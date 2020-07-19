@@ -1,0 +1,81 @@
+{
+	"info": {
+		"_postman_id": "a133ca62-2b80-4067-a3f3-548213785fce",
+		"name": "Ruuvi",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Send update (from gateway)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"data\":\t{\r\n\t\t\"coordinates\":\t\"\",\r\n\t\t\"timestamp\":\t133,\r\n\t\t\"gwmac\":\t\"240ac4e32eb4\",\r\n\t\t\"tags\":\t{\r\n\t\t\t\"76EA4D1D1021\":\t{\r\n\t\t\t\t\"rssi\":\t-76,\r\n\t\t\t\t\"timestamp\":\t1595333605932,\r\n\t\t\t\t\"data\":\t\"02011A020A0C0AFF4C001005031C6E57DD\"\r\n\t\t\t},\r\n\t\t\t\"5575B388898D\":\t{\r\n\t\t\t\t\"rssi\":\t-52,\r\n\t\t\t\t\"timestamp\":\t1595198605932,\r\n\t\t\t\t\"data\":\t\"1EFF06000109200230E6726EBD7FD084DFC33558D954149C321F735CC51159\"\r\n\t\t\t},\r\n\t\t\t\"6C4008A1C25D\":\t{\r\n\t\t\t\t\"rssi\":\t-48,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"0201060AFF4C0010054B1C6C9ED5\"\r\n\t\t\t},\r\n\t\t\t\"655D7925361D\":\t{\r\n\t\t\t\t\"rssi\":\t-52,\r\n\t\t\t\t\"timestamp\":\t1595198605934,\r\n\t\t\t\t\"data\":\t\"02010613FF4C000C0E00BC32D7E1B0C296ADA26E8632C9\"\r\n\t\t\t},\r\n\t\t\t\"16FD6FF63364\":\t{\r\n\t\t\t\t\"rssi\":\t-62,\r\n\t\t\t\t\"timestamp\":\t1595198605936,\r\n\t\t\t\t\"data\":\t\"1EFF0600010920029E258660E0B062F2FFB868D9337736E2CD2038057DB9BD\"\r\n\t\t\t},\r\n\t\t\t\"F63A84A8E4CF\":\t{\r\n\t\t\t\t\"rssi\":\t-24,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"0201041BFF990405154636CDC88B004C002403F079B6FFFFFFF63A84A8E4CF\"\r\n\t\t\t},\r\n\t\t\t\"654FF6FE52A8\":\t{\r\n\t\t\t\t\"rssi\":\t-27,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"0201060AFF4C001005451CED6715\"\r\n\t\t\t},\r\n\t\t\t\"47B73797431A\":\t{\r\n\t\t\t\t\"rssi\":\t-39,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"02011A020A0C0BFF4C0010060B1E4B03D47C\"\r\n\t\t\t},\r\n\t\t\t\"442CFAA838B8\":\t{\r\n\t\t\t\t\"rssi\":\t-50,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"1EFF0600010F2002CFBF43DCD33C599D71FFE3E2267A581766B8F09F2008DC\"\r\n\t\t\t},\r\n\t\t\t\"F40F2438E2E9\":\t{\r\n\t\t\t\t\"rssi\":\t-62,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"0201060AFF4C0010054B1C263A26\"\r\n\t\t\t},\r\n\t\t\t\"7C0E31B04AD5\":\t{\r\n\t\t\t\t\"rssi\":\t-62,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"02010613FF4C000C0E08EACB2EA8DA2B709A34DF1FD2B2\"\r\n\t\t\t},\r\n\t\t\t\"4A251258A167\":\t{\r\n\t\t\t\t\"rssi\":\t-45,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"02011A020A0C0BFF4C001006031E82AC36B5\"\r\n\t\t\t},\r\n\t\t\t\"7C5B1B365242\":\t{\r\n\t\t\t\t\"rssi\":\t-72,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"0201060AFF4C0010050B1C60D1AF\"\r\n\t\t\t},\r\n\t\t\t\"791BD51E1A27\":\t{\r\n\t\t\t\t\"rssi\":\t-51,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"02011A020A0C0BFF4C001006471E1B522613\"\r\n\t\t\t},\r\n\t\t\t\"323CB5C0FB57\":\t{\r\n\t\t\t\t\"rssi\":\t-73,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"1EFF060001092002BB132272588BDD97624C64193F2DF14528D59D26D56D07\"\r\n\t\t\t},\r\n\t\t\t\"194488332F62\":\t{\r\n\t\t\t\t\"rssi\":\t-87,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"1EFF06000109200277931B5F7B618C7D5396EAACDB4E476FC2361A6FD44932\"\r\n\t\t\t},\r\n\t\t\t\"DAB59BDFA9BB\":\t{\r\n\t\t\t\t\"rssi\":\t-56,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"0201041BFF99040512954B2FC8880074FF7004006976E2A7A6DAB59BDFA9BB\"\r\n\t\t\t},\r\n\t\t\t\"15082A6773B2\":\t{\r\n\t\t\t\t\"rssi\":\t-73,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"1EFF0600010920025FDE9F9234847B66681BB2CC17209976F602936034AE46\"\r\n\t\t\t},\r\n\t\t\t\"74F6D8A52FB4\":\t{\r\n\t\t\t\t\"rssi\":\t-68,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"02011A020A0C0BFF4C001006131E56BCEC09\"\r\n\t\t\t},\r\n\t\t\t\"0016A40FB3CD\":\t{\r\n\t\t\t\t\"rssi\":\t-62,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"0201060319E00016FF150264E0001E06F054ABE5BC4CB681BC11AFEB0BC2\"\r\n\t\t\t},\r\n\t\t\t\"31B04AD52CE9\":\t{\r\n\t\t\t\t\"rssi\":\t-60,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"0201060AFF4C0010054B1C263A26\"\r\n\t\t\t},\r\n\t\t\t\"D70411EBCE76\":\t{\r\n\t\t\t\t\"rssi\":\t-73,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"031900000201061107275125077B182691364CDD843CFC39D8\"\r\n\t\t\t},\r\n\t\t\t\"657C2C25361D\":\t{\r\n\t\t\t\t\"rssi\":\t-77,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"02010613FF4C000C0E00BC32D7E1B0C296ADA26E8632C9\"\r\n\t\t\t},\r\n\t\t\t\"3AC40F493821\":\t{\r\n\t\t\t\t\"rssi\":\t-75,\r\n\t\t\t\t\"timestamp\":\t1595198605933,\r\n\t\t\t\t\"data\":\t\"1EFF060001092002E76BF96742B4855B5E1FE0DAB4367FC6C0D1B8D37E8812\"\r\n\t\t\t}\r\n\t\t}\r\n\t}\r\n}",
+					"options": {
+						"raw": {}
+					}
+				},
+				"url": {
+					"raw": "https://h0wpfi5qcj.execute-api.eu-west-1.amazonaws.com/record",
+					"protocol": "https",
+					"host": [
+						"h0wpfi5qcj",
+						"execute-api",
+						"eu-west-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"record"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetSensorData",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "RuuviTagi",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://h0wpfi5qcj.execute-api.eu-west-1.amazonaws.com/get?tag=76EA4D1D1021&",
+					"protocol": "https",
+					"host": [
+						"h0wpfi5qcj",
+						"execute-api",
+						"eu-west-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"get"
+					],
+					"query": [
+						{
+							"key": "tag",
+							"value": "76EA4D1D1021"
+						},
+						{
+							"key": "",
+							"value": null
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
