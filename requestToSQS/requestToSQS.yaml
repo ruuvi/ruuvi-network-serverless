@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Request-to-SQS writer for Ruuvi Network
+Resources:
+  requestToDynamo:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs12.x
+      CodeUri: .
+      Description: Request-to-sQS writer for Ruuvi Network
+      MemorySize: 128
+      Timeout: 10
+      Role: >-
+        arn:aws:iam::603371033421:role/ruuvi-gateway-receiver-dev-eu-west-1-lambdaRole
+      Events:
+        Api1:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api2:
+          Type: Api
+          Properties:
+            Path: /record
+            Method: ANY
+        Api3:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+      Environment:
+        Variables:
+          TARGET_QUEUE: 'https://sqs.eu-west-1.amazonaws.com/603371033421/ruuvi_poc'

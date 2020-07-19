@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Register user end-point Lambda implementation.
+Resources:
+  createUser:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs12.x
+      CodeUri: .
+      Description: 'Register User end-point'
+      MemorySize: 128
+      Timeout: 3
+      Role: 'arn:aws:iam::603371033421:role/service-role/createUser-role-j0jgx41m'
+      Events:
+        Api1:
+          Type: Api
+          Properties:
+            Path: /register
+            Method: ANY
+      Environment:
+        Variables:
+          TABLE_NAME: SensorData
