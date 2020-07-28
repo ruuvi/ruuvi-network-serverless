@@ -1,0 +1,81 @@
+# Ruuvi Network Serverless v0.01
+#
+# For full config options: docs.serverless.com
+
+service: ruuvi-network-serverless
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  profile: muhwu-ou
+
+  # Defaults
+  stage: dev
+  region: eu-west-1
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "logs:CreateLogGroup"
+      Resource: "arn:aws:logs:eu-west-1:603371033421:*"
+    - Effect: "Allow"
+      Action:
+        - "logs:CreateLogStream"
+        - "logs:PutLogEvents"
+      Resource: "arn:aws:logs:eu-west-1:603371033421:log-group:/aws/lambda/writeToDatabase:*"
+    - Effect: "Allow"
+      Action:
+        - "sqs:DeleteMessage"
+        - "sqs:ReceiveMessage"
+        - "sqs:SendMessage"
+        - "sqs:GetQueueAttributes"
+      Resource: "arn:aws:sqs:*"
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:DeleteItem"
+        - "dynamodb:GetItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:Scan"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:BatchWriteItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:UpdateItem"
+      Resource: "arn:aws:dynamodb:eu-west-1:603371033421:table/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+#package:
+#  include:
+#    - include-me.js
+#    - include-me-dir/**
+#  exclude:
+#    - exclude-me.js
+#    - exclude-me-dir/**
+
+functions:
+  requestToSQS:
+    handler: requestToSQS/index.handler
+    events:
+      - http: POST record
+    environment:
+      TARGET_QUEUE: https://sqs.eu-west-1.amazonaws.com/603371033421/ruuvi_poc
+
+
+  writeToDatabase:
+    handler: writeToDatabase/index.handler
+    events:
+      - sqs: arn:aws:sqs:eu-west-1:603371033421:ruuvi_poc
+
+    environment:
+      TABLE_NAME: SensorData
+
+#  getSensorData:
+    #handler: getSensorData/index.handler
+
