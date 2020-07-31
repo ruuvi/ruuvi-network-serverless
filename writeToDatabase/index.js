@@ -17,6 +17,7 @@ exports.handler = async (event) => {
     }
     
     let uploadBatchPromises = [];
+    let batchedIds = []; // For deduplication
     
     for (const { messageId, body, messageAttributes } of event.Records) {
         const gwmac = messageAttributes.gwmac.stringValue;
@@ -26,12 +27,17 @@ exports.handler = async (event) => {
         let tags = JSON.parse(body);
 
         Object.keys(tags).forEach(function(key) {
+            // Dedupe
+            if (batchedIds.includes(key + "," + tags[key]['timestamp'])) {
+                return;
+            }
             tags[key].id = key;
             tags[key].gwmac = gwmac;
             tags[key].coordinates = coordinates;
             tags[key].received = timestamp;
             
             flattenedData.push(tags[key]);
+            batchedIds.push(key + "," + tags[key]['timestamp']);
             
             if (flattenedData.length >= 25) {
                uploadBatchPromises.push(sendBatch(flattenedData));
