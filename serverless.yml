@@ -8,8 +8,10 @@ custom:
   dynamoTableName: 'RuuviSensorData'
   writerQueueName: 'ruuvi_network'
   lambdaConcurrency: 10
-  dynamoWriteCapacity: 1
-  dynamoReadCapacity: 1
+  
+  # For auto-scaling: https://www.serverless.com/plugins/serverless-plugin-dynamodb-autoscaling
+  dynamoWriteCapacity: 5
+  dynamoReadCapacity: 5
 
 provider:
   name: aws
@@ -18,7 +20,7 @@ provider:
 
   # Defaults
   stage: dev
-  region: eu-west-1
+  region: eu-central-1
 
   # Permissions (Note: These could be more granular per lambda)
   iamRoleStatements:
@@ -104,3 +106,4 @@ resources:
           ProvisionedThroughput:
             ReadCapacityUnits: ${self:custom.dynamoReadCapacity}
             WriteCapacityUnits: ${self:custom.dynamoWriteCapacity}
+            
