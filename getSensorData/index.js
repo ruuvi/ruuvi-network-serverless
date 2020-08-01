@@ -6,7 +6,7 @@ AWS.config.update({region: 'eu-west-1'});
 
 exports.handler = async (event, context) => {
     // Authorization
-    if (event.headers.authorization !== 'Bearer ' + process.env.ACCESS_KEY) {
+    if (process.env.ACCESS_KEY !== "" && event.headers.authorization !== 'Bearer ' + process.env.ACCESS_KEY) {
         // Forbidden
         return gatewayHelper.response(403);
     }
@@ -44,5 +44,5 @@ exports.handler = async (event, context) => {
             Total: rawData.Items.length,
             Measurements: rawData.Items
         }
-    }, null, 4)); // 4 = pretty-print depth
+    }, null, 4)); // 4 = pretty-print depth (TODO: Change to 0 eventually)
 };

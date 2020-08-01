@@ -4,29 +4,33 @@
 
 service: ruuvi-network-serverless
 
-# You can pin your service to only deploy with a specific Serverless version
-# Check out our docs for more details
-# frameworkVersion: "=X.X.X"
+custom:
+  dynamoTableName: 'RuuviSensorData'
+  writerQueueName: 'ruuvi_network'
+  lambdaConcurrency: 10
+  dynamoWriteCapacity: 1
+  dynamoReadCapacity: 1
 
 provider:
   name: aws
   runtime: nodejs12.x
-  profile: muhwu-ou
+  profile: ruuvi
 
   # Defaults
   stage: dev
   region: eu-west-1
 
+  # Permissions (Note: These could be more granular per lambda)
   iamRoleStatements:
     - Effect: "Allow"
       Action:
         - "logs:CreateLogGroup"
-      Resource: "arn:aws:logs:eu-west-1:603371033421:*"
+      Resource: { 'Fn::Join': [':', ['arn:aws:logs', { Ref: 'AWS::Region' }, { Ref: 'AWS::AccountId' }, '*']] }
     - Effect: "Allow"
       Action:
         - "logs:CreateLogStream"
         - "logs:PutLogEvents"
-      Resource: "arn:aws:logs:eu-west-1:603371033421:log-group:/aws/lambda/writeToDatabase:*"
+      Resource: { 'Fn::Join': [':', ['arn:aws:logs', { Ref: 'AWS::Region' }, { Ref: 'AWS::AccountId' }, 'log-group:/aws/lambda/*writeToDatabase:*']]}
     - Effect: "Allow"
       Action:
         - "sqs:DeleteMessage"
@@ -42,40 +46,61 @@ provider:
         - "dynamodb:Scan"
         - "dynamodb:UpdateItem"
         - "dynamodb:BatchWriteItem"
-        - "dynamodb:PutItem"
         - "dynamodb:UpdateItem"
-      Resource: "arn:aws:dynamodb:eu-west-1:603371033421:table/*"
+        - "dynamodb:Query"
+      Resource: { 'Fn::Join': [':', ['arn:aws:dynamodb', { Ref: 'AWS::Region' }, { Ref: 'AWS::AccountId' }, 'table/*']] }
 
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
-
-# you can add packaging information here
-#package:
-#  include:
-#    - include-me.js
-#    - include-me-dir/**
-#  exclude:
-#    - exclude-me.js
-#    - exclude-me-dir/**
-
+# Lambdas
 functions:
   requestToSQS:
     handler: requestToSQS/index.handler
+    reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http: POST record
     environment:
-      TARGET_QUEUE: https://sqs.eu-west-1.amazonaws.com/603371033421/ruuvi_poc
-
+      TARGET_QUEUE: { Ref: GatewayQueue }
 
   writeToDatabase:
     handler: writeToDatabase/index.handler
     events:
-      - sqs: arn:aws:sqs:eu-west-1:603371033421:ruuvi_poc
-
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - GatewayQueue
+              - Arn
+          batchSize: 10
     environment:
-      TABLE_NAME: SensorData
+      TABLE_NAME: ${self:custom.dynamoTableName}
 
-#  getSensorData:
-    #handler: getSensorData/index.handler
+  getSensorData:
+    handler: getSensorData/index.handler
+    events:
+      - http: GET get
+    environment:
+      TABLE_NAME: ${self:custom.dynamoTableName}
+      ACCESS_KEY: "" # Empty for not required
 
+# Resources (queues, databases, etc.)
+resources:
+    Resources:
+      GatewayQueue:
+        Type: AWS::SQS::Queue
+        Properties:
+          QueueName: ${self:custom.writerQueueName}
+      DynamoSensorData:
+        Type: AWS::DynamoDB::Table
+        Properties:
+          TableName: ${self:custom.dynamoTableName}
+          AttributeDefinitions:
+            - AttributeName: SensorId
+              AttributeType: S
+            - AttributeName: MeasurementTimestamp
+              AttributeType: N
+          KeySchema:
+            - AttributeName: SensorId
+              KeyType: HASH
+            - AttributeName: MeasurementTimestamp
+              KeyType: RANGE
+          ProvisionedThroughput:
+            ReadCapacityUnits: ${self:custom.dynamoReadCapacity}
+            WriteCapacityUnits: ${self:custom.dynamoWriteCapacity}
