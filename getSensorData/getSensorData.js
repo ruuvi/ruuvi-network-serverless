@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 var ddb = new AWS.DynamoDB.DocumentClient();
-const gatewayHelper = require('gatewayHelper.js');
+const gatewayHelper = require('helpers/gatewayHelper.js');
 
 AWS.config.update({region: 'eu-west-1'});
 

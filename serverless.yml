@@ -8,7 +8,13 @@ custom:
   dynamoTableName: 'RuuviSensorData'
   writerQueueName: 'ruuvi_network'
   lambdaConcurrency: 10
-  
+
+  # TODO: Switch to Role-Based authentication
+  databaseEndpoint: "ruuvi-main.cluster-ro-cd69jmnnlqh0.eu-central-1.rds.amazonaws.com"
+  databaseName: "ruuvi"
+  databaseUsername: "master"
+  databasePassword: "VfHWsbhl7iFk7A85iX5W"
+
   # For auto-scaling: https://www.serverless.com/plugins/serverless-plugin-dynamodb-autoscaling
   dynamoWriteCapacity: 5
   dynamoReadCapacity: 5
@@ -42,6 +48,12 @@ provider:
       Resource: "arn:aws:sqs:*"
     - Effect: "Allow"
       Action:
+        - "ec2:CreateNetworkInterface"
+        - "ec2:DescribeNetworkInterfaces"
+        - "ec2:DeleteNetworkInterface"
+      Resource: "*"
+    - Effect: "Allow"
+      Action:
         - "dynamodb:DeleteItem"
         - "dynamodb:GetItem"
         - "dynamodb:PutItem"
@@ -54,8 +66,9 @@ provider:
 
 # Lambdas
 functions:
+  # Gateway Facing API
   requestToSQS:
-    handler: requestToSQS/index.handler
+    handler: requestToSQS/requestToSQS.handler
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http: POST record
@@ -63,7 +76,7 @@ functions:
       TARGET_QUEUE: { Ref: GatewayQueue }
 
   writeToDatabase:
-    handler: writeToDatabase/index.handler
+    handler: writeToDatabase/writeToDatabase.handler
     events:
       - sqs:
           arn:
@@ -74,14 +87,37 @@ functions:
     environment:
       TABLE_NAME: ${self:custom.dynamoTableName}
 
+  # User Facing API
   getSensorData:
-    handler: getSensorData/index.handler
+    handler: getSensorData/getSensorData.handler
     events:
       - http: GET get
     environment:
       TABLE_NAME: ${self:custom.dynamoTableName}
       ACCESS_KEY: "" # Empty for not required
 
+  getUserData:
+    handler: getUserData/getUserData.handler
+    reservedConcurrency: ${self:custom.lambdaConcurrency}
+    events:
+      - http: GET user
+    environment:
+      ENDPOINT: ${self:custom.databaseEndpoint}
+      DATABASE: ${self:custom.databaseName}
+      USERNAME: ${self:custom.databaseUsername}
+      PASSWORD: ${self:custom.databasePassword}
+      
+  createUser:
+    handler: createUser/createUser.handler
+    reservedConcurrency: ${self:custom.lambdaConcurrency}
+    events:
+      - http: POST register
+    environment:
+      ENDPOINT: ${self:custom.databaseEndpoint}
+      DATABASE: ${self:custom.databaseName}
+      USERNAME: ${self:custom.databaseUsername}
+      PASSWORD: ${self:custom.databasePassword}
+      
 # Resources (queues, databases, etc.)
 resources:
     Resources:
@@ -106,4 +142,3 @@ resources:
           ProvisionedThroughput:
             ReadCapacityUnits: ${self:custom.dynamoReadCapacity}
             WriteCapacityUnits: ${self:custom.dynamoWriteCapacity}
-            
