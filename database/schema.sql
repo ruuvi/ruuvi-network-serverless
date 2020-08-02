@@ -14,7 +14,7 @@ CREATE TABLE user_tokens (
         access_token VARCHAR(128) NOT NULL,
         PRIMARY KEY(id),
         UNIQUE INDEX user_token_idx (user_id, access_token),
-  		FOREIGN KEY(user_id) REFERENCES users(id)
+        FOREIGN KEY(user_id) REFERENCES users(id)
 ) ENGINE=INNODB CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
 CREATE TABLE claimed_tags (

@@ -12,7 +12,7 @@ custom:
   # TODO: Switch to Role-Based authentication
   databaseEndpoint: "ruuvi-main.cluster-ro-cd69jmnnlqh0.eu-central-1.rds.amazonaws.com"
   databaseName: "ruuvi"
-  databaseUsername: "master"
+  databaseUsername: "admin"
   databasePassword: "VfHWsbhl7iFk7A85iX5W"
 
   # For auto-scaling: https://www.serverless.com/plugins/serverless-plugin-dynamodb-autoscaling
