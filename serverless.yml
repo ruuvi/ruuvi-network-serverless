@@ -117,6 +117,17 @@ functions:
       DATABASE: ${self:custom.databaseName}
       USERNAME: ${self:custom.databaseUsername}
       PASSWORD: ${self:custom.databasePassword}
+
+  claimTag:
+    handler: claimTag/claimTag.handler
+    reservedConcurrency: ${self:custom.lambdaConcurrency}
+    events:
+      - http: POST claim
+    environment:
+      ENDPOINT: ${self:custom.databaseEndpoint}
+      DATABASE: ${self:custom.databaseName}
+      USERNAME: ${self:custom.databaseUsername}
+      PASSWORD: ${self:custom.databasePassword}
       
 # Resources (queues, databases, etc.)
 resources:
