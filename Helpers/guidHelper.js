@@ -5,7 +5,7 @@
  * 
  * @param int length 
  */
-module.exports.guid = (length) => {
+const guid = (length) => {
     var result           = '';
     var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     var charactersLength = characters.length;
@@ -13,4 +13,11 @@ module.exports.guid = (length) => {
        result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
- }
+}
+
+/**
+ * Exports
+ */
+module.exports = {
+   guid
+};

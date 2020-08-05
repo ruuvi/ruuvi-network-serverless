@@ -25,3 +25,12 @@ CREATE TABLE claimed_tags (
         UNIQUE INDEX claim_idx (user_id, tag_id),
         FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+
+CREATE TABLE user_registrations (
+        registration_id BIGINT NOT NULL AUTO_INCREMENT,
+        email VARCHAR(320) NOT NULL,
+        token VARCHAR(64) NOT NULL,
+        expires DATETIME NOT NULL,
+        PRIMARY KEY(registration_id),
+        UNIQUE INDEX token_expire_idx (token, expires)
+) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_unicode_ci;

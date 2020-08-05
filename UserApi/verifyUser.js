@@ -1,5 +1,5 @@
-const guidHelper = require('helpers/guidHelper');
-const gatewayHelper = require('helpers/gatewayHelper.js');
+const gatewayHelper = require('Helpers/gatewayHelper.js');
+const validator = require('Helpers/validator.js');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -8,32 +8,29 @@ const mysql = require('serverless-mysql')({
         user     : process.env.USERNAME,
         password : process.env.PASSWORD
     }
-});
-  
+})
+
 // Main handler function
 exports.handler = async (event, context) => {
-    const eventBody = JSON.parse(event.body);
-    
     if (
-        !eventBody.hasOwnProperty('email')
+        !validator.hasKeys(event.queryStringParameters, ['token'])
+        || !validator.validateToken(event.queryStringParameters.token)
     ) {
-        return gatewayHelper.response(400);
-    }
-
-    const email = eventBody.email;
-    const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-
-    if (!emailRegexp.test(email)) {
-        return gatewayHelper.response(400, null, '{"result":"error","message":"Invalid e-mail address."}');
+        return gatewayHelper.forbidden();
     }
     
-    let results = null;
+    // Run your query
+    let results = await mysql.query(
+        'SELECT email FROM user_registrations WHERE token = "' + token + '" AND expiration > CURRENT_TIMESTAMP();'
+    );
 
-    const userInfo = {
-        email: email,
-        accessToken: guidHelper.guid(32)
-    };
-    
+    if (results.length !== 1) {
+        // Expired token
+        return gatewayHelper.expired();
+    }
+
+    const email = results[0].email;
+
     try {
         results = await mysql.query(
             "INSERT INTO users (email) VALUES ('" + email + "');"
@@ -63,7 +60,9 @@ exports.handler = async (event, context) => {
         }
         
         return gatewayHelper.response(errorCode, null, JSON.stringify(errorResponse));
-    }  
+    }
 
-    return gatewayHelper.response(200, null, JSON.stringify(userInfo));
+    await mysql.end();
+
+    return results;
 }

@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 var ddb = new AWS.DynamoDB.DocumentClient();
-const gatewayHelper = require('helpers/gatewayHelper.js');
+const gatewayHelper = require('Helpers/gatewayHelper.js');
 
 AWS.config.update({region: 'eu-west-1'});
 
@@ -8,7 +8,7 @@ exports.handler = async (event, context) => {
     // Authorization
     if (process.env.ACCESS_KEY !== "" && event.headers.authorization !== 'Bearer ' + process.env.ACCESS_KEY) {
         // Forbidden
-        return gatewayHelper.response(403);
+        return gatewayHelper.forbidden();
     }
     
     // Validation
@@ -18,7 +18,7 @@ exports.handler = async (event, context) => {
         || event.queryStringParameters.tag.length < 8) {
 
         // Invalid request
-        return gatewayHelper.response(400);
+        return gatewayHelper.invalid();
     }
 
     const tag = event.queryStringParameters.tag;
@@ -34,10 +34,10 @@ exports.handler = async (event, context) => {
     const rawData = await ddb.query(params).promise();
     if (rawData.Items.length === 0) {
         // Not found
-        return gatewayHelper.response(404);
+        return gatewayHelper.notFound();
     }
 
-    return gatewayHelper.response(200, null, JSON.stringify({
+    return gatewayHelper.ok(null, JSON.stringify({
         result: "success",
         data: {
             Tag: tag,

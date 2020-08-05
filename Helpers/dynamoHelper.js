@@ -1,7 +1,7 @@
 /**
  * Validates an individual sensor data point.
  */
-module.exports.validateSensorData = (data) => {
+const validateSensorData = (data) => {
     // Data field existence
     const fields = ['rssi', 'data', 'coordinates', 'timestamp', 'id', 'gwmac'];
     for (let i = 0, len = fields.length; i < len; i++) {
@@ -19,7 +19,7 @@ module.exports.validateSensorData = (data) => {
 /**
  * Formats the raw sensor data to DynamoDB row format.
  */
-module.exports.dynamoFormat = (inputData) => {
+const dynamoFormat = (inputData) => {
     return {
         "SensorId": { "S": inputData.id },
         "MeasurementTimestamp": { "N": inputData.timestamp.toString() },
@@ -35,7 +35,7 @@ module.exports.dynamoFormat = (inputData) => {
 /**
  * Formats the raw JSON objects into a batch for DynamoDB.
  */
-module.exports.getDynamoBatch = (inputData) => {
+const getDynamoBatch = (inputData) => {
     let batch = {
         RequestItems: { }
     };
@@ -55,3 +55,12 @@ module.exports.getDynamoBatch = (inputData) => {
 
     return batch;
 }
+
+/**
+ * Exports
+ */
+module.exports = {
+    getDynamoBatch,
+    dynamoFormat,
+    validateSensorData
+};

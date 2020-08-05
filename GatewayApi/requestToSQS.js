@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk');
-const gatewayHelper = require('helpers/gatewayHelper.js');
+const gatewayHelper = require('Helpers/gatewayHelper.js');
 
 AWS.config.update({region: 'eu-west-1'});
 
@@ -23,7 +23,7 @@ exports.handler = async (event, context) => {
         || !data.hasOwnProperty('coordinates')
     ) {
         console.error("Invalid Data: " + event.body);
-        return gatewayHelper.response(400);
+        return gatewayHelper.invalid();
     }
     
     // SQS Message Properties will contain gateway data
@@ -57,8 +57,8 @@ exports.handler = async (event, context) => {
         }).promise();
     } catch (e) {
         console.error(e);
-        return gatewayHelper.response(400);
+        return gatewayHelper.invalid();
     }
     
-    return gatewayHelper.response(200);
+    return gatewayHelper.ok();
 };

@@ -1,4 +1,4 @@
-const gatewayHelper = require('helpers/gatewayHelper.js');
+const gatewayHelper = require('Helpers/gatewayHelper.js');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -12,8 +12,9 @@ const mysql = require('serverless-mysql')({
 // Main handler function
 exports.handler = async (event, context) => {
     // Run your query
+    let sanitizedEmail = 'abc@abc.com';
     let results = await mysql.query(
-        'SELECT * FROM users'
+        'SELECT id, email FROM users WHERE email = "' + sanitizedEmail + '";'
     );
   
     // Run clean up function

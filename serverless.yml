@@ -68,7 +68,7 @@ provider:
 functions:
   # Gateway Facing API
   requestToSQS:
-    handler: requestToSQS/requestToSQS.handler
+    handler: GatewayApi/requestToSQS.handler
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http: POST record
@@ -76,7 +76,7 @@ functions:
       TARGET_QUEUE: { Ref: GatewayQueue }
 
   writeToDatabase:
-    handler: writeToDatabase/writeToDatabase.handler
+    handler: GatewayApi/writeToDatabase.handler
     events:
       - sqs:
           arn:
@@ -89,7 +89,7 @@ functions:
 
   # User Facing API
   getSensorData:
-    handler: getSensorData/getSensorData.handler
+    handler: UserApi/getSensorData.handler
     events:
       - http: GET get
     environment:
@@ -97,7 +97,7 @@ functions:
       ACCESS_KEY: "" # Empty for not required
 
   getUserData:
-    handler: getUserData/getUserData.handler
+    handler: UserApi/getUserData.handler
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http: GET user
@@ -107,8 +107,8 @@ functions:
       USERNAME: ${self:custom.databaseUsername}
       PASSWORD: ${self:custom.databasePassword}
       
-  createUser:
-    handler: createUser/createUser.handler
+  requestRegistration:
+    handler: UserApi/requestRegistration.handler
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http: POST register
@@ -118,8 +118,19 @@ functions:
       USERNAME: ${self:custom.databaseUsername}
       PASSWORD: ${self:custom.databasePassword}
 
+  verifyUser:
+    handler: UserApi/verifyUser.handler
+    reservedConcurrency: ${self:custom.lambdaConcurrency}
+    events:
+      - http: GET verify
+    environment:
+      ENDPOINT: ${self:custom.databaseEndpoint}
+      DATABASE: ${self:custom.databaseName}
+      USERNAME: ${self:custom.databaseUsername}
+      PASSWORD: ${self:custom.databasePassword}
+
   claimTag:
-    handler: claimTag/claimTag.handler
+    handler: UserApi/claimTag.handler
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http: POST claim

@@ -1,4 +1,7 @@
-const gatewayHelper = require('helpers/gatewayHelper.js');
+const guidHelper = require('Helpers/guidHelper');
+const gatewayHelper = require('Helpers/gatewayHelper.js');
+const emailHelper = require('Helpers/emailHelper');
+const validator = require('Helpers/validator');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -11,37 +14,36 @@ const mysql = require('serverless-mysql')({
   
 // Main handler function
 exports.handler = async (event, context) => {
-    const accessToken = event.headers.authorization;
     const eventBody = JSON.parse(event.body);
     
-    // Access token validation
-    if (accessToken.length < 10) {
-        // TODO: Length validation is not enough
-        return gatewayHelper.response(403);
-    }
+    const valid = validator.hasKeys(eventBody, ['email']) && validator.validateEmail(eventBody.email);
 
-    if (!eventBody.hasOwnProperty('tag')) {
-        return gatewayHelper.response(400, null, '{"result":"error","error":"Missing tag"}');
+    if (!valid) {
+        return gatewayHelper.invalid();
     }
     
-    const  tag = eventBody.tag;
-
     let results = null;
-    
+
+    const userInfo = {
+        email: email,
+        accessToken: guidHelper.guid(32)
+    };
+
     try {
         results = await mysql.query(
-            'INSERT IGNORE INTO claimed_tags (user_id, tag_id) SELECT user_id, "' + tag + '" FROM user_tokens WHERE access_token = "' + accessToken + '"'
+            "INSERT INTO users (email) VALUES ('" + email + "');"
         );
 
         if (results.insertId) {
-            // Success
+            let tokenResult = await mysql.query(
+                "INSERT INTO user_tokens (user_id, access_token) VALUES (" + results.insertId + ", '" + userInfo.accessToken + "');"
+            );
         }
       
-        // Run clean up function
         await mysql.end();
     } catch (e) {
         // TODO: Consolidate & Unify MySQL + error handling - possibly better done async
-        console.error("Unable to claim tag: " + e.error);
+        console.error("Unable to insert user: " + email);
 
         let errorCode = 500;
 
@@ -52,11 +54,11 @@ exports.handler = async (event, context) => {
         
         if (e.code === 'ER_DUP_ENTRY') {
             errorCode = 409; // Conflict
-            errorResponse.error = "Tag already claimed.";
+            errorResponse.error = "E-mail already exists.";
         }
         
         return gatewayHelper.response(errorCode, null, JSON.stringify(errorResponse));
-    }  
+    }
 
-    return gatewayHelper.response(200, null, JSON.stringify(userInfo));
+    return gatewayHelper.ok(null, JSON.stringify(userInfo));
 }
