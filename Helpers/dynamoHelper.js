@@ -42,13 +42,13 @@ const getDynamoBatch = (inputData) => {
     batch.RequestItems[process.env.TABLE_NAME] = [];
     
     for (let i = 0, len = inputData.length; i < len; i++) {
-        if (!this.validateSensorData(inputData[i])) {
+        if (!validateSensorData(inputData[i])) {
             return null;
         }
         
         batch.RequestItems[process.env.TABLE_NAME].push({
             PutRequest: {
-                Item: this.dynamoFormat(inputData[i])
+                Item: dynamoFormat(inputData[i])
             }
         });
     }
