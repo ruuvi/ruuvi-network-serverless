@@ -1,4 +1,5 @@
 const sendEmailVerification = (email, token, ses) => {
+    const link = `${process.env.BASE_API_URL}/verify?token=${token}`;
     var params = {
         Destination: {
             ToAddresses: [email]
@@ -6,7 +7,7 @@ const sendEmailVerification = (email, token, ses) => {
         Message: {
             Body: {
                 Text: {
-                    Data: "Please go to " + token
+                    Data: `Please follow <a href="${link}">this link</a> to confirm your e-mail.`
                 }
                 
             },

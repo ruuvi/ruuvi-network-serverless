@@ -122,6 +122,15 @@ functions:
       DATABASE: ${self:custom.databaseName}
       USERNAME: ${self:custom.databaseUsername}
       PASSWORD: ${self:custom.databasePassword}
+      BASE_API_URL:
+        !Join
+          - ''
+          - - 'https://'
+            - !Ref ApiGatewayRestApi
+            - '.execute-api.'
+            - ${opt:region, self:provider.region}
+            - '.amazonaws.com/'
+            - ${opt:stage, self:provider.stage}
 
   verifyUser:
     handler: UserApi/verifyUser.handler
@@ -133,7 +142,7 @@ functions:
       DATABASE: ${self:custom.databaseName}
       USERNAME: ${self:custom.databaseUsername}
       PASSWORD: ${self:custom.databasePassword}
-
+            
   claimTag:
     handler: UserApi/claimTag.handler
     reservedConcurrency: ${self:custom.lambdaConcurrency}
