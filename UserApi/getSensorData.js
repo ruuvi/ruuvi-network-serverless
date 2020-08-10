@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 var ddb = new AWS.DynamoDB.DocumentClient();
 const gatewayHelper = require('Helpers/gatewayHelper.js');
 
-AWS.config.update({region: 'eu-west-1'});
+AWS.config.update({region: 'eu-central-1'});
 
 exports.handler = async (event, context) => {
     // Authorization
@@ -37,12 +37,9 @@ exports.handler = async (event, context) => {
         return gatewayHelper.notFound();
     }
 
-    return gatewayHelper.ok(null, JSON.stringify({
-        result: "success",
-        data: {
-            Tag: tag,
-            Total: rawData.Items.length,
-            Measurements: rawData.Items
-        }
-    }, null, 4)); // 4 = pretty-print depth (TODO: Change to 0 eventually)
+    return gatewayHelper.successResponse({
+        Tag: tag,
+        Total: rawData.Items.length,
+        Measurements: rawData.Items
+    });
 };

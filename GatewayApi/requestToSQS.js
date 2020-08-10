@@ -1,7 +1,7 @@
 const AWS = require('aws-sdk');
 const gatewayHelper = require('Helpers/gatewayHelper.js');
 
-AWS.config.update({region: 'eu-west-1'});
+AWS.config.update({region: 'eu-central-1'});
 
 var sqs = new AWS.SQS({apiVersion: '2012-11-05'});
 

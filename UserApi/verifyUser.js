@@ -21,7 +21,11 @@ exports.handler = async (event, context) => {
     
     // Run your query
     let results = await mysql.query(
-        'SELECT email FROM user_registrations WHERE token = "' + token + '" AND expiration > CURRENT_TIMESTAMP();'
+        `SELECT email
+        FROM user_registrations
+        WHERE
+            token = '${token}'
+            AND expiration > CURRENT_TIMESTAMP();`
     );
 
     if (results.length !== 1) {
@@ -29,40 +33,49 @@ exports.handler = async (event, context) => {
         return gatewayHelper.expired();
     }
 
-    const email = results[0].email;
+    const userInfo = {
+        Email: results[0].email,
+        AccessToken: guidHelper.guid(32)
+    };
 
     try {
         results = await mysql.query(
-            "INSERT INTO users (email) VALUES ('" + email + "');"
+            `INSERT INTO users (
+                email
+            ) VALUES (
+                '${userInfo.email}'
+            );`
         );
 
         if (results.insertId) {
             let tokenResult = await mysql.query(
-                "INSERT INTO user_tokens (user_id, access_token) VALUES (" + results.insertId + ", '" + userInfo.accessToken + "');"
+                `INSERT INTO user_tokens (
+                    user_id,
+                    access_token
+                ) VALUES (
+                    '${results.insertId},
+                    '${userInfo.AccessToken}'
+                );`
             );
+
+            if (tokenResult.insertId) {
+                console.log("Successfully created token for user: " + userInfo.Email);
+            }
         }
       
         await mysql.end();
     } catch (e) {
         // TODO: Consolidate & Unify MySQL + error handling - possibly better done async
-        console.error("Unable to insert user: " + email);
+        console.error("Unable to insert user: " + userInfo.Email);
 
-        let errorCode = 500;
-
-        let errorResponse = {
-            "result": "error",
-            "error": "Unknown error occurred."
-        };
-        
         if (e.code === 'ER_DUP_ENTRY') {
-            errorCode = 409; // Conflict
-            errorResponse.error = "E-mail already exists.";
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, "Email already exists.");
         }
         
-        return gatewayHelper.response(errorCode, null, JSON.stringify(errorResponse));
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
     }
 
     await mysql.end();
 
-    return results;
+    return gatewayHelper.successResponse(userInfo);
 }

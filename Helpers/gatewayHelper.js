@@ -1,23 +1,96 @@
 /**
  * Amazon API Gateway formatted response
  */
-const response = (code, headers, body) => {
+const response = (code, body, headers) => {
+    // Resolve body to a string
+    if (body !== null && typeof(body) !== "string") {
+        body = JSON.stringify(body, null, 4); // 4 = pretty-print depth (TODO: Change to 0 eventually)
+    } else if (body === null) {
+        body = "";
+    }
+
     return {
         'statusCode': code !== null ? code : 200,
         'headers': headers !== null ? headers : { },
-        'body': body !== null ? body : ""
+        'body': body
     };
 };
 
+/**
+ * HTTP Codes Enumeration
+ */
+const HTTPCodes = {
+    OK: 200,
+    INVALID: 400,
+    FORBIDDEN: 403,
+    NOT_FOUND: 404,
+    CONFLICT: 409,
+    EXPIRED: 493,
+    INTERNAL: 500
+};
+
 // Helpers for shorter syntax
-const ok = (headers, body) => response(200, headers, body);
+const ok = (headers, body) => response(HTTPCodes.OK, body, headers);
 
-const invalid = (headers, body) => response(400, headers, body);
-const forbidden = (headers, body) => response(403, headers, body);
-const notFound = (headers, body) => response(403, headers, body);
-const expired = (headers, body) => response(493, headers, body);
+const invalid = (headers, body) => response(HTTPCodes.INVALID, body, headers);
+const forbidden = (headers, body) => response(HTTPCodes.FORBIDDEN, body, headers);
+const notFound = (headers, body) => response(HTTPCodes.NOT_FOUND, body, headers);
+const expired = (headers, body) => response(HTTPCodes.EXPIRED, body, headers);
 
-const internal = (headers, body) => response(500, headers, body);
+const internal = (headers, body) => response(HTTPCodes.INVALID, body, headers);
+
+/**
+ * Helper method for logging errors on API calls.
+ * 
+ * @param {int} code 
+ * @param {string} errorMessage 
+ * @param {object} errorData 
+ */
+const logAPIError = (code, errorMessage, errorData) => {
+    console.error(
+        `API Error (${code}): ${errorMessage}` + (errorData !== null ? "\n" + JSON.stringify(errorData, null, 4) : "")
+    );
+};
+
+/**
+ * Helper method for unified error formatting.
+ * 
+ * @param {int} code 
+ * @param {string} errorMessage 
+ * @param {object} errorData 
+ * @param {object} headers 
+ */
+const errorResponse = (code, errorMessage, errorData, headers) => {
+    logAPIError(code, errorMessage, errorData);
+
+    if (code === HTTPCodes.OK) {
+        throw new Error("Invalid error state: " + HTTPCodes.OK);
+    }
+    let errorObject = {
+        result: "error",
+        error: errorMessage
+    };
+    if (errorData) {
+        errorObject.data = errorData;
+    }
+    return response(code, errorObject, headers);
+};
+
+/**
+ * Helper method for returning unified successes.
+ * 
+ * @param {object} data 
+ * @param {object} headers 
+ */
+const successResponse = (data, headers) => {
+    let responseObject = {
+        result: "success"
+    };
+    if (data) {
+        responseObject.data = data;
+    }
+    return response(HTTPCodes.OK, responseObject, headers);
+};
 
 /**
  * Exports
@@ -30,6 +103,13 @@ module.exports = {
     notFound,
     invalid,
     expired,
-    internal
+    internal,
+
+    // Constants
+    HTTPCodes,
+
+    // API level formatted errors
+    successResponse,
+    errorResponse
 }
 

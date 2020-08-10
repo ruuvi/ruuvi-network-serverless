@@ -7,7 +7,7 @@ exports.handler = async (event) => {
     let flattenedData = [];
 
     function sendBatch(data) {
-         const batch = dynamoHelper.getDynamoBatch(flattenedData);
+         const batch = dynamoHelper.getDynamoBatch(data);
             
         return dynamo.batchWriteItem(batch, function(err, data) {
             if (err) {
