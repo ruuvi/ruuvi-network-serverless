@@ -11,6 +11,7 @@ custom:
 
   sourceEmail: 'sami@muhwu.com'
   invitationExpirationInterval: 5 # minutes after requested
+  requireLoginForData: 0
 
   # TODO: Switch to Role-Based authentication
   databaseEndpoint: "ruuvi-main.cluster-ro-cd69jmnnlqh0.eu-central-1.rds.amazonaws.com"
@@ -102,8 +103,12 @@ functions:
       - http: GET get
     environment:
       TABLE_NAME: ${self:custom.dynamoTableName}
-      ACCESS_KEY: "" # Empty for not required
+      REQUIRE_LOGIN: ${self:custom.requireLoginForData}
       DEFAULT_RESULTS: 15
+      ENDPOINT: ${self:custom.databaseEndpoint}
+      DATABASE: ${self:custom.databaseName}
+      USERNAME: ${self:custom.databaseUsername}
+      PASSWORD: ${self:custom.databasePassword}
 
   getUserData:
     handler: UserApi/getUserData.handler
