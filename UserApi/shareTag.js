@@ -22,11 +22,15 @@ exports.handler = async (event, context) => {
     const eventBody = JSON.parse(event.body);
 
     if (!eventBody || !validator.hasKeys(eventBody, ['tag', 'user'])) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing tag or user_id");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Missing tag or user_id");
     }
     
     const tag = eventBody.tag;
     const targetUserEmail = eventBody.user;
+
+    if (!validator.validateEmail(targetUserEmail)) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid E-mail given.");
+    }
 
     let results = null;
     
