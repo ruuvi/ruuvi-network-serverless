@@ -1,5 +1,7 @@
-const gatewayHelper = require('Helpers/gatewayHelper.js');
+const gatewayHelper = require('Helpers/gatewayHelper');
 const { HTTPCodes } = require('../Helpers/gatewayHelper');
+const auth = require('Helpers/authHelper');
+const validator = require('Helpers/validator');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -10,18 +12,16 @@ const mysql = require('serverless-mysql')({
     }
 });
   
-// Main handler function
 exports.handler = async (event, context) => {
-    const accessToken = event.headers.authorization;
-    const eventBody = JSON.parse(event.body);
-    
-    // Access token validation
-    if (accessToken.length < 10) {
-        // TODO: Length validation is not enough
-        return gatewayHelper.forbidden();
+    const authInfo = event.headers.Authorization;
+    const user = await auth.authorizedUser(authInfo);
+    if (!user) {
+        return gatewayHelper.forbiddenResponse();
     }
 
-    if (!eventBody.hasOwnProperty('tag')) {
+    const eventBody = JSON.parse(event.body);
+
+    if (!eventBody || !validator.hasKeys(eventBody, ['tag'])) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing tag");
     }
     
@@ -31,14 +31,13 @@ exports.handler = async (event, context) => {
     
     try {
         results = await mysql.query(
-            `INSERT IGNORE INTO claimed_tags (
+            `INSERT INTO claimed_tags (
                 user_id,
                 tag_id
-            ) SELECT
-                user_id, 
-                "${tag}"
-            FROM user_tokens
-            WHERE access_token = "${accessToken}"`
+            ) VALUES (
+                ${user.id},
+                '${tag}'
+            );`
         );
 
         if (results.insertId) {

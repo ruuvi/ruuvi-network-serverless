@@ -5,12 +5,14 @@
  * @param {array} target 
  */
 const hasKeys = (given, target) => {
+    let found = true;
     target.forEach((item) => {
         if (!given.hasOwnProperty(item)) {
-            return false;
+            found = false;
+            return found;
         }
     });
-    return true;
+    return found;
 };
 
 /**

@@ -25,12 +25,13 @@ const HTTPCodes = {
     FORBIDDEN: 403,
     NOT_FOUND: 404,
     CONFLICT: 409,
+    THROTTLED: 429,
     EXPIRED: 493,
     INTERNAL: 500
 };
 
 // Helpers for shorter syntax
-const ok = (headers, body) => response(HTTPCodes.OK, body, headers);
+const ok = (body, headers) => response(HTTPCodes.OK, body, headers);
 
 const invalid = (headers, body) => response(HTTPCodes.INVALID, body, headers);
 const forbidden = (headers, body) => response(HTTPCodes.FORBIDDEN, body, headers);
@@ -77,6 +78,11 @@ const errorResponse = (code, errorMessage, errorData, headers) => {
 };
 
 /**
+ * Standardized forbidden response with message.
+ */
+const forbiddenResponse = () => errorResponse(HTTPCodes.FORBIDDEN, "Unauthorized request.");
+
+/**
  * Helper method for returning unified successes.
  * 
  * @param {object} data 
@@ -110,6 +116,7 @@ module.exports = {
 
     // API level formatted errors
     successResponse,
-    errorResponse
+    errorResponse,
+    forbiddenResponse
 }
 

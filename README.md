@@ -25,8 +25,11 @@ Enjoy!
 
 ## Current Status
 
+### Services and Limits
+- [ ] Apply to get out of SES Sandbox (if necessary)
+
 ### Receiver
-- [ ] CloudFront for Throttling
+- [ ] CloudFront for Throttling (This might be built in)
 - [x] API Gateway forwards payloads to Receiver Lambda
 - [ ] Receiver Lambda authorizes request
 - [x] Receiver Lambda validates request (rudimentary)
@@ -37,8 +40,9 @@ Enjoy!
 - [x] Reader Lambda writes to DynamoDB
 
 ### Client API
-- [ ] Register User
-- [ ] Claim RuuviTag
+- [x] Register User
+- [x] Claim RuuviTag
+- [x] Share RuuviTag
 - [x] Read Sensor Data (currently authorized with static Bearer string)
 - [ ] Advanced querying (by Date / etc)
 
