@@ -1,3 +1,6 @@
+const AWS = require('aws-sdk');
+var ddb = new AWS.DynamoDB.DocumentClient();
+
 /**
  * Validates an individual sensor data point.
  */
@@ -57,10 +60,40 @@ const getDynamoBatch = (inputData) => {
 }
 
 /**
+ * Retrieves sensor data from Dynamo based on parameters.
+ * Fetches most recent if date range is not given.
+ * 
+ * @param {string} tag Tag ID / MAC
+ * @param {int} count Desired maximum result count
+ * @param {date} startDate Start date for results
+ * @param {date} endDate End date for results
+ */
+const getSensorData = async (tag, count, startDate, endDate) => {
+    const params = {
+        TableName: process.env.TABLE_NAME,
+        KeyConditionExpression: 'SensorId = :id',
+        ExpressionAttributeValues: {
+            ":id": tag
+        },
+        ProjectionExpression: 'SensorId,Coordinates,SensorData,GatewayMac,MeasurementTimestamp,RSSI',
+        ScanIndexForward: false,
+        Limit: count
+    };
+    
+    const rawData = await ddb.query(params).promise();
+    if (!rawData || !rawData.hasOwnProperty('Items')) {
+        console.error("No data returned!", rawData);
+        return [];
+    }
+    return rawData.Items;
+}
+
+/**
  * Exports
  */
 module.exports = {
     getDynamoBatch,
     dynamoFormat,
-    validateSensorData
+    validateSensorData,
+    getSensorData
 };

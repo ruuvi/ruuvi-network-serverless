@@ -1,8 +1,5 @@
-const AWS = require('aws-sdk');
-var ddb = new AWS.DynamoDB.DocumentClient();
-const gatewayHelper = require('Helpers/gatewayHelper.js');
-
-AWS.config.update({region: 'eu-central-1'});
+const gatewayHelper = require('Helpers/gatewayHelper');
+const dynamoHelper = require('Helpers/dynamoHelper');
 
 exports.handler = async (event, context) => {
     // Authorization
@@ -22,24 +19,16 @@ exports.handler = async (event, context) => {
     }
 
     const tag = event.queryStringParameters.tag;
-    const params = {
-        TableName: process.env.TABLE_NAME,
-        KeyConditionExpression: 'SensorId = :id',
-        ExpressionAttributeValues: {
-            ":id": tag
-        },
-        ProjectionExpression: 'SensorId,Coordinates,SensorData,GatewayMac,MeasurementTimestamp,RSSI'
-    };
     
-    const rawData = await ddb.query(params).promise();
-    if (rawData.Items.length === 0) {
+    const dataPoints = await dynamoHelper.getSensorData(tag, process.env.DEFAULT_RESULTS);
+    if (dataPoints.length === 0) {
         // Not found
         return gatewayHelper.notFound();
     }
 
     return gatewayHelper.successResponse({
         Tag: tag,
-        Total: rawData.Items.length,
-        Measurements: rawData.Items
+        Total: dataPoints.length,
+        Measurements: dataPoints
     });
 };

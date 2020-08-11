@@ -10,7 +10,7 @@ custom:
   lambdaConcurrency: 10
 
   sourceEmail: 'sami@muhwu.com'
-  invitationExpirationInterval: 24 # hours after requested
+  invitationExpirationInterval: 5 # minutes after requested
 
   # TODO: Switch to Role-Based authentication
   databaseEndpoint: "ruuvi-main.cluster-ro-cd69jmnnlqh0.eu-central-1.rds.amazonaws.com"
@@ -103,6 +103,7 @@ functions:
     environment:
       TABLE_NAME: ${self:custom.dynamoTableName}
       ACCESS_KEY: "" # Empty for not required
+      DEFAULT_RESULTS: 15
 
   getUserData:
     handler: UserApi/getUserData.handler
