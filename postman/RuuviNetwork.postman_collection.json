@@ -81,6 +81,258 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Register User",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"email\":\"muhweli@gmail.com\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://5a9supxcrb.execute-api.eu-central-1.amazonaws.com/dev/register",
+					"protocol": "https",
+					"host": [
+						"5a9supxcrb",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"dev",
+						"register"
+					],
+					"query": [
+						{
+							"key": "tag",
+							"value": "76EA4D1D1021",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify User",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://5a9supxcrb.execute-api.eu-central-1.amazonaws.com/dev/verify?token=h1bE12rrCZS7SLhsHui6N0IlG6NheFuu",
+					"protocol": "https",
+					"host": [
+						"5a9supxcrb",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"dev",
+						"verify"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "h1bE12rrCZS7SLhsHui6N0IlG6NheFuu"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Reset Token",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"email\":\"sami@muhwu.com\", \"reset\": 1}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://5a9supxcrb.execute-api.eu-central-1.amazonaws.com/dev/register",
+					"protocol": "https",
+					"host": [
+						"5a9supxcrb",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"dev",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Confirm Reset",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://5a9supxcrb.execute-api.eu-central-1.amazonaws.com/dev/verify?token=VleTTm4FYautR6S7taPgWYI3uyf6K0pR",
+					"protocol": "https",
+					"host": [
+						"5a9supxcrb",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"dev",
+						"verify"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "VleTTm4FYautR6S7taPgWYI3uyf6K0pR"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get User Data",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "ECc95DR71cjS8DW2qGIydRIf8suvRq9a",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://5a9supxcrb.execute-api.eu-central-1.amazonaws.com/dev/user",
+					"protocol": "https",
+					"host": [
+						"5a9supxcrb",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"dev",
+						"user"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Claim Tag",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "wH1l34LbMOJRJM4LSXjABwxejp5zvlfS",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"tag\":\"test\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://5a9supxcrb.execute-api.eu-central-1.amazonaws.com/dev/claim",
+					"protocol": "https",
+					"host": [
+						"5a9supxcrb",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"dev",
+						"claim"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Share Tag",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "wH1l34LbMOJRJM4LSXjABwxejp5zvlfS",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"tag\":\"abbacd123\", \"user\":\"sami.anttila.net@gmail.com\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://5a9supxcrb.execute-api.eu-central-1.amazonaws.com/dev/share?tag=abbacd123",
+					"protocol": "https",
+					"host": [
+						"5a9supxcrb",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"dev",
+						"share"
+					],
+					"query": [
+						{
+							"key": "tag",
+							"value": "abbacd123"
+						}
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"protocolProfileBehavior": {}
