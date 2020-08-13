@@ -41,8 +41,8 @@ exports.handler = async (event, context) => {
     const isReset = results[0].type === 'reset';
 
     const userInfo = {
-        Email: results[0].email,
-        AccessToken: guidHelper.guid(32)
+        email: results[0].email,
+        accessToken: guidHelper.guid(32)
     };
 
     try {
@@ -52,7 +52,7 @@ exports.handler = async (event, context) => {
                 `INSERT INTO users (
                     email
                 ) VALUES (
-                    '${userInfo.Email}'
+                    '${userInfo.email}'
                 );`
             );
             userId = results.insertId;
@@ -60,7 +60,7 @@ exports.handler = async (event, context) => {
             results = await mysql.query(
                 `SELECT id
                 FROM users
-                WHERE email = '${userInfo.Email}'
+                WHERE email = '${userInfo.email}'
                 LIMIT 1;`
             );
             if (results.length === 1) {
@@ -75,12 +75,12 @@ exports.handler = async (event, context) => {
                     access_token
                 ) VALUES (
                     ${userId},
-                    '${userInfo.AccessToken}'
+                    '${userInfo.accessToken}'
                 );`
             );
 
             if (tokenResult.insertId) {
-                console.info("Successfully created token for user: " + userInfo.Email);
+                console.info("Successfully created token for user: " + userInfo.email);
             }
         }
 
@@ -88,10 +88,10 @@ exports.handler = async (event, context) => {
         let registrationResult = await mysql.query(
             `UPDATE user_registrations
             SET completed = 1
-            WHERE email = '${userInfo.Email}';`
+            WHERE email = '${userInfo.email}';`
         );
         if (registrationResult.affectedRows !== 1) {
-            console.error("Unable to set registration row as completed for " + userInfo.Email);
+            console.error("Unable to set registration row as completed for " + userInfo.email);
         }
     } catch (e) {
         if (e.code === 'ER_DUP_ENTRY') {

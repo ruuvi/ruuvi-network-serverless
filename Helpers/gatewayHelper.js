@@ -80,7 +80,12 @@ const errorResponse = (code, errorMessage, errorData, headers) => {
 /**
  * Standardized forbidden response with message.
  */
-const forbiddenResponse = () => errorResponse(HTTPCodes.FORBIDDEN, "Unauthorized request.");
+const forbiddenResponse = () => errorResponse(HTTPCodes.FORBIDDEN, "Forbidden.");
+
+/**
+ * Standardized forbidden response with message.
+ */
+const unauthorizedResponse = () => errorResponse(HTTPCodes.FORBIDDEN, "Unauthorized request.");
 
 /**
  * Helper method for returning unified successes.
@@ -117,6 +122,8 @@ module.exports = {
     // API level formatted errors
     successResponse,
     errorResponse,
-    forbiddenResponse
+    
+    forbiddenResponse,
+    unauthorizedResponse
 }
 

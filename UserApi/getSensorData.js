@@ -19,7 +19,7 @@ exports.handler = async (event, context) => {
         const authInfo = event.headers.Authorization;
         user = await auth.authorizedUser(authInfo);
         if (!user) {
-            return gatewayHelper.forbiddenResponse();
+            return gatewayHelper.unauthorizedResponse();
         }
     }
     
@@ -50,19 +50,19 @@ exports.handler = async (event, context) => {
                 AND tag_id = '${tag}'`
         );
         if (hasClaim.length === 0) {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.FORBIDDEN, "Cannot access tag.");
+            return gatewayHelper.forbiddenResponse();
         }
     }
 
     const dataPoints = await dynamoHelper.getSensorData(tag, process.env.DEFAULT_RESULTS);
     if (dataPoints.length === 0) {
         // Not found
-        return gatewayHelper.notFound();
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Not found.");
     }
 
     return gatewayHelper.successResponse({
-        Tag: tag,
-        Total: dataPoints.length,
-        Measurements: dataPoints
+        tag: tag,
+        total: dataPoints.length,
+        measurements: dataPoints
     });
 };

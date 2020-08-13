@@ -15,7 +15,7 @@ exports.handler = async (event, context) => {
     const user = await auth.authorizedUser(authInfo);
   
     if (!user) {
-        return gatewayHelper.forbiddenResponse();
+        return gatewayHelper.unauthorizedResponse();
     }
 
     const tags = await mysql.query(
@@ -33,7 +33,7 @@ exports.handler = async (event, context) => {
     );
 
     return gatewayHelper.successResponse({
-        Email: user.email,
-        Tags: tags
+        email: user.email,
+        tags: tags
     });
 }

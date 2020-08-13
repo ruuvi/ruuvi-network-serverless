@@ -16,7 +16,7 @@ exports.handler = async (event, context) => {
     const authInfo = event.headers.Authorization;
     const user = await auth.authorizedUser(authInfo);
     if (!user) {
-        return gatewayHelper.forbiddenResponse();
+        return gatewayHelper.unauthorizedResponse();
     }
 
     const eventBody = JSON.parse(event.body);
@@ -55,6 +55,6 @@ exports.handler = async (event, context) => {
     }  
 
     return gatewayHelper.successResponse({
-        Tag: tag
+        tag: tag
     });
 }

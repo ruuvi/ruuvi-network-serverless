@@ -95,5 +95,7 @@ exports.handler = async (event, context) => {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
     }
 
-    return gatewayHelper.successResponse(userInfo);
+    return gatewayHelper.successResponse({
+        email: userInfo.email
+    });
 }

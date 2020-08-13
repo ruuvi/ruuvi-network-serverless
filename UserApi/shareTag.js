@@ -16,13 +16,13 @@ exports.handler = async (event, context) => {
     const authInfo = event.headers.Authorization;
     const user = await auth.authorizedUser(authInfo);
     if (!user) {
-        return gatewayHelper.forbiddenResponse();
+        return gatewayHelper.unauthorizedResponse();
     }
 
     const eventBody = JSON.parse(event.body);
 
     if (!eventBody || !validator.hasKeys(eventBody, ['tag', 'user'])) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Missing tag or user_id");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing tag or user_id");
     }
     
     const tag = eventBody.tag;
@@ -30,6 +30,10 @@ exports.handler = async (event, context) => {
 
     if (!validator.validateEmail(targetUserEmail)) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid E-mail given.");
+    }
+
+    if (!validator.validateToken(tag)) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid Tag ID given.");
     }
 
     let results = null;
@@ -89,6 +93,6 @@ exports.handler = async (event, context) => {
     }  
 
     return gatewayHelper.successResponse({
-        Tag: tag
+        tag: tag
     });
 }
