@@ -9,6 +9,18 @@ const response = (code, body, headers) => {
         body = "";
     }
 
+    // NOTE! This is probably too permissive unless we want to allow web-apps to embed the API.
+    const corsHeaders = {
+        "Access-Control-Allow-Headers" : "Content-Type",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST"
+    };
+
+    const completeHeaders = {
+        ...headers,
+        ...corsHeaders
+    }
+
     return {
         'statusCode': code !== null ? code : 200,
         'headers': headers !== null ? headers : { },
