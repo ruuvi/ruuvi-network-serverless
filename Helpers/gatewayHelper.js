@@ -23,7 +23,7 @@ const response = (code, body, headers) => {
 
     return {
         'statusCode': code !== null ? code : 200,
-        'headers': headers !== null ? headers : { },
+        'headers': completeHeaders,
         'body': body
     };
 };

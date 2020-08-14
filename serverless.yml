@@ -81,6 +81,7 @@ functions:
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http: POST record
+      
     environment:
       TARGET_QUEUE: { Ref: GatewayQueue }
 
@@ -100,7 +101,11 @@ functions:
   getSensorData:
     handler: UserApi/getSensorData.handler
     events:
-      - http: GET get
+      - http:
+          path: get  
+          method: get
+          cors: true
+
     environment:
       TABLE_NAME: ${self:custom.dynamoTableName}
       REQUIRE_LOGIN: ${self:custom.requireLoginForData}
@@ -114,7 +119,10 @@ functions:
     handler: UserApi/getUserData.handler
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http: GET user
+      - http:
+          path: user  
+          method: get
+          cors: true
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
@@ -125,7 +133,10 @@ functions:
     handler: UserApi/requestRegistration.handler
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http: POST register
+      - http:
+          path: register  
+          method: post
+          cors: true
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
@@ -147,7 +158,10 @@ functions:
     handler: UserApi/verifyUser.handler
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http: GET verify
+      - http:
+          path: verify  
+          method: get
+          cors: true
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
@@ -158,7 +172,10 @@ functions:
     handler: UserApi/claimTag.handler
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http: POST claim
+      - http:
+          path: claim  
+          method: post
+          cors: true
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
@@ -169,7 +186,10 @@ functions:
     handler: UserApi/shareTag.handler
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http: POST share
+      - http:
+          path: share  
+          method: post
+          cors: true
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
