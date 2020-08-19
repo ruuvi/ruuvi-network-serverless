@@ -1,0 +1,8 @@
+{
+	"url": "https://5a9supxcrb.execute-api.eu-central-1.amazonaws.com/dev/record",
+	"concurrency": 5,
+	"method": "POST",
+	"body": "",
+	"requestsPerSecond": 500,
+    "maxSeconds": 10
+}
