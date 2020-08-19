@@ -6,13 +6,25 @@ const fs = require('fs');
 const yargs = require('yargs');
 const { measureMemory } = require('vm');
 const urlLib = require('url');
+var hexCharacters = '0123456789ABCDEF';
 
 function randomId(length) {
     var result = '';
-    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var charactersLength = characters.length;
+    var charactersLength = hexCharacters.length;
     for (var i = 0; i < length; i++) {
-       result += characters.charAt(Math.floor(Math.random() * charactersLength));
+       result += hexCharacters.charAt(Math.floor(Math.random() * charactersLength));
+       result += hexCharacters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+ }
+
+ function randomData(length) {
+    var result = '';
+    var charactersLength = hexCharacters.length;
+    result += "0201041BFF990405"
+    for (var i = 0; i < length; i++) {
+       result += hexCharacters.charAt(Math.floor(Math.random() * charactersLength));
+       result += hexCharacters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
  }
@@ -43,10 +55,10 @@ const options = {
 
         let measurements = {};
         for (let i = 0; i < params.measurementsPerRequest; i++) {
-            measurements["AE" + randomId(6)] = {
+            measurements["AEDDDDDDDD" + randomId(1)] = {
                 "rssi": -76,
                 "timestamp": Date.now(),
-                "data": "02011A020A0C0AFF4C001005031C6E57DD"
+                "data": randomData(24)
             }
         }
         
@@ -62,11 +74,13 @@ const options = {
 
 		const request = client(options, callback);
 		request.write(options.body);
+
 		return request;
 	}
 };
 
 const mergedOptions = Object.assign({}, options, argv);
+console.log(mergedOptions);
 
 loadtest.loadTest(mergedOptions, (error, results) => {
 	if (error) {
