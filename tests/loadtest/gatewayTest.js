@@ -74,13 +74,14 @@ const options = {
 
 		const request = client(options, callback);
 		request.write(options.body);
-        /* console.log(options.body); */
+
 		return request;
 	}
 };
 
 const mergedOptions = Object.assign({}, options, argv);
 console.log(mergedOptions);
+
 loadtest.loadTest(mergedOptions, (error, results) => {
 	if (error) {
 		return console.error('Got an error: %s', error);
