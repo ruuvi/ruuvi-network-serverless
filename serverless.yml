@@ -7,6 +7,7 @@ service: ruuvi-network-serverless
 custom:
   dynamoTableName: 'RuuviSensorData'
   writerQueueName: 'ruuvi_network'
+  gatewayReceiverLambdaConcurrency: 100 # Separate due to higher requirements
   lambdaConcurrency: 10
 
   sourceEmail: 'sami@muhwu.com'
@@ -78,10 +79,10 @@ functions:
   # Gateway Facing API
   requestToSQS:
     handler: GatewayApi/requestToSQS.handler
-    reservedConcurrency: ${self:custom.lambdaConcurrency}
+    reservedConcurrency: ${self:custom.gatewayReceiverLambdaConcurrency}
     events:
       - http: POST record
-      
+
     environment:
       TARGET_QUEUE: { Ref: GatewayQueue }
 
@@ -102,7 +103,7 @@ functions:
     handler: UserApi/getSensorData.handler
     events:
       - http:
-          path: get  
+          path: get
           method: get
           cors: true
 
@@ -120,7 +121,7 @@ functions:
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http:
-          path: user  
+          path: user
           method: get
           cors: true
     environment:
@@ -128,13 +129,13 @@ functions:
       DATABASE: ${self:custom.databaseName}
       USERNAME: ${self:custom.databaseUsername}
       PASSWORD: ${self:custom.databasePassword}
-      
+
   requestRegistration:
     handler: UserApi/requestRegistration.handler
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http:
-          path: register  
+          path: register
           method: post
           cors: true
     environment:
@@ -159,7 +160,7 @@ functions:
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http:
-          path: verify  
+          path: verify
           method: get
           cors: true
     environment:
@@ -167,13 +168,13 @@ functions:
       DATABASE: ${self:custom.databaseName}
       USERNAME: ${self:custom.databaseUsername}
       PASSWORD: ${self:custom.databasePassword}
-            
+
   claimTag:
     handler: UserApi/claimTag.handler
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http:
-          path: claim  
+          path: claim
           method: post
           cors: true
     environment:
@@ -187,7 +188,7 @@ functions:
     reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http:
-          path: share  
+          path: share
           method: post
           cors: true
     environment:
@@ -195,7 +196,7 @@ functions:
       DATABASE: ${self:custom.databaseName}
       USERNAME: ${self:custom.databaseUsername}
       PASSWORD: ${self:custom.databasePassword}
-      
+
 # Resources (queues, databases, etc.)
 resources:
     Resources:

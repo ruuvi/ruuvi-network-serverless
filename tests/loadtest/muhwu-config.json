@@ -1,6 +1,6 @@
 {
 	"url": "https://5a9supxcrb.execute-api.eu-central-1.amazonaws.com/dev/record",
-	"concurrency": 5,
-	"requestsPerSecond": 500,
-    "maxSeconds": 10
+	"concurrency": 10,
+	"requestsPerSecond": 200,
+    "maxSeconds": 60
 }

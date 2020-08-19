@@ -1,0 +1,6 @@
+{
+	"url": "https://smart-sensor-server.ruuvi.torqhub.io/ruuvi-station?ApiKey=zpIg%2FEzHA3zLgKYQuRQvjmOa0klKr%2FXoB0UIDxLQil7zu62l0DP8b0bIVKmtuApLTPm9mRrd7X72pkso2xs8pLCLYvZzOyRa1qf15ojoTydpmNh%2FD4VDNBG07z49JBQw",
+	"concurrency": 10,
+	"requestsPerSecond": 200,
+    "maxSeconds": 60
+}

@@ -5,6 +5,7 @@ const loadtest = require('loadtest');
 const fs = require('fs');
 const yargs = require('yargs');
 const { measureMemory } = require('vm');
+const urlLib = require('url');
 
 function randomId(length) {
     var result = '';
@@ -20,8 +21,8 @@ const argv = yargs
     .config('settings', function (configPath) {
         return JSON.parse(fs.readFileSync(configPath, 'utf-8'))
     })
-    .option('endpoint', {
-        alias: 'e',
+    .option('url', {
+        alias: 'u',
         description: 'End point URL',
         type: 'string',
     })
@@ -30,25 +31,25 @@ const argv = yargs
     .argv;
 
 const options = {
-	url: 'http://localhost',
-	concurrency: 5,
+	url: 'https://smart-sensor-server.ruuvi.torqhub.io/ruuvi-station?ApiKey=zpIg%2FEzHA3zLgKYQuRQvjmOa0klKr%2FXoB0UIDxLQil7zu62l0DP8b0bIVKmtuApLTPm9mRrd7X72pkso2xs8pLCLYvZzOyRa1qf15ojoTydpmNh%2FD4VDNBG07z49JBQw',
+	concurrency: 1,
 	method: 'POST',
 	body: '',
     requestsPerSecond: 1,
-    maxSeconds: 1,
-    measurementsPerRequest: 20,
+    maxSeconds: 2,
+    measurementsPerRequest: 5,
 	requestGenerator: (params, options, client, callback) => {
         options.headers['Content-Type'] = 'application/json';
-        
+
         let measurements = {};
-        for (let i = 0; i < options.measurementsPerRequest; i++) {
-            measurements["TE" + randomId(6)] = {
+        for (let i = 0; i < params.measurementsPerRequest; i++) {
+            measurements["AE" + randomId(6)] = {
                 "rssi": -76,
                 "timestamp": Date.now(),
                 "data": "02011A020A0C0AFF4C001005031C6E57DD"
             }
         }
-
+        
 		options.body = JSON.stringify({
             "data":	{
                 "coordinates": "",
@@ -59,7 +60,6 @@ const options = {
         });
 		options.headers['Content-Length'] = options.body.length;
 
-        options.path = '/dev/record';
 		const request = client(options, callback);
 		request.write(options.body);
 		return request;
