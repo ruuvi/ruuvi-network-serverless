@@ -9,13 +9,14 @@ if [ $# -eq 1 ]; then
 
 	echo "STARTING STRESS TEST WITH CONFIGURATION" >> $LOG_FILE
 	cat $SPEC >> $LOG_FILE
+	echo "" >> $LOG_FILE
 
 	echo "KALTIOT" >> $LOG_FILE 
 	./run.sh "$SPEC" "targets/kaltiot.json" >> $LOG_FILE
-	echo "--------------------" >> $LOG_FILE
+	echo "" >> $LOG_FILE
 	echo "WHEREOS" >> $LOG_FILE 
 	./run.sh "$SPEC" "targets/whereos.json" >> $LOG_FILE
-	echo "--------------------" >> $LOG_FILE
+	echo "" >> $LOG_FILE
 	echo "MUHWU" >> $LOG_FILE 
 	./run.sh "$SPEC" "targets/muhwu.json" >> $LOG_FILE
 else

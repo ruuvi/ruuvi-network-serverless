@@ -90,5 +90,4 @@ loadtest.loadTest(mergedOptions, (error, results) => {
 		return console.error('Got an error: %s', error);
 	}
 	console.log(results);
-	console.log('Tests run successfully');
 });
