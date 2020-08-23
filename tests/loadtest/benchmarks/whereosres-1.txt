@@ -1,0 +1,12 @@
+{
+  totalRequests: 28004,
+  totalErrors: 6488,
+  totalTimeSeconds: 60.033113696,
+  rps: 466,
+  meanLatencyMs: 4865.1,
+  maxLatencyMs: 55689,
+  minLatencyMs: 7,
+  percentiles: { '50': 2121, '90': 10606, '95': 12274, '99': 22890 },
+  errorCodes: { '502': 165, '504': 6319, '-1': 4 },
+  instanceIndex: 0
+}
