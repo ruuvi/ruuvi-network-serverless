@@ -6,6 +6,7 @@ const fs = require('fs');
 const yargs = require('yargs');
 const { measureMemory } = require('vm');
 const urlLib = require('url');
+const { exit } = require('process');
 var hexCharacters = '0123456789ABCDEF';
 
 function randomId(length) {
@@ -30,8 +31,11 @@ function randomId(length) {
  }
 
 const argv = yargs
-    .config('settings', function (configPath) {
+    .config('target', function (configPath) {
         return JSON.parse(fs.readFileSync(configPath, 'utf-8'))
+    })
+    .config('spec', function (specPath) {
+        return JSON.parse(fs.readFileSync(specPath, 'utf-8'))
     })
     .option('url', {
         alias: 'u',
@@ -43,7 +47,7 @@ const argv = yargs
     .argv;
 
 const options = {
-	url: 'https://smart-sensor-server.ruuvi.torqhub.io/ruuvi-station?ApiKey=zpIg%2FEzHA3zLgKYQuRQvjmOa0klKr%2FXoB0UIDxLQil7zu62l0DP8b0bIVKmtuApLTPm9mRrd7X72pkso2xs8pLCLYvZzOyRa1qf15ojoTydpmNh%2FD4VDNBG07z49JBQw',
+	url: 'https://localhost/',
 	concurrency: 1,
 	method: 'POST',
 	body: '',
@@ -80,7 +84,6 @@ const options = {
 };
 
 const mergedOptions = Object.assign({}, options, argv);
-console.log(mergedOptions);
 
 loadtest.loadTest(mergedOptions, (error, results) => {
 	if (error) {
