@@ -1,0 +1,27 @@
+{
+  url: 'https://smart-sensor-server.ruuvi.torqhub.io/ruuvi-station?ApiKey=zpIg%2FEzHA3zLgKYQuRQvjmOa0klKr%2FXoB0UIDxLQil7zu62l0DP8b0bIVKmtuApLTPm9mRrd7X72pkso2xs8pLCLYvZzOyRa1qf15ojoTydpmNh%2FD4VDNBG07z49JBQw',
+  concurrency: 20,
+  method: 'POST',
+  body: '',
+  requestsPerSecond: 500,
+  maxSeconds: 60,
+  measurementsPerRequest: 5,
+  requestGenerator: [Function: requestGenerator],
+  _: [],
+  settings: 'kaltiot-config.json',
+  u: 'https://smart-sensor-server.ruuvi.torqhub.io/ruuvi-station?ApiKey=zpIg%2FEzHA3zLgKYQuRQvjmOa0klKr%2FXoB0UIDxLQil7zu62l0DP8b0bIVKmtuApLTPm9mRrd7X72pkso2xs8pLCLYvZzOyRa1qf15ojoTydpmNh%2FD4VDNBG07z49JBQw',
+  '$0': 'gatewayTest.js'
+}
+{
+  totalRequests: 29552,
+  totalErrors: 1147,
+  totalTimeSeconds: 60.059997302000006,
+  rps: 492,
+  meanLatencyMs: 537.9,
+  maxLatencyMs: 1734,
+  minLatencyMs: 300,
+  percentiles: { '50': 445, '90': 877, '95': 1245, '99': 1451 },
+  errorCodes: { '502': 1147 },
+  instanceIndex: 0
+}
+Tests run successfully
