@@ -4,8 +4,11 @@
 
 service: ruuvi-network-serverless
 
+plugins:
+  - serverless-dynamodb-autoscaling
+
 custom:
-  dynamoTableName: 'RuuviSensorData'
+  dynamoTableName: 'SensorData'
   writerQueueName: 'ruuvi_network'
   gatewayReceiverLambdaConcurrency: 100 # Separate due to higher requirements
   lambdaConcurrency: 10
@@ -13,6 +16,7 @@ custom:
   sourceEmail: 'sami@muhwu.com'
   invitationExpirationInterval: 5 # minutes after requested
   requireLoginForData: 0
+  gatewaySendRate: 60 # every X seconds
 
   # TODO: Switch to Role-Based authentication
   databaseEndpoint: "ruuvi-main.cluster-ro-cd69jmnnlqh0.eu-central-1.rds.amazonaws.com"
@@ -23,6 +27,18 @@ custom:
   # For auto-scaling: https://www.serverless.com/plugins/serverless-plugin-dynamodb-autoscaling
   dynamoWriteCapacity: 5
   dynamoReadCapacity: 5
+
+  # Dynamo Auto-Scaling Configuration
+  capacities:
+    - table: DynamoSensorData  # DynamoDB Resource
+      read:
+        minimum: 25       # Minimum read capacity
+        maximum: 1000     # Maximum read capacity
+        usage: 0.2        # Targeted usage percentage
+      write:
+        minimum: 15       # Minimum write capacity
+        maximum: 1000     # Maximum write capacity
+        usage: 0.2        # Targeted usage percentage
 
 provider:
   name: aws
@@ -79,11 +95,14 @@ functions:
   # Gateway Facing API
   requestToSQS:
     handler: GatewayApi/requestToSQS.handler
-    reservedConcurrency: ${self:custom.gatewayReceiverLambdaConcurrency}
+    #reservedConcurrency: ${self:custom.gatewayReceiverLambdaConcurrency}
     events:
-      - http: POST record
-
+      - http: POST /record
+      - httpApi:
+          method: POST
+          path: /record
     environment:
+      GATEWAY_SEND_RATE: ${self:custom.gatewaySendRate}
       TARGET_QUEUE: { Ref: GatewayQueue }
 
   writeToDatabase:
@@ -106,6 +125,9 @@ functions:
           path: get
           method: get
           cors: true
+      - httpApi:
+          method: GET
+          path: /get
 
     environment:
       TABLE_NAME: ${self:custom.dynamoTableName}
@@ -118,12 +140,15 @@ functions:
 
   getUserData:
     handler: UserApi/getUserData.handler
-    reservedConcurrency: ${self:custom.lambdaConcurrency}
+    #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http:
           path: user
           method: get
           cors: true
+      - httpApi:
+          method: GET
+          path: /user
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
@@ -132,12 +157,15 @@ functions:
 
   requestRegistration:
     handler: UserApi/requestRegistration.handler
-    reservedConcurrency: ${self:custom.lambdaConcurrency}
+    #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http:
           path: register
           method: post
           cors: true
+      - httpApi:
+          method: POST
+          path: /register
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
@@ -157,12 +185,15 @@ functions:
 
   verifyUser:
     handler: UserApi/verifyUser.handler
-    reservedConcurrency: ${self:custom.lambdaConcurrency}
+    #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http:
           path: verify
           method: get
           cors: true
+      - httpApi:
+          method: GET
+          path: /verify
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
@@ -171,12 +202,15 @@ functions:
 
   claimTag:
     handler: UserApi/claimTag.handler
-    reservedConcurrency: ${self:custom.lambdaConcurrency}
+    #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http:
           path: claim
           method: post
           cors: true
+      - httpApi:
+          method: POST
+          path: /claim
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
@@ -185,12 +219,15 @@ functions:
 
   shareTag:
     handler: UserApi/shareTag.handler
-    reservedConcurrency: ${self:custom.lambdaConcurrency}
+    #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - http:
           path: share
           method: post
           cors: true
+      - httpApi:
+          method: POST
+          path: /share
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}

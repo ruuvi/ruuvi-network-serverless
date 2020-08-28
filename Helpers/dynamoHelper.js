@@ -15,7 +15,7 @@ const validateSensorData = (data) => {
     }
 
     // TODO: Other validation - per row validation
-    
+
     return true;
 }
 
@@ -43,12 +43,12 @@ const getDynamoBatch = (inputData) => {
         RequestItems: { }
     };
     batch.RequestItems[process.env.TABLE_NAME] = [];
-    
+
     for (let i = 0, len = inputData.length; i < len; i++) {
         if (!validateSensorData(inputData[i])) {
             return null;
         }
-        
+
         batch.RequestItems[process.env.TABLE_NAME].push({
             PutRequest: {
                 Item: dynamoFormat(inputData[i])
@@ -62,7 +62,7 @@ const getDynamoBatch = (inputData) => {
 /**
  * Retrieves sensor data from Dynamo based on parameters.
  * Fetches most recent if date range is not given.
- * 
+ *
  * @param {string} tag Tag ID / MAC
  * @param {int} count Desired maximum result count
  * @param {date} startDate Start date for results
@@ -79,12 +79,15 @@ const getSensorData = async (tag, count, startDate, endDate) => {
         ScanIndexForward: false,
         Limit: count
     };
-    
+
     const rawData = await ddb.query(params).promise();
     if (!rawData || !rawData.hasOwnProperty('Items')) {
         console.error("No data returned!", rawData);
         return [];
     }
+
+    // TODO: Format
+
     return rawData.Items;
 }
 
