@@ -10,11 +10,11 @@ var sqs = new AWS.SQS({apiVersion: '2012-11-05'});
  */
 exports.handler = async (event, context) => {
     // TODO: Validate signature / key
-    
+
     // TODO: This validation is pretty rudimentary
     const eventBody = JSON.parse(event.body);
     const data = eventBody.data;
-    
+
     if (
         !eventBody.hasOwnProperty('data')
         || !data.hasOwnProperty('tags')
@@ -25,7 +25,7 @@ exports.handler = async (event, context) => {
         console.error("Invalid Data: " + event.body);
         return gatewayHelper.invalid();
     }
-    
+
     // SQS Message Properties will contain gateway data
     const params = {
         DelaySeconds: 0,
@@ -59,6 +59,9 @@ exports.handler = async (event, context) => {
         console.error(e);
         return gatewayHelper.invalid();
     }
-    
-    return gatewayHelper.ok();
+
+    // Include the gateway request rate by default
+    return gatewayHelper.ok(null, {
+        [gatewayHelper.RequestRateHeader] : process.env.GATEWAY_SEND_RATE
+    });
 };

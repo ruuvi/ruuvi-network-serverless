@@ -22,7 +22,7 @@ exports.handler = async (event, context) => {
             return gatewayHelper.unauthorizedResponse();
         }
     }
-    
+
     // Validation
     if (
         !event.queryStringParameters
@@ -34,7 +34,7 @@ exports.handler = async (event, context) => {
     }
 
     const tag = event.queryStringParameters.tag;
-    
+
     if (user) {
         const hasClaim = await mysql.query(
             `SELECT claim_id
@@ -61,7 +61,7 @@ exports.handler = async (event, context) => {
     }
 
     return gatewayHelper.successResponse({
-        tag: tag,
+        sensor: tag,
         total: dataPoints.length,
         measurements: dataPoints
     });
