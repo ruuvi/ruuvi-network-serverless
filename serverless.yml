@@ -81,7 +81,10 @@ functions:
     handler: GatewayApi/requestToSQS.handler
     reservedConcurrency: ${self:custom.gatewayReceiverLambdaConcurrency}
     events:
-      - http: POST record
+      - http: POST /record
+      - httpApi:
+          method: POST
+          path: /record
 
     environment:
       TARGET_QUEUE: { Ref: GatewayQueue }
