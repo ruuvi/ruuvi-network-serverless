@@ -13,7 +13,7 @@ const response = (code, body, headers) => {
     const corsHeaders = {
         "Access-Control-Allow-Headers" : "Content-Type",
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST"
+        "Access-Control-Allow-Methods": "POST",
     };
 
     const completeHeaders = {
@@ -42,6 +42,9 @@ const HTTPCodes = {
     INTERNAL: 500
 };
 
+// Header names
+const RequestRateHeader = 'x-ruuvi-gateway-rate';
+
 // Helpers for shorter syntax
 const ok = (body, headers) => response(HTTPCodes.OK, body, headers);
 
@@ -54,10 +57,10 @@ const internal = (headers, body) => response(HTTPCodes.INVALID, body, headers);
 
 /**
  * Helper method for logging errors on API calls.
- * 
- * @param {int} code 
- * @param {string} errorMessage 
- * @param {object} errorData 
+ *
+ * @param {int} code
+ * @param {string} errorMessage
+ * @param {object} errorData
  */
 const logAPIError = (code, errorMessage, errorData) => {
     console.error(
@@ -67,11 +70,11 @@ const logAPIError = (code, errorMessage, errorData) => {
 
 /**
  * Helper method for unified error formatting.
- * 
- * @param {int} code 
- * @param {string} errorMessage 
- * @param {object} errorData 
- * @param {object} headers 
+ *
+ * @param {int} code
+ * @param {string} errorMessage
+ * @param {object} errorData
+ * @param {object} headers
  */
 const errorResponse = (code, errorMessage, errorData, headers) => {
     logAPIError(code, errorMessage, errorData);
@@ -101,9 +104,9 @@ const unauthorizedResponse = () => errorResponse(HTTPCodes.FORBIDDEN, "Unauthori
 
 /**
  * Helper method for returning unified successes.
- * 
- * @param {object} data 
- * @param {object} headers 
+ *
+ * @param {object} data
+ * @param {object} headers
  */
 const successResponse = (data, headers) => {
     let responseObject = {
@@ -130,11 +133,12 @@ module.exports = {
 
     // Constants
     HTTPCodes,
+    RequestRateHeader,
 
     // API level formatted errors
     successResponse,
     errorResponse,
-    
+
     forbiddenResponse,
     unauthorizedResponse
 }
