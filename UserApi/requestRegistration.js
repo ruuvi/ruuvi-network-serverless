@@ -12,17 +12,20 @@ const mysql = require('serverless-mysql')({
         password : process.env.PASSWORD
     }
 });
-  
+
 exports.handler = async (event, context) => {
+    if (event.httpMethod === 'OPTIONS') {
+        return gatewayHelper.ok();
+    }
     const eventBody = JSON.parse(event.body);
-    
+
     const valid = validator.hasKeys(eventBody, ['email']) && validator.validateEmail(eventBody.email);
     const isReset = eventBody.hasOwnProperty('reset') && eventBody.reset === 1;
 
     if (!valid) {
         return gatewayHelper.invalid();
     }
-    
+
     let results = null;
 
     const userInfo = {
@@ -47,7 +50,7 @@ exports.handler = async (event, context) => {
         if (existingRequest.length > 0) {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.THROTTLED, "Please wait a few minutes before trying again.");
         }
-        
+
         // For completed 'reset' requests, reset the link to the most recent one.
         results = await mysql.query(
             `INSERT INTO user_registrations (
