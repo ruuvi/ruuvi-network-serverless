@@ -1,4 +1,4 @@
-# Ruuvi Network Serverless v0.01
+# Ruuvi Network Serverless v0.02
 #
 # For full config options: docs.serverless.com
 
@@ -128,6 +128,7 @@ functions:
       - httpApi:
           method: GET
           path: /get
+          #payload: '2.0'
 
     environment:
       TABLE_NAME: ${self:custom.dynamoTableName}
@@ -149,6 +150,7 @@ functions:
       - httpApi:
           method: GET
           path: /user
+          #payload: '2.0'
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
@@ -166,6 +168,7 @@ functions:
       - httpApi:
           method: POST
           path: /register
+
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
@@ -194,6 +197,7 @@ functions:
       - httpApi:
           method: GET
           path: /verify
+          #payload: '2.0'
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
@@ -211,6 +215,7 @@ functions:
       - httpApi:
           method: POST
           path: /claim
+          #payload: '2.0'
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
@@ -228,11 +233,29 @@ functions:
       - httpApi:
           method: POST
           path: /share
+          #payload: '2.0'
     environment:
       ENDPOINT: ${self:custom.databaseEndpoint}
       DATABASE: ${self:custom.databaseName}
       USERNAME: ${self:custom.databaseUsername}
       PASSWORD: ${self:custom.databasePassword}
+
+  # NOTE: Workaround for CORS preflight requests
+  corsOptions:
+    handler: UserApi/corsHelper.handler
+    events:
+      - httpApi:
+          method: OPTIONS
+          path: /register
+      - httpApi:
+          method: OPTIONS
+          path: /claim
+      - httpApi:
+          method: OPTIONS
+          path: /share
+      - httpApi:
+          method: OPTIONS
+          path: /claim
 
 # Resources (queues, databases, etc.)
 resources:

@@ -11,9 +11,11 @@ const response = (code, body, headers) => {
 
     // NOTE! This is probably too permissive unless we want to allow web-apps to embed the API.
     const corsHeaders = {
-        "Access-Control-Allow-Headers" : "Content-Type",
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Headers" : "*",
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST",
+        "Access-Control-Allow-Methods": "*",
+        "Access-Control-Max-Age": 86400
     };
 
     const completeHeaders = {
