@@ -11,10 +11,9 @@ const mysql = require('serverless-mysql')({
         password : process.env.PASSWORD
     }
 });
-  
+
 exports.handler = async (event, context) => {
-    const authInfo = event.headers.Authorization;
-    const user = await auth.authorizedUser(authInfo);
+    const user = await auth.authorizedUser(event.headers);
     if (!user) {
         return gatewayHelper.unauthorizedResponse();
     }
@@ -24,7 +23,7 @@ exports.handler = async (event, context) => {
     if (!eventBody || !validator.hasKeys(eventBody, ['tag', 'user'])) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing tag or user_id");
     }
-    
+
     const tag = eventBody.tag;
     const targetUserEmail = eventBody.user;
 
@@ -37,7 +36,7 @@ exports.handler = async (event, context) => {
     }
 
     let results = null;
-    
+
     try {
         const targetUser = await mysql.query(
             `SELECT id
@@ -49,7 +48,7 @@ exports.handler = async (event, context) => {
         }
         const targetUserId = targetUser[0].id;
 
-        // Currently Enforces sharing restrictions on database level       
+        // Currently Enforces sharing restrictions on database level
         results = await mysql.query(
             `INSERT INTO shared_tags (
                 user_id,
@@ -67,18 +66,18 @@ exports.handler = async (event, context) => {
         if (results.insertId) {
             // Success
         } else {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Unable to share tag.");    
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Unable to share tag.");
         }
-      
+
         // Run clean up function
         await mysql.end();
-    } catch (e) {       
+    } catch (e) {
         if (e.code === 'ER_DUP_ENTRY') {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, "Tag already shared to user.");
         }
 
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
-    }  
+    }
 
     return gatewayHelper.successResponse({
         tag: tag

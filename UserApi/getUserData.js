@@ -11,9 +11,7 @@ const mysql = require('serverless-mysql')({
 });
 
 exports.handler = async (event, context) => {
-    const authInfo = event.headers.Authorization;
-    const user = await auth.authorizedUser(authInfo);
-  
+    const user = await auth.authorizedUser(event.headers);
     if (!user) {
         return gatewayHelper.unauthorizedResponse();
     }
