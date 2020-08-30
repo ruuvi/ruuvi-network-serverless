@@ -16,8 +16,7 @@ exports.handler = async (event, context) => {
     // Authorization
     let user = null;
     if (process.env.REQUIRE_LOGIN == 1) {
-        const authInfo = event.headers.Authorization;
-        user = await auth.authorizedUser(authInfo);
+        user = await auth.authorizedUser(event.headers);
         if (!user) {
             return gatewayHelper.unauthorizedResponse();
         }

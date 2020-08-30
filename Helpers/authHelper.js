@@ -11,11 +11,19 @@ const mysql = require('serverless-mysql')({
 
 /**
  * Returns the user id for the authenticated user.
- * 
+ *
  * @param {string} authHeader Bearer token auth string or token
  */
-const authorizedUser = async (authHeader) => {
-    let token = authHeader;
+const authorizedUser = async (headers) => {
+    // Due to case-insensitiveness of the headers, this is done the icky way
+    let token = null;
+    for (const [key, value] of Object.entries(headers)) {
+        if (key.toLowerCase() === 'authorization') {
+            token = value;
+            break;
+        }
+    }
+
     if (!token) {
         return null;
     } else if (token.length > 7 && token.substring(0, 7) === 'Bearer ') {

@@ -255,7 +255,13 @@ functions:
           path: /share
       - httpApi:
           method: OPTIONS
-          path: /claim
+          path: /verify
+      - httpApi:
+          method: OPTIONS
+          path: /get
+      - httpApi:
+          method: OPTIONS
+          path: /user
 
 # Resources (queues, databases, etc.)
 resources:
