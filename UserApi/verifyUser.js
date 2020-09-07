@@ -4,10 +4,10 @@ const guidHelper = require('Helpers/guidHelper');
 
 const mysql = require('serverless-mysql')({
     config: {
-        host     : process.env.ENDPOINT,
-        database : process.env.DATABASE,
-        user     : process.env.USERNAME,
-        password : process.env.PASSWORD
+        host     : process.env.DATABASE_ENDPOINT,
+        database : process.env.DATABASE_NAME,
+        user     : process.env.DATABASE_USERNAME,
+        password : process.env.DATABASE_PASSWORD
     }
 });
 
