@@ -49,6 +49,18 @@ const authorizedUser = async (headers) => {
     return results[0];
 };
 
+const validateSignature = (signature, gatewayId, timestamp) => {
+    const crypto = require('crypto');
+
+    const secret = 'abcdefg';
+    const hash = crypto.createHmac('sha256', secret)
+        .update('I love cupcakes')
+        .digest('hex');
+
+    return signature === hash
+}
+
 module.exports = {
-    authorizedUser
+    authorizedUser,
+    validateSignature
 }
