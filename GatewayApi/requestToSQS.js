@@ -12,6 +12,7 @@ var sqs = new AWS.SQS({apiVersion: '2012-11-05'});
 exports.handler = async (event, context) => {
     const signature = gatewayHelper.getHeader('x-ruuvi-signature', event.headers);
     const timestamp = gatewayHelper.getHeader('x-ruuvi-timestamp', event.headers);
+    const nonce = gatewayHelper.getHeader('x-ruuvi-nonce', event.headers);
     const eventBody = JSON.parse(event.body);
 
     const data = eventBody.data;
@@ -33,6 +34,7 @@ exports.handler = async (event, context) => {
             signature,
             eventBody,
             data.gwmac,
+            nonce,
             timestamp,
             process.env.GATEWAY_REQUEST_TTL,
             process.env.GATEWAY_SIGNATURE_SECRET
