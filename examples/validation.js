@@ -1,5 +1,4 @@
 // Test data to poke the API with
-const secret = 'hippety hop we are pop'
 const deviceId = '1234'
 const deviceAddr = '5678'
 const nonce = 'nonsense!'
@@ -134,13 +133,13 @@ const postData = {
     }
 };
 
-const createSignature = (data, deviceId, deviceAddr, nonce, timestamp, secret) => {
+const createSignature = (data, nonce, timestamp, secret) => {
     let dataStr = data;
     if (typeof data !== 'string') {
         dataStr = JSON.stringify(data);
     }
 
-    const signatureBody = deviceAddr + deviceId + nonce + timestamp + dataStr;
+    const signatureBody = secret + nonce + timestamp + dataStr;
 
     const crypto = require('crypto');
 
@@ -158,7 +157,7 @@ async function testSignature(postData, secret) {
 
     const data = JSON.stringify(postData)
 
-    const signature = createSignature(data, deviceId, deviceAddr, nonce, timestamp, secret);
+    const signature = createSignature(data, nonce, timestamp, secret);
     console.log('Calculated signature: ' + signature);
 
     const options = {
@@ -191,4 +190,4 @@ async function testSignature(postData, secret) {
     req.end()
 }
 
-testSignature(postData, secret);
+testSignature(postData, deviceId + deviceAddr);

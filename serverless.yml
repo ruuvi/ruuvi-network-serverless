@@ -120,7 +120,6 @@ functions:
       GATEWAY_SEND_RATE: ${self:custom.gatewaySendRate}
       TARGET_QUEUE: { Ref: GatewayQueue }
       ENFORCE_SIGNATURE: ${self:custom.gatewayEnforceSignature}
-      GATEWAY_SIGNATURE_SECRET: ${ssm:/ruuvi-gateway-signature-secret~true}
       GATEWAY_REQUEST_TTL: ${self:custom.gatewayRequestTTL}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
 

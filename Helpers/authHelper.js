@@ -57,9 +57,8 @@ const authorizedUser = async (headers) => {
  * @param {string} gatewayId Gateway id to validate
  * @param {integer} timestamp Unix timestamp of the message (as provided in the headers)
  * @param {integer} maxAge Maximum age of the request
- * @param {secret} secret Secret to validate with
  */
-const validateGatewaySignature = async (givenSignature, data, gatewayId, nonce, timestamp, maxAge, secret) => {
+const validateGatewaySignature = async (givenSignature, data, gatewayId, nonce, timestamp, maxAge) => {
     if (givenSignature === null || gatewayId === null || timestamp === null) {
         return false;
     }
@@ -72,31 +71,29 @@ const validateGatewaySignature = async (givenSignature, data, gatewayId, nonce, 
         return false;
     }
 
-    return validateSignature(givenSignature, data, gatewayData[0].DeviceId, gatewayData[0].DeviceAddr, nonce, timestamp, maxAge, secret);
+    return validateSignature(givenSignature, data, nonce, timestamp, maxAge, gatewayData[0].DeviceId + gatewayData[0].DeviceAddr);
 }
 
 /**
+ * Validates the given signature
  * 
  * @param {string} givenSignature Signature to validate
  * @param {mixed} data Payload to validate
- * @param {string} deviceId Device Id to validate against
- * @param {string} deviceAddr Device Addr to validate against
  * @param {integer} timestamp Unix Timestamp of the signature
  * @param {integer} maxAge Maximum age of the request
  * @param {string} secret Signing secret
  */
-const validateSignature = (givenSignature, data, deviceId, deviceAddr, nonce, timestamp, maxAge, secret) => {
-    if (givenSignature === null || deviceId === null || deviceAddr === null || timestamp === null || secret === null || nonce === null) {
+const validateSignature = (givenSignature, data, nonce, timestamp, maxAge, secret) => {
+    if (givenSignature === null || timestamp === null || secret === null || nonce === null) {
         return false;
     }
 
     const now = Date.now();
     if (now - timestamp > maxAge) {
-        console.error('Old request for ' + deviceId + ': ' + timestamp + ' (now: ' + now + ')');
         return false;
     }
 
-    const signature = createSignature(data, deviceId, deviceAddr, nonce, timestamp, secret);
+    const signature = createSignature(data, nonce, timestamp, secret);
 
     return givenSignature === signature;
 }
@@ -105,19 +102,17 @@ const validateSignature = (givenSignature, data, deviceId, deviceAddr, nonce, ti
  * Creates a signature for the given payload with the parameters.
  * 
  * @param {mixed} data String or array representing the payload
- * @param {string} deviceId Device ID string
- * @param {string} deviceAddr Device Address string
  * @param {string} nonce Random nonce
  * @param {integer} timestamp Unix timestamp integer
  * @param {string} secret Signing secret
  */
-const createSignature = (data, deviceId, deviceAddr, nonce, timestamp, secret) => {
+const createSignature = (data, nonce, timestamp, secret) => {
     let dataStr = data;
     if (typeof data !== 'string') {
         dataStr = JSON.stringify(data);
     }
 
-    const signatureBody = deviceAddr + deviceId + nonce + timestamp + dataStr;
+    const signatureBody = secret + nonce + timestamp + dataStr;
 
     const crypto = require('crypto');
 
