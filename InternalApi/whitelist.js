@@ -4,7 +4,7 @@ const dynamo = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 
 exports.handler = async (event, context) => {
     const apiKey = process.env.INTERNAL_API_KEY;
-    if (apiKey === null || apiKey === '' || event.headers['X-Internal-Secret'] !== apiKey) {
+    if (apiKey === null || apiKey === '' || gatewayHelper.getHeader('X-Internal-Secret', event.headers) !== apiKey) {
         return gatewayHelper.invalid();
     }
 
@@ -19,11 +19,13 @@ exports.handler = async (event, context) => {
     let batch = {
         RequestItems: { }
     };
-    batch.RequestItems[process.env.TABLE_NAME] = [];
+    const tableName = process.env.WHITELIST_TABLE_NAME;
+
+    batch.RequestItems[tableName] = [];
 
     for (let i = 0, len = gateways.length; i < len; i++) {
         const inputData = gateways[i];
-        batch.RequestItems[process.env.TABLE_NAME].push({
+        batch.RequestItems[tableName].push({
             PutRequest: {
                 Item: {
                     "GatewayId": { "S": inputData.gatewayId },
@@ -33,17 +35,17 @@ exports.handler = async (event, context) => {
             }
         });
 
-        if (batch.RequestItems[process.env.TABLE_NAME].length >= 25) {
+        if (batch.RequestItems[tableName].length >= 25) {
             await dynamo.batchWriteItem(batch, function(err, data) {
                 if (err) {
                     console.error("Error", err);
                 }
             }).promise();
-            batch.RequestItems[process.env.TABLE_NAME] = [];
+            batch.RequestItems[tableName] = [];
         }
     }
 
-    if (batch.RequestItems[process.env.TABLE_NAME].length > 0) {
+    if (batch.RequestItems[tableName].length > 0) {
         await dynamo.batchWriteItem(batch, function(err, data) {
             if (err) {
                 console.error("Error", err);

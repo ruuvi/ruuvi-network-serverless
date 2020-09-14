@@ -17,10 +17,12 @@ custom:
   dynamoGatewayWhitelist: 'GatewayWhitelist'
   dynamoAlerts: 'SensorAlerts'
 
-  sourceEmail: 'sami@muhwu.com'
+  sourceEmail: 'otso@ruuvi.com'
   invitationExpirationInterval: 5 # minutes after requested
-  requireLoginForData: 0
-  gatewaySendRate: 60 # every X seconds
+  requireLoginForData: 0          # 1 for ENABLED
+  gatewaySendRate: 60             # every X seconds
+  gatewayEnforceSignature: 0      # 1 for ENABLED
+  gatewayRequestTTL: 10000        # ms
 
   # Dynamo Auto-Scaling Configuration
   capacities:
@@ -59,7 +61,7 @@ provider:
   profile: ruuvi
 
   # Defaults
-  stage: dev
+  stage: ${opt:stage, 'dev'}
   region: eu-central-1
 
   # Permissions (Note: These could be more granular per lambda)
@@ -117,6 +119,11 @@ functions:
     environment:
       GATEWAY_SEND_RATE: ${self:custom.gatewaySendRate}
       TARGET_QUEUE: { Ref: GatewayQueue }
+      ENFORCE_SIGNATURE: ${self:custom.gatewayEnforceSignature}
+      GATEWAY_SIGNATURE_SECRET: ${ssm:/ruuvi-gateway-signature-secret~true}
+      GATEWAY_REQUEST_TTL: ${self:custom.gatewayRequestTTL}
+      WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
+
 
   writeToDatabase:
     handler: GatewayApi/writeToDatabase.handler
@@ -283,7 +290,7 @@ functions:
           path: /whitelist
     environment:
       INTERNAL_API_KEY: ${ssm:/ruuvi-internal-api-key~true}
-      TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
+      WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
 
 # Resources (queues, databases, etc.)
 resources:

@@ -60,6 +60,40 @@ const getDynamoBatch = (inputData) => {
 }
 
 /**
+ * Fetches data from a DynamoDB table.
+ * 
+ * @param {string} tableName Name of the table to fetch data from
+ * @param {string} keyName Name of the key being fetched by
+ * @param {mixed} keyValue Value to be scanned for
+ * @param {array} fieldNames Array of field names to fetch
+ * @param {integer} limit Maximum result count to return
+ * @param {bool} scanForward Forward or backward scan on the query
+ * @returns {array} Array of items from the database
+ */
+const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 1, scanForward = false) => {
+    const fieldsString = fieldNames.join(',')
+    
+    const params = {
+        TableName: tableName,
+        KeyConditionExpression: keyName + ' = :id',
+        ExpressionAttributeValues: {
+            ":id": keyValue
+        },
+        ProjectionExpression: fieldsString,
+        ScanIndexForward: scanForward,
+        Limit: limit
+    };
+
+    const rawData = await ddb.query(params).promise();
+    if (!rawData || !rawData.hasOwnProperty('Items')) {
+        console.error("No data returned!", rawData);
+        return [];
+    }
+
+    return rawData.Items;
+}
+
+/**
  * Retrieves sensor data from Dynamo based on parameters.
  * Fetches most recent if date range is not given.
  *
@@ -69,26 +103,40 @@ const getDynamoBatch = (inputData) => {
  * @param {date} endDate End date for results
  */
 const getSensorData = async (tag, count, startDate, endDate) => {
-    const params = {
-        TableName: process.env.TABLE_NAME,
-        KeyConditionExpression: 'SensorId = :id',
-        ExpressionAttributeValues: {
-            ":id": tag
-        },
-        ProjectionExpression: 'SensorId,Coordinates,SensorData,GatewayMac,MeasurementTimestamp,RSSI',
-        ScanIndexForward: false,
-        Limit: count
-    };
-
-    const rawData = await ddb.query(params).promise();
-    if (!rawData || !rawData.hasOwnProperty('Items')) {
-        console.error("No data returned!", rawData);
+    if (typeof(process.env.TABLE_NAME === 'undefined')) {
+        console.error('TABLE_NAME not defined in environment.');
         return [];
     }
 
-    // TODO: Format
+    return fetch(
+        process.env.TABLE_NAME,
+        'SensorId',
+        tag,
+        ['SensorId', 'Coordinates', 'SensorData', 'GatewayMac', 'MeasurementTimestamp', 'RSSI'],
+        count,
+        false
+    )
+}
 
-    return rawData.Items;
+/**
+ * Fetches the information such as device id and device addr for a given gateway.
+ * 
+ * @param {string} gatewayId ID of the gateway data to fetch
+ */
+const getGatewayData = async (gatewayId) => {
+    if (typeof process.env.WHITELIST_TABLE_NAME === 'undefined') {
+        console.error('WHITELIST_TABLE_NAME not defined in environment.');
+        return [];
+    }
+
+    return fetch(
+        process.env.WHITELIST_TABLE_NAME,
+        'GatewayId',
+        gatewayId,
+        ['GatewayId', 'DeviceId', 'DeviceAddr'],
+        1,
+        false
+    )
 }
 
 /**
@@ -98,5 +146,7 @@ module.exports = {
     getDynamoBatch,
     dynamoFormat,
     validateSensorData,
-    getSensorData
+    getSensorData,
+    getGatewayData,
+    fetch
 };

@@ -121,6 +121,21 @@ const successResponse = (data, headers) => {
 };
 
 /**
+ * Searches for a given header (case insensitive)
+ * 
+ * @param {string} headerName Name of the header to look for
+ * @param {array} headers Array of headers as provided by the API gateway
+ */
+const getHeader = (headerName, headers) => {
+    for (const [key, value] of Object.entries(headers)) {
+        if (key.toLowerCase() === headerName.toLowerCase()) {
+            return value
+        }
+    }
+    return null
+}
+
+/**
  * Exports
  */
 module.exports = {
@@ -142,6 +157,9 @@ module.exports = {
     errorResponse,
 
     forbiddenResponse,
-    unauthorizedResponse
+    unauthorizedResponse,
+
+    // Other
+    getHeader
 }
 
