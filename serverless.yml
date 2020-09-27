@@ -8,14 +8,16 @@ plugins:
   - serverless-dynamodb-autoscaling
 
 custom:
-  writerQueueName: 'ruuvi_network'
+  stage: ${opt:stage, self:provider.stage}
+
+  writerQueueName: ${self:custom.stage}-ruuvi_network
   gatewayReceiverLambdaConcurrency: 100 # Separate due to higher requirements
   lambdaConcurrency: 10
 
   # Dynamo DB Tables
-  dynamoSensorData: 'SensorData' # Main Sensor data
-  dynamoGatewayWhitelist: 'GatewayWhitelist'
-  dynamoAlerts: 'SensorAlerts'
+  dynamoSensorData: ${self:custom.stage}-SensorData # Main Sensor data
+  dynamoGatewayWhitelist: ${self:custom.stage}-GatewayWhitelist'
+  dynamoAlerts: ${self:custom.stage}-SensorAlerts
 
   sourceEmail: 'otso@ruuvi.com'
   invitationExpirationInterval: 5 # minutes after requested
@@ -149,11 +151,11 @@ functions:
           path: /get
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:/ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:/ruuvi-db-password~true}
-      DATABASE_ENDPOINT: ${ssm:/ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:/ruuvi-db-database}
-      TABLE_NAME: ${self:custom.dynamoSensorData}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      TABLE_NAME: ${self:custom.dynamoSensorData}-${self:custom.stage}
       REQUIRE_LOGIN: ${self:custom.requireLoginForData}
       DEFAULT_RESULTS: 15
 
@@ -170,10 +172,10 @@ functions:
           path: /user
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:/ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:/ruuvi-db-password~true}
-      DATABASE_ENDPOINT: ${ssm:/ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:/ruuvi-db-database}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
 
   requestRegistration:
     handler: UserApi/requestRegistration.handler
@@ -187,10 +189,10 @@ functions:
           method: POST
           path: /register
     environment:
-      DATABASE_USERNAME: ${ssm:/ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:/ruuvi-db-password~true}
-      DATABASE_ENDPOINT: ${ssm:/ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:/ruuvi-db-database}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       INVITATION_EXPIRATION_INTERVAL: ${self:custom.invitationExpirationInterval}
       SOURCE_EMAIL: ${self:custom.sourceEmail}
       BASE_API_URL:
@@ -216,10 +218,10 @@ functions:
           path: /verify
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:/ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:/ruuvi-db-password~true}
-      DATABASE_ENDPOINT: ${ssm:/ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:/ruuvi-db-database}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
 
   claimTag:
     handler: UserApi/claimTag.handler
@@ -234,10 +236,10 @@ functions:
           path: /claim
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:/ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:/ruuvi-db-password~true}
-      DATABASE_ENDPOINT: ${ssm:/ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:/ruuvi-db-database}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
 
   shareTag:
     handler: UserApi/shareTag.handler
@@ -252,10 +254,10 @@ functions:
           path: /share
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:/ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:/ruuvi-db-password~true}
-      DATABASE_ENDPOINT: ${ssm:/ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:/ruuvi-db-database}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
 
   # NOTE: Workaround for CORS preflight requests
   corsOptions:
@@ -288,7 +290,7 @@ functions:
           method: POST
           path: /whitelist
     environment:
-      INTERNAL_API_KEY: ${ssm:/ruuvi-internal-api-key~true}
+      INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key~true}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
 
 # Resources (queues, databases, etc.)
