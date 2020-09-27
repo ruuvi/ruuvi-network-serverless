@@ -16,7 +16,7 @@ custom:
 
   # Dynamo DB Tables
   dynamoSensorData: ${self:custom.stage}-SensorData # Main Sensor data
-  dynamoGatewayWhitelist: ${self:custom.stage}-GatewayWhitelist'
+  dynamoGatewayWhitelist: ${self:custom.stage}-GatewayWhitelist
   dynamoAlerts: ${self:custom.stage}-SensorAlerts
 
   sourceEmail: 'otso@ruuvi.com'
@@ -65,6 +65,8 @@ provider:
   # Defaults
   stage: ${opt:stage, 'dev'}
   region: eu-central-1
+  httpApi:
+    cors: true
 
   # Permissions (Note: These could be more granular per lambda)
   iamRoleStatements:
@@ -114,7 +116,6 @@ functions:
     handler: GatewayApi/requestToSQS.handler
     #reservedConcurrency: ${self:custom.gatewayReceiverLambdaConcurrency}
     events:
-      - http: POST /record
       - httpApi:
           method: POST
           path: /record
@@ -142,10 +143,6 @@ functions:
   getSensorData:
     handler: UserApi/getSensorData.handler
     events:
-      - http:
-          path: get
-          method: get
-          cors: true
       - httpApi:
           method: GET
           path: /get
@@ -163,10 +160,6 @@ functions:
     handler: UserApi/getUserData.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http:
-          path: user
-          method: get
-          cors: true
       - httpApi:
           method: GET
           path: /user
@@ -195,7 +188,7 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       INVITATION_EXPIRATION_INTERVAL: ${self:custom.invitationExpirationInterval}
       SOURCE_EMAIL: ${self:custom.sourceEmail}
-      BASE_API_URL:
+      BASE_API_URL: 
         !Join
           - ''
           - - 'https://'
@@ -209,10 +202,6 @@ functions:
     handler: UserApi/verifyUser.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http:
-          path: verify
-          method: get
-          cors: true
       - httpApi:
           method: GET
           path: /verify
@@ -227,10 +216,6 @@ functions:
     handler: UserApi/claimTag.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http:
-          path: claim
-          method: post
-          cors: true
       - httpApi:
           method: POST
           path: /claim
@@ -245,10 +230,6 @@ functions:
     handler: UserApi/shareTag.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http:
-          path: share
-          method: post
-          cors: true
       - httpApi:
           method: POST
           path: /share
@@ -260,27 +241,27 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
 
   # NOTE: Workaround for CORS preflight requests
-  corsOptions:
-    handler: UserApi/corsHelper.handler
-    events:
-      - httpApi:
-          method: OPTIONS
-          path: /register
-      - httpApi:
-          method: OPTIONS
-          path: /claim
-      - httpApi:
-          method: OPTIONS
-          path: /share
-      - httpApi:
-          method: OPTIONS
-          path: /verify
-      - httpApi:
-          method: OPTIONS
-          path: /get
-      - httpApi:
-          method: OPTIONS
-          path: /user
+#  corsOptions:
+#    handler: UserApi/corsHelper.handler
+#    events:
+#      - httpApi:
+#          method: OPTIONS
+#          path: /register
+#      - httpApi:
+#          method: OPTIONS
+#          path: /claim
+#      - httpApi:
+#          method: OPTIONS
+#          path: /share
+#      - httpApi:
+#          method: OPTIONS
+#          path: /verify
+#      - httpApi:
+#          method: OPTIONS
+#          path: /get
+#      - httpApi:
+#          method: OPTIONS
+#          path: /user
 
   # INTERNAL API
   whitelist:
@@ -320,11 +301,11 @@ resources:
     GatewayEventTopic:
       Type: AWS::SNS::Topic
       Properties:
-        TopicName: RuuviGatewayEventTopic
+        TopicName: ${self:custom.stage}-RuuviGatewayEventTopic
     GatewayAlertHandlerQueue:
       Type: AWS::SQS::Queue
       Properties:
-        QueueName: RuuviAlertHandlerQueue
+        QueueName: ${self:custom.stage}-RuuviAlertHandlerQueue
     snsToAlertQueuePolicy:
       Type: AWS::SQS::QueuePolicy
       Properties:
