@@ -25,12 +25,12 @@ exports.handler = async (event, context) => {
     }
 
     // If not resetting, check for user existing
-    if (!isReset && userHelper.getByEmail(eventBody.email)) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, "User already exists.")
+    if (!isReset && await userHelper.getByEmail(eventBody.email)) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, "User already exists.");
     }
 
     try {
-        const jwt = jwtHelper.sign(userInfo, process.env.SIGNING_SECRET, process.env.INVITATION_EXPIRATION_INTERVAL * 60)
+        const jwt = jwtHelper.sign(userInfo, process.env.SIGNING_SECRET, process.env.INVITATION_EXPIRATION_INTERVAL * 60);
 
         let emailResult = {};
         if (userInfo.type === 'registration') {
@@ -41,7 +41,9 @@ exports.handler = async (event, context) => {
         if (!emailResult.hasOwnProperty("MessageId")) {
             throw new Error("Error sending e-mail: " + emailResult);
         }
+        console.log(emailResult);
     } catch (e) {
+        console.log(e);
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
     }
 

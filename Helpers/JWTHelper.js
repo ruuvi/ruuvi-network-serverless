@@ -28,7 +28,7 @@ const verify = (token, secret) => {
     const jwt = require('jsonwebtoken')
 
     try {
-       const decrypted = jwt.verify(token, secret)
+        const decrypted = jwt.verify(token, secret)
 
         const time = Math.floor(+new Date() / 1000)
 
@@ -46,7 +46,7 @@ const verify = (token, secret) => {
     } catch (e) {
         return false
     }
-    
+
     return decrypted.data
 }
 

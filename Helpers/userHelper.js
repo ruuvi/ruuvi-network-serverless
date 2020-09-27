@@ -12,7 +12,7 @@ const mysql = require('serverless-mysql')({
  * 
  * @param {string} email E-mail address of the fetched user
  */
-const getByEmail = (email) => {
+const getByEmail = async (email) => {
     const validator = require('../Helpers/validator');
     if (!validator.validateEmail(email)) {
         return null;
@@ -39,7 +39,7 @@ const getByEmail = (email) => {
  * 
  * @param {int} id ID of the fetched user
  */
-const getById = (id) => {
+const getById = async (id) => {
     const idInt = parseInt(id)
     if (!idInt) {
         return null;
@@ -66,7 +66,7 @@ const getById = (id) => {
  * 
  * @param {string} email Email of the created user
  */
-const create = (email) => {
+const create = async (email) => {
     const validator = require('../Helpers/validator');
     if (!validator.validateEmail(email)) {
         return null;
@@ -96,7 +96,7 @@ const create = (email) => {
  * @param {int} userId ID of the user
  * @param {string} token Token to store
  */
-const createToken = (userId) => {
+const createToken = async (userId) => {
     const idInt = parseInt(userId)
     if (!idInt) {
         return null;

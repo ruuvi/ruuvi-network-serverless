@@ -37,14 +37,14 @@ exports.handler = async (event, context) => {
 
     let userId = 0;
     if (!isReset) {
-        userId = userHelper.create(userInfo.email)
+        userId = await userHelper.create(userInfo.email)
     } else {
-        const user = userHelper.getByEmail(email)
+        const user = await userHelper.getByEmail(email)
         userId = user.id ? user.id : 0
     }
 
     if (userId > 0) {
-        userInfo.accessToken = userHelper.createToken(userId)
+        userInfo.accessToken = await userHelper.createToken(userId)
         if (userInfo.accessToken) {
             console.info("Successfully created token for user: " + userInfo.email);
         }
