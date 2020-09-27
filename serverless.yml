@@ -6,6 +6,7 @@ service: ruuvi-network-serverless
 
 plugins:
   - serverless-dynamodb-autoscaling
+  - serverless-offline
 
 custom:
   stage: ${opt:stage, self:provider.stage}
@@ -180,12 +181,13 @@ functions:
           cors: true
       - httpApi:
           method: POST
-          path: /register
+          path: /register-http
     environment:
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
       INVITATION_EXPIRATION_INTERVAL: ${self:custom.invitationExpirationInterval}
       SOURCE_EMAIL: ${self:custom.sourceEmail}
       BASE_API_URL: 

@@ -1,7 +1,7 @@
-const gatewayHelper = require('Helpers/gatewayHelper');
-const dynamoHelper = require('Helpers/dynamoHelper');
-const validator = require('Helpers/validator');
-const auth = require('Helpers/authHelper');
+const gatewayHelper = require('../Helpers/gatewayHelper');
+const dynamoHelper = require('../Helpers/dynamoHelper');
+const validator = require('../Helpers/validator');
+const auth = require('../Helpers/authHelper');
 
 const mysql = require('serverless-mysql')({
     config: {

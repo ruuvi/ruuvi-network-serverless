@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
-const gatewayHelper = require('Helpers/gatewayHelper.js');
-const auth = require('Helpers/authHelper')
+const gatewayHelper = require('../Helpers/gatewayHelper.js');
+const auth = require('../Helpers/authHelper')
 
 AWS.config.update({region: 'eu-central-1'});
 

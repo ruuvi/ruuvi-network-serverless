@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 const dynamo = new AWS.DynamoDB({apiVersion: '2012-08-10'});
-const dynamoHelper = require('Helpers/dynamoHelper');
+const dynamoHelper = require('../Helpers/dynamoHelper');
 
 exports.handler = async (event) => {
     // Flatten into an array
