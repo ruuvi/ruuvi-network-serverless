@@ -29,6 +29,7 @@ const getByEmail = async (email) => {
             return existingUser[0]
         }
     } catch (err) {
+        console.error(err)
         return null
     } 
     return null
@@ -56,6 +57,7 @@ const getById = async (id) => {
             return existingUser[0]
         }
     } catch (err) {
+        console.error(err)
         return null
     } 
     return null
@@ -77,15 +79,12 @@ const create = async (email) => {
             `INSERT INTO users (
                 email
             ) VALUES (
-                '${userInfo.email}'
+                '${email}'
             );`
         );
         return results.insertId;
     } catch (err) {
-        if (err.code === 'ER_DUP_ENTRY') {
-            console.error(err);
-        }
-
+        console.error(err)
         return null
     } 
 }
@@ -103,7 +102,7 @@ const createToken = async (userId) => {
     }
 
     const guidHelper = require('../Helpers/guidHelper');
-    const token = guidHelper.guid(32)
+    const token = guidHelper.guid(64)
 
     try {
         results = await mysql.query(
@@ -115,11 +114,9 @@ const createToken = async (userId) => {
                 '${token}'
             );`
         );
-        return results.insertId;
+        return token;
     } catch (err) {
-        if (err.code === 'ER_DUP_ENTRY') {
-            console.error(err);
-        }
+        console.error(err);
         return null
     } 
 }

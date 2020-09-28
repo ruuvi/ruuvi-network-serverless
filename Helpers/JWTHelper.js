@@ -43,11 +43,11 @@ const verify = (token, secret) => {
         if (!decrypted.data) {
             return false
         }
+
+        return decrypted.data
     } catch (e) {
         return false
     }
-
-    return decrypted.data
 }
 
 /**

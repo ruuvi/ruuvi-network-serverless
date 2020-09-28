@@ -158,9 +158,9 @@ functions:
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      TABLE_NAME: ${self:custom.dynamoSensorData}-${self:custom.stage}
+      TABLE_NAME: ${self:custom.dynamoSensorData}
       REQUIRE_LOGIN: ${self:custom.requireLoginForData}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       DEFAULT_RESULTS: 15
 
   getUserData:
@@ -176,7 +176,7 @@ functions:
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
   requestRegistration:
     handler: UserApi/requestRegistration.handler
@@ -194,7 +194,7 @@ functions:
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       INVITATION_EXPIRATION_INTERVAL: ${self:custom.invitationExpirationInterval}
       SOURCE_EMAIL: ${self:custom.sourceEmail}
       BASE_API_URL: 
@@ -204,12 +204,17 @@ functions:
             - !Ref ApiGatewayRestApi
             - '.execute-api.'
             - ${opt:region, self:provider.region}
-            - '.amazonaws.com'
+            - '.amazonaws.com/'
+            - ${self:custom.stage}
 
   verifyUser:
     handler: UserApi/verifyUser.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
+      - http:
+          path: verify
+          method: get
+          cors: true
       - httpApi:
           method: GET
           path: /verify
@@ -219,7 +224,7 @@ functions:
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
   claimTag:
     handler: UserApi/claimTag.handler
@@ -234,7 +239,7 @@ functions:
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
   shareTag:
     handler: UserApi/shareTag.handler
@@ -249,7 +254,7 @@ functions:
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
   # NOTE: Workaround for CORS preflight requests
 #  corsOptions:

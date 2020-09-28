@@ -37,7 +37,7 @@ exports.handler = async (event, context) => {
 
     let userId = 0;
     if (!isReset) {
-        userId = await userHelper.create(userInfo.email)
+        userId = await userHelper.create(email)
     } else {
         const user = await userHelper.getByEmail(email)
         userId = user.id ? user.id : 0

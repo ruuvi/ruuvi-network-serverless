@@ -1,7 +1,7 @@
-const gatewayHelper = require('../Helpers/gatewayHelper.js');
-const { HTTPCodes } = require('../Helpers/gatewayHelper');
+const gatewayHelper = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
+const userHelper = require('../Helpers/userHelper')
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -38,15 +38,11 @@ exports.handler = async (event, context) => {
     let results = null;
 
     try {
-        const targetUser = await mysql.query(
-            `SELECT id
-            FROM users
-            WHERE email = '${targetUserEmail}'`
-        );
-        if (targetUser.length === 0) {
+        const targetUser = await userHelper.getByEmail(targetUserEmail)
+        if (!targetUser) {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "User not found.");
         }
-        const targetUserId = targetUser[0].id;
+        const targetUserId = targetUser.id;
 
         // Currently Enforces sharing restrictions on database level
         results = await mysql.query(
