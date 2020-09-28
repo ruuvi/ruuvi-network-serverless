@@ -26,7 +26,7 @@ Enjoy!
 ## Current Status
 
 ### Services and Limits
-- [ ] Apply to get out of SES Sandbox (if necessary)
+- [X] Apply to get out of SES Sandbox (if necessary)
 
 ### Receiver
 - [ ] CloudFront for Throttling (This might be built in)
