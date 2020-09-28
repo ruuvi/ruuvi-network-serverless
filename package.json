@@ -14,6 +14,7 @@
     "yargs": "^15.4.1"
   },
   "devDependencies": {
+    "jest": "^26.4.2",
     "serverless-mocha-plugin": "^1.12.0",
     "serverless-offline": "^6.8.0"
   },
