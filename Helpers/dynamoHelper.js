@@ -103,7 +103,7 @@ const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 1, scanFo
  * @param {date} endDate End date for results
  */
 const getSensorData = async (tag, count, startDate, endDate) => {
-    if (typeof(process.env.TABLE_NAME === 'undefined')) {
+    if (typeof(process.env.TABLE_NAME) === 'undefined') {
         console.error('TABLE_NAME not defined in environment.');
         return [];
     }

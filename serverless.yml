@@ -6,23 +6,26 @@ service: ruuvi-network-serverless
 
 plugins:
   - serverless-dynamodb-autoscaling
+  - serverless-offline
 
 custom:
-  writerQueueName: 'ruuvi_network'
+  stage: ${opt:stage, self:provider.stage}
+
+  writerQueueName: ${self:custom.stage}-ruuvi_network
   gatewayReceiverLambdaConcurrency: 100 # Separate due to higher requirements
   lambdaConcurrency: 10
 
   # Dynamo DB Tables
-  dynamoSensorData: 'SensorData' # Main Sensor data
-  dynamoGatewayWhitelist: 'GatewayWhitelist'
-  dynamoAlerts: 'SensorAlerts'
+  dynamoSensorData: ${self:custom.stage}-SensorData # Main Sensor data
+  dynamoGatewayWhitelist: ${self:custom.stage}-GatewayWhitelist
+  dynamoAlerts: ${self:custom.stage}-SensorAlerts
 
-  sourceEmail: 'otso@ruuvi.com'
-  invitationExpirationInterval: 5 # minutes after requested
-  requireLoginForData: 0          # 1 for ENABLED
-  gatewaySendRate: 60             # every X seconds
-  gatewayEnforceSignature: 0      # 1 for ENABLED
-  gatewayRequestTTL: 10000        # ms
+  sourceEmail: 'sami@muhwu.com'    #'otso@ruuvi.com'
+  invitationExpirationInterval: 15 # minutes after requested
+  requireLoginForData: 0           # 1 for ENABLED
+  gatewaySendRate: 60              # every X seconds
+  gatewayEnforceSignature: 0       # 1 for ENABLED
+  gatewayRequestTTL: 10000         # ms
 
   # Dynamo Auto-Scaling Configuration
   capacities:
@@ -41,8 +44,8 @@ custom:
         maximum: 1000     # Maximum read capacity
         usage: 0.2        # Targeted usage percentage
       write:
-        minimum: 1       # Minimum write capacity
-        maximum: 10     # Maximum write capacity
+        minimum: 1        # Minimum write capacity
+        maximum: 10       # Maximum write capacity
         usage: 0.2        # Targeted usage percentage
     - table: DynamoGatewayWhitelist
       read:
@@ -63,6 +66,8 @@ provider:
   # Defaults
   stage: ${opt:stage, 'dev'}
   region: eu-central-1
+  httpApi:
+    cors: true
 
   # Permissions (Note: These could be more granular per lambda)
   iamRoleStatements:
@@ -82,6 +87,10 @@ provider:
         - "sqs:SendMessage"
         - "sqs:GetQueueAttributes"
       Resource: "arn:aws:sqs:*"
+    - Effect: "Allow"
+      Action:
+        - "sns:Publish"
+      Resource: { Ref: GatewayEventTopic }
     - Effect: "Allow"
       Action:
         - "ec2:CreateNetworkInterface"
@@ -112,13 +121,13 @@ functions:
     handler: GatewayApi/requestToSQS.handler
     #reservedConcurrency: ${self:custom.gatewayReceiverLambdaConcurrency}
     events:
-      - http: POST /record
       - httpApi:
           method: POST
           path: /record
     environment:
       GATEWAY_SEND_RATE: ${self:custom.gatewaySendRate}
       TARGET_QUEUE: { Ref: GatewayQueue }
+      TARGET_TOPIC: { Ref: GatewayEventTopic }
       ENFORCE_SIGNATURE: ${self:custom.gatewayEnforceSignature}
       GATEWAY_REQUEST_TTL: ${self:custom.gatewayRequestTTL}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
@@ -140,40 +149,34 @@ functions:
   getSensorData:
     handler: UserApi/getSensorData.handler
     events:
-      - http:
-          path: get
-          method: get
-          cors: true
       - httpApi:
           method: GET
           path: /get
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:/ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:/ruuvi-db-password~true}
-      DATABASE_ENDPOINT: ${ssm:/ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:/ruuvi-db-database}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       TABLE_NAME: ${self:custom.dynamoSensorData}
       REQUIRE_LOGIN: ${self:custom.requireLoginForData}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       DEFAULT_RESULTS: 15
 
   getUserData:
     handler: UserApi/getUserData.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http:
-          path: user
-          method: get
-          cors: true
       - httpApi:
           method: GET
           path: /user
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:/ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:/ruuvi-db-password~true}
-      DATABASE_ENDPOINT: ${ssm:/ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:/ruuvi-db-database}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
   requestRegistration:
     handler: UserApi/requestRegistration.handler
@@ -185,15 +188,16 @@ functions:
           cors: true
       - httpApi:
           method: POST
-          path: /register
+          path: /register-http
     environment:
-      DATABASE_USERNAME: ${ssm:/ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:/ruuvi-db-password~true}
-      DATABASE_ENDPOINT: ${ssm:/ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:/ruuvi-db-database}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       INVITATION_EXPIRATION_INTERVAL: ${self:custom.invitationExpirationInterval}
       SOURCE_EMAIL: ${self:custom.sourceEmail}
-      BASE_API_URL:
+      BASE_API_URL: 
         !Join
           - ''
           - - 'https://'
@@ -201,7 +205,7 @@ functions:
             - '.execute-api.'
             - ${opt:region, self:provider.region}
             - '.amazonaws.com/'
-            - ${opt:stage, self:provider.stage}
+            - ${self:custom.stage}
 
   verifyUser:
     handler: UserApi/verifyUser.handler
@@ -216,69 +220,64 @@ functions:
           path: /verify
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:/ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:/ruuvi-db-password~true}
-      DATABASE_ENDPOINT: ${ssm:/ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:/ruuvi-db-database}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
   claimTag:
     handler: UserApi/claimTag.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http:
-          path: claim
-          method: post
-          cors: true
       - httpApi:
           method: POST
           path: /claim
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:/ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:/ruuvi-db-password~true}
-      DATABASE_ENDPOINT: ${ssm:/ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:/ruuvi-db-database}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
   shareTag:
     handler: UserApi/shareTag.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http:
-          path: share
-          method: post
-          cors: true
       - httpApi:
           method: POST
           path: /share
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:/ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:/ruuvi-db-password~true}
-      DATABASE_ENDPOINT: ${ssm:/ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:/ruuvi-db-database}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
   # NOTE: Workaround for CORS preflight requests
-  corsOptions:
-    handler: UserApi/corsHelper.handler
-    events:
-      - httpApi:
-          method: OPTIONS
-          path: /register
-      - httpApi:
-          method: OPTIONS
-          path: /claim
-      - httpApi:
-          method: OPTIONS
-          path: /share
-      - httpApi:
-          method: OPTIONS
-          path: /verify
-      - httpApi:
-          method: OPTIONS
-          path: /get
-      - httpApi:
-          method: OPTIONS
-          path: /user
+#  corsOptions:
+#    handler: UserApi/corsHelper.handler
+#    events:
+#      - httpApi:
+#          method: OPTIONS
+#          path: /register
+#      - httpApi:
+#          method: OPTIONS
+#          path: /claim
+#      - httpApi:
+#          method: OPTIONS
+#          path: /share
+#      - httpApi:
+#          method: OPTIONS
+#          path: /verify
+#      - httpApi:
+#          method: OPTIONS
+#          path: /get
+#      - httpApi:
+#          method: OPTIONS
+#          path: /user
 
   # INTERNAL API
   whitelist:
@@ -288,7 +287,7 @@ functions:
           method: POST
           path: /whitelist
     environment:
-      INTERNAL_API_KEY: ${ssm:/ruuvi-internal-api-key~true}
+      INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key~true}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
 
 # Resources (queues, databases, etc.)
@@ -315,14 +314,45 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 5 # Defaults, using auto-scaling by default
           WriteCapacityUnits: 5
+
+    # GATEWAY SNS->SQS Data Flow
     GatewayEventTopic:
       Type: AWS::SNS::Topic
       Properties:
-        TopicName: RuuviGatewayEventTopic
+        TopicName: ${self:custom.stage}-RuuviGatewayEventTopic
+    SNSToGatewayQueuePolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Sid: "allow-sns-messages"
+              Effect: Allow
+              Principal: "*"
+              Resource: !GetAtt
+                - GatewayQueue
+                - Arn
+              Action: "SQS:SendMessage"
+              Condition:
+                ArnEquals:
+                  "aws:SourceArn": !Ref GatewayEventTopic
+        Queues:
+          - Ref: GatewayQueue
+    DatabaseWriterSubscription:
+      Type: 'AWS::SNS::Subscription'
+      Properties:
+        TopicArn: !Ref GatewayEventTopic
+        Endpoint: !GetAtt
+          - GatewayQueue
+          - Arn
+        Protocol: sqs
+        RawMessageDelivery: 'true'
+    
+    # Alert resources and policies
     GatewayAlertHandlerQueue:
       Type: AWS::SQS::Queue
       Properties:
-        QueueName: RuuviAlertHandlerQueue
+        QueueName: ${self:custom.stage}-RuuviAlertHandlerQueue
     snsToAlertQueuePolicy:
       Type: AWS::SQS::QueuePolicy
       Properties:
@@ -350,6 +380,7 @@ resources:
           - Arn
         Protocol: sqs
         RawMessageDelivery: 'true'
+        FilterPolicy: "{\"tags\": [\"alert\", \"demo\"]}"
     DynamoGatewayWhitelist:
       Type: AWS::DynamoDB::Table
       Properties:

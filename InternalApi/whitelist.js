@@ -1,4 +1,4 @@
-const gatewayHelper = require('Helpers/gatewayHelper');
+const gatewayHelper = require('../Helpers/gatewayHelper');
 const AWS = require('aws-sdk');
 const dynamo = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 

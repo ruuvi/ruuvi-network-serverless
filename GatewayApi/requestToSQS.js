@@ -1,10 +1,11 @@
 const AWS = require('aws-sdk');
-const gatewayHelper = require('Helpers/gatewayHelper.js');
-const auth = require('Helpers/authHelper')
+const gatewayHelper = require('../Helpers/gatewayHelper.js');
+const auth = require('../Helpers/authHelper')
 
 AWS.config.update({region: 'eu-central-1'});
 
-var sqs = new AWS.SQS({apiVersion: '2012-11-05'});
+const sns = new AWS.SNS();
+const sqs = new AWS.SQS({apiVersion: '2012-11-05'});
 
 /**
  * Sends received data to SQS queue for processing
@@ -46,8 +47,16 @@ exports.handler = async (event, context) => {
         }
     }
 
-    // SQS Message Properties will contain gateway data
-    const params = {
+    // Parse Tags from data
+    let tagIds = [];
+    for (var key in data.tags) {
+        if (data.tags.hasOwnProperty(key)) {
+            tagIds.push(key)
+        }
+    }
+
+    // Prepare message
+    let params = {
         DelaySeconds: 0,
         MessageAttributes: {
             "gwmac": {
@@ -61,6 +70,10 @@ exports.handler = async (event, context) => {
             "coordinates": {
                 DataType: "String",
                 StringValue: data.coordinates === "" ? "N/A" : data.coordinates
+            },
+            "tags": {
+                DataType: "String.Array",
+                StringValue: JSON.stringify(tagIds)
             }
         },
         MessageBody: JSON.stringify(data.tags),
@@ -68,16 +81,20 @@ exports.handler = async (event, context) => {
     };
 
     try {
-        await sqs.sendMessage(params, function(err, data) {
-            if (err) {
-                console.log("Error", err);
-            } else {
-                console.log("Success", data.MessageId);
-            }
-        }).promise();
+        const snsParams = {
+            Message: params.MessageBody, 
+            Subject: "GWUPD",
+            TopicArn: process.env.TARGET_TOPIC,
+            MessageAttributes: params.MessageAttributes
+        };
+        const res = await sns.publish(snsParams).promise();
+        if (!res.MessageId) {
+            console.error(res)
+            return gatewayHelper.invalid()
+        }
     } catch (e) {
         console.error(e);
-        return gatewayHelper.invalid();
+        return gatewayHelper.invalid()
     }
 
     // Include the gateway request rate by default

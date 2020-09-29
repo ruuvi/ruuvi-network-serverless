@@ -1,4 +1,4 @@
-const validator = require('Helpers/validator');
+const validator = require('../Helpers/validator');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -63,7 +63,7 @@ const validateGatewaySignature = async (givenSignature, data, gatewayId, nonce, 
         return false;
     }
 
-    const dynamoHelper = require('Helpers/dynamoHelper');
+    const dynamoHelper = require('../Helpers/dynamoHelper');
 
     const gatewayData = await dynamoHelper.getGatewayData(gatewayId);
     if (!gatewayData || gatewayData.length === 0) {
