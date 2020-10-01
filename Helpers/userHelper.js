@@ -9,7 +9,7 @@ const mysql = require('serverless-mysql')({
 
 /**
  * Fetches a user by e-mail
- * 
+ *
  * @param {string} email E-mail address of the fetched user
  */
 const getByEmail = async (email) => {
@@ -26,26 +26,26 @@ const getByEmail = async (email) => {
         );
 
         if (existingUser.length === 1) {
-            return existingUser[0]
+            return existingUser[0];
         }
     } catch (err) {
-        console.error(err)
-        return null
-    } 
-    return null
+        console.error(err);
+        return null;
+    }
+    return null;
 }
 
 /**
  * Fetches a user by id
- * 
+ *
  * @param {int} id ID of the fetched user
  */
 const getById = async (id) => {
-    const idInt = parseInt(id)
+    const idInt = parseInt(id);
     if (!idInt) {
         return null;
     }
-    
+
     try {
         const existingUser = await mysql.query(
             `SELECT *
@@ -54,18 +54,18 @@ const getById = async (id) => {
         );
 
         if (existingUser.length === 1) {
-            return existingUser[0]
+            return existingUser[0];
         }
     } catch (err) {
-        console.error(err)
-        return null
-    } 
-    return null
+        console.error(err);
+        return null;
+    }
+    return null;
 }
 
 /**
  * Create user by e-mail
- * 
+ *
  * @param {string} email Email of the created user
  */
 const create = async (email) => {
@@ -73,7 +73,7 @@ const create = async (email) => {
     if (!validator.validateEmail(email)) {
         return null;
     }
-    
+
     try {
         results = await mysql.query(
             `INSERT INTO users (
@@ -84,25 +84,25 @@ const create = async (email) => {
         );
         return results.insertId;
     } catch (err) {
-        console.error(err)
-        return null
-    } 
+        console.error(err);
+        return null;
+    }
 }
 
 /**
  * Create user token for user
- * 
+ *
  * @param {int} userId ID of the user
  * @param {string} token Token to store
  */
 const createToken = async (userId) => {
-    const idInt = parseInt(userId)
+    const idInt = parseInt(userId);
     if (!idInt) {
         return null;
     }
 
     const guidHelper = require('../Helpers/guidHelper');
-    const token = guidHelper.guid(64)
+    const token = guidHelper.guid(64);
 
     try {
         results = await mysql.query(
@@ -117,8 +117,8 @@ const createToken = async (userId) => {
         return token;
     } catch (err) {
         console.error(err);
-        return null
-    } 
+        return null;
+    }
 }
 
 

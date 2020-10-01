@@ -8,12 +8,12 @@ const userHelper = require('../Helpers/userHelper');
 exports.handler = async (event, context) => {
     // TODO: This should no longer be required
     if (event.httpMethod === 'OPTIONS') {
-        return gatewayHelper.ok()
+        return gatewayHelper.ok();
     }
-    const eventBody = JSON.parse(event.body)
+    const eventBody = JSON.parse(event.body);
 
-    const valid = validator.hasKeys(eventBody, ['email']) && validator.validateEmail(eventBody.email)
-    const isReset = eventBody.hasOwnProperty('reset') && eventBody.reset === 1
+    const valid = validator.hasKeys(eventBody, ['email']) && validator.validateEmail(eventBody.email);
+    const isReset = eventBody.hasOwnProperty('reset') && eventBody.reset === 1;
 
     if (!valid) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid e-mail address.');
@@ -22,7 +22,7 @@ exports.handler = async (event, context) => {
     const userInfo = {
         email: eventBody.email,
         type: isReset ? 'reset' : 'registration'
-    }
+    };
 
     // If not resetting, check for user existing
     if (!isReset && await userHelper.getByEmail(eventBody.email)) {

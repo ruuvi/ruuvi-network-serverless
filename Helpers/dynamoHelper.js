@@ -61,7 +61,7 @@ const getDynamoBatch = (inputData) => {
 
 /**
  * Fetches data from a DynamoDB table.
- * 
+ *
  * @param {string} tableName Name of the table to fetch data from
  * @param {string} keyName Name of the key being fetched by
  * @param {mixed} keyValue Value to be scanned for
@@ -70,10 +70,10 @@ const getDynamoBatch = (inputData) => {
  * @param {bool} scanForward Forward or backward scan on the query
  * @returns {array} Array of items from the database
  */
-const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 1, scanForward = false) => {
+const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 10000, scanForward = false, rangeField = null, rangeStart = null, rangeEnd = null) => {
     const fieldsString = fieldNames.join(',')
-    
-    const params = {
+
+    let params = {
         TableName: tableName,
         KeyConditionExpression: keyName + ' = :id',
         ExpressionAttributeValues: {
@@ -83,6 +83,20 @@ const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 1, scanFo
         ScanIndexForward: scanForward,
         Limit: limit
     };
+
+    if (rangeField && (rangeStart || rangeEnd)) {
+        if (!rangeEnd) {
+            rangeEnd = Date.now();
+        }
+        if (!rangeStart) {
+            rangeStart = 0;;
+        }
+
+        params.ProjectionExpression = "#range between :since and :until";
+        params.ExpressionAttributeNames['#range'] = rangeField;
+        params.ExpressionAttributeValues[':since'] = since;
+        params.ExpressionAttributeValues[':until'] = until;
+    }
 
     const rawData = await ddb.query(params).promise();
     if (!rawData || !rawData.hasOwnProperty('Items')) {
@@ -115,12 +129,12 @@ const getSensorData = async (tag, count, startDate, endDate) => {
         ['SensorId', 'Coordinates', 'SensorData', 'GatewayMac', 'MeasurementTimestamp', 'RSSI'],
         count,
         false
-    )
+    );
 }
 
 /**
  * Fetches the information such as device id and device addr for a given gateway.
- * 
+ *
  * @param {string} gatewayId ID of the gateway data to fetch
  */
 const getGatewayData = async (gatewayId) => {
@@ -136,7 +150,7 @@ const getGatewayData = async (gatewayId) => {
         ['GatewayId', 'DeviceId', 'DeviceAddr'],
         1,
         false
-    )
+    );
 }
 
 /**

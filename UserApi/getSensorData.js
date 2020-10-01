@@ -22,17 +22,29 @@ exports.handler = async (event, context) => {
         }
     }
 
+    const query = event.queryStringParameters;
+
     // Validation
     if (
-        !event.queryStringParameters
-        || !event.queryStringParameters.hasOwnProperty('tag')
-        || !validator.validateToken(event.queryStringParameters.tag)) {
+        !query
+        || !query.hasOwnProperty('tag')
+        || !validator.validateToken(query.tag)) {
 
         // Invalid request
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid request format.');
     }
 
-    const tag = event.queryStringParameters.tag;
+    let sinceTime = null;
+    let untilTime = null;
+
+    if (query.hasOwnProperty('since') && parseInt(query.since)) {
+        sinceTime = parseInt(query.since);
+    }
+    if (query.hasOwnProperty('until') && parseInt(query.until)) {
+        untilTime = parseInt(query.until);
+    }
+
+    const tag = query.tag;
 
     if (user) {
         const hasClaim = await mysql.query(
@@ -53,7 +65,7 @@ exports.handler = async (event, context) => {
         }
     }
 
-    const dataPoints = await dynamoHelper.getSensorData(tag, process.env.DEFAULT_RESULTS);
+    const dataPoints = await dynamoHelper.getSensorData(tag, process.env.DEFAULT_RESULTS, sinceTime, untilTime);
     if (dataPoints.length === 0) {
         // Not found
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Not found.");

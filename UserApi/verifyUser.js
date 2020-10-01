@@ -22,12 +22,12 @@ exports.handler = async (event, context) => {
     }
 
     const token = event.queryStringParameters.token;
-    const decrypted = jwtHelper.verify(token, process.env.SIGNING_SECRET)
+    const decrypted = jwtHelper.verify(token, process.env.SIGNING_SECRET);
     if (!decrypted) {
         return gatewayHelper.unauthorizedResponse();
     }
-    const email = decrypted.email
-    const type  = decrypted.type
+    const email = decrypted.email;
+    const type  = decrypted.type;
     const isReset = type === 'reset';
 
     let userInfo = {
@@ -37,14 +37,14 @@ exports.handler = async (event, context) => {
 
     let userId = 0;
     if (!isReset) {
-        userId = await userHelper.create(email)
+        userId = await userHelper.create(email);
     } else {
-        const user = await userHelper.getByEmail(email)
-        userId = user.id ? user.id : 0
+        const user = await userHelper.getByEmail(email);
+        userId = user.id ? user.id : 0;
     }
 
     if (userId > 0) {
-        userInfo.accessToken = await userHelper.createToken(userId)
+        userInfo.accessToken = await userHelper.createToken(userId);
         if (userInfo.accessToken) {
             console.info("Successfully created token for user: " + userInfo.email);
         }

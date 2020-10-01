@@ -38,7 +38,7 @@ exports.handler = async (event, context) => {
     let results = null;
 
     try {
-        const targetUser = await userHelper.getByEmail(targetUserEmail)
+        const targetUser = await userHelper.getByEmail(targetUserEmail);
         if (!targetUser) {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "User not found.");
         }
