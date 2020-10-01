@@ -182,13 +182,9 @@ functions:
     handler: UserApi/requestRegistration.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http:
-          path: register
-          method: post
-          cors: true
       - httpApi:
           method: POST
-          path: /register-http
+          path: /register
     environment:
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
@@ -197,24 +193,20 @@ functions:
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       INVITATION_EXPIRATION_INTERVAL: ${self:custom.invitationExpirationInterval}
       SOURCE_EMAIL: ${self:custom.sourceEmail}
-      BASE_API_URL: 
+      BASE_API_URL:
         !Join
           - ''
           - - 'https://'
-            - !Ref ApiGatewayRestApi
+            - !Ref HttpApi
             - '.execute-api.'
             - ${opt:region, self:provider.region}
-            - '.amazonaws.com/'
-            - ${self:custom.stage}
+            - '.'
+            - !Ref AWS::URLSuffix
 
   verifyUser:
     handler: UserApi/verifyUser.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
-      - http:
-          path: verify
-          method: get
-          cors: true
       - httpApi:
           method: GET
           path: /verify
@@ -347,7 +339,7 @@ resources:
           - Arn
         Protocol: sqs
         RawMessageDelivery: 'true'
-    
+
     # Alert resources and policies
     GatewayAlertHandlerQueue:
       Type: AWS::SQS::Queue

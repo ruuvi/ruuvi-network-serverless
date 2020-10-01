@@ -29,7 +29,7 @@ exports.handler = async (event, context) => {
         || !validator.validateToken(event.queryStringParameters.tag)) {
 
         // Invalid request
-        return gatewayHelper.invalid();
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid request format.');
     }
 
     const tag = event.queryStringParameters.tag;

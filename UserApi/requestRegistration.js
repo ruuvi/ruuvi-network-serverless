@@ -16,7 +16,7 @@ exports.handler = async (event, context) => {
     const isReset = eventBody.hasOwnProperty('reset') && eventBody.reset === 1
 
     if (!valid) {
-        return gatewayHelper.invalid()
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid e-mail address.');
     }
 
     const userInfo = {
