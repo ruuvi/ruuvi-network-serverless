@@ -18,13 +18,13 @@ exports.handler = async (event, context) => {
         !validator.hasKeys(event.queryStringParameters, ['token'])
         || !validator.validateToken(event.queryStringParameters.token)
     ) {
-        return gatewayHelper.forbidden();
+        return gatewayHelper.unauthorizedResponse();
     }
-    
+
     const token = event.queryStringParameters.token;
     const decrypted = jwtHelper.verify(token, process.env.SIGNING_SECRET)
     if (!decrypted) {
-        return gatewayHelper.forbidden();
+        return gatewayHelper.unauthorizedResponse();
     }
     const email = decrypted.email
     const type  = decrypted.type
