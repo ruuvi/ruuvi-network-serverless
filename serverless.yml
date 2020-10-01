@@ -20,7 +20,7 @@ custom:
   dynamoGatewayWhitelist: ${self:custom.stage}-GatewayWhitelist
   dynamoAlerts: ${self:custom.stage}-SensorAlerts
 
-  sourceEmail: 'sami@muhwu.com'    #'otso@ruuvi.com'
+  sourceEmail: 'otso@ruuvi.com'
   invitationExpirationInterval: 15 # minutes after requested
   requireLoginForData: 0           # 1 for ENABLED
   gatewaySendRate: 60              # every X seconds
