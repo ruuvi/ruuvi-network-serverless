@@ -47,19 +47,26 @@ exports.handler = async (event, context) => {
     const tag = query.tag;
 
     if (user) {
-        const hasClaim = await mysql.query(
-            `SELECT claim_id
-            FROM claimed_tags
-            WHERE
-                user_id = ${user.id}
-                AND tag_id = '${tag}'
-            UNION
-            SELECT share_id
-            FROM shared_tags
-            WHERE
-                user_id = ${user.id}
-                AND tag_id = '${tag}'`
-        );
+        const hasClaim = await mysql.query({
+            sql: `SELECT claim_id
+                FROM claimed_tags
+                WHERE
+                    user_id = ?
+                    AND tag_id = ?
+                UNION
+                SELECT share_id
+                FROM shared_tags
+                WHERE
+                    user_id = ?
+                    AND tag_id = ?`,
+            timeout: 1000,
+            values: [
+                user.id,
+                tag,
+                user.id,
+                tag
+            ]
+        });
         if (hasClaim.length === 0) {
             return gatewayHelper.forbiddenResponse();
         }

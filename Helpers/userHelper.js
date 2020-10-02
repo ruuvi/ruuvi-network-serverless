@@ -19,11 +19,11 @@ const getByEmail = async (email) => {
     }
 
     try {
-        const existingUser = await mysql.query(
-            `SELECT *
-            FROM users
-            WHERE email = '${email}'`
-        );
+        const existingUser = await mysql.query({
+            sql: `SELECT * FROM users WHERE email = ?`,
+            timeout: 10000,
+            values: [email]
+        });
 
         if (existingUser.length === 1) {
             return existingUser[0];
@@ -47,11 +47,11 @@ const getById = async (id) => {
     }
 
     try {
-        const existingUser = await mysql.query(
-            `SELECT *
-            FROM users
-            WHERE id = ${id}`
-        );
+        const existingUser = await mysql.query({
+            sql: `SELECT * FROM users WHERE id = ?`,
+            timeout: 1000,
+            values: [idInt]
+        });
 
         if (existingUser.length === 1) {
             return existingUser[0];
@@ -75,13 +75,11 @@ const create = async (email) => {
     }
 
     try {
-        results = await mysql.query(
-            `INSERT INTO users (
-                email
-            ) VALUES (
-                '${email}'
-            );`
-        );
+        results = await mysql.query({
+            sql: `INSERT INTO users (email) VALUES (?);`,
+            timeout: 1000,
+            values: [email]
+        });
         return results.insertId;
     } catch (err) {
         console.error(err);
@@ -105,15 +103,11 @@ const createToken = async (userId) => {
     const token = guidHelper.guid(64);
 
     try {
-        results = await mysql.query(
-            `INSERT INTO user_tokens (
-                user_id,
-                access_token
-            ) VALUES (
-                ${idInt},
-                '${token}'
-            );`
-        );
+        results = await mysql.query({
+            sql: `INSERT INTO user_tokens (user_id, access_token) VALUES (?, ?);`,
+            timeout: 1000,
+            values: [idInt, token]
+        });
         return token;
     } catch (err) {
         console.error(err);

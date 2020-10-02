@@ -16,19 +16,21 @@ exports.handler = async (event, context) => {
         return gatewayHelper.unauthorizedResponse();
     }
 
-    const tags = await mysql.query(
-        `SELECT
-            tag_id AS Tag,
-            true AS Owner
-        FROM claimed_tags
-        WHERE user_id = ${user.id}
-        UNION
-        SELECT
-            tag_id AS Tag,
-            false AS Owner
-        FROM shared_tags
-        WHERE user_id = ${user.id}`
-    );
+    const tags = await mysql.query({
+        sql: `SELECT
+                tag_id AS Tag,
+                true AS Owner
+            FROM claimed_tags
+            WHERE user_id = ?
+            UNION
+            SELECT
+                tag_id AS Tag,
+                false AS Owner
+            FROM shared_tags
+            WHERE user_id = ?`,
+        timeout: 1000,
+        values: [user.id, user.id]
+    });
 
     return gatewayHelper.successResponse({
         email: user.email,

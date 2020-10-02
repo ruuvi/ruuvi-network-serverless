@@ -4,15 +4,6 @@ const guidHelper = require('../Helpers/guidHelper');
 const jwtHelper = require('../Helpers/JWTHelper');
 const userHelper = require('../Helpers/userHelper');
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD
-    }
-});
-
 exports.handler = async (event, context) => {
     if (
         !validator.hasKeys(event.queryStringParameters, ['token'])
@@ -32,7 +23,8 @@ exports.handler = async (event, context) => {
 
     let userInfo = {
         email: email,
-        accessToken: null
+        accessToken: null,
+        newUser: isReset ? false : true
     };
 
     let userId = 0;

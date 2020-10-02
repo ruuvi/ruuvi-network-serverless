@@ -45,19 +45,21 @@ exports.handler = async (event, context) => {
         const targetUserId = targetUser.id;
 
         // Currently Enforces sharing restrictions on database level
-        results = await mysql.query(
-            `INSERT INTO shared_tags (
-                user_id,
-                tag_id
-            ) SELECT
-                ${targetUserId},
-                tag_id
-            FROM claimed_tags
-            WHERE
-                user_id = ${user.id}
-                AND user_id != ${targetUserId}
-                AND tag_id = '${tag}'`
-        );
+        results = await mysql.query({
+            sql: `INSERT INTO shared_tags (
+                    user_id,
+                    tag_id
+                ) SELECT
+                    ?,
+                    tag_id
+                FROM claimed_tags
+                WHERE
+                    user_id = ?
+                    AND user_id != ?
+                    AND tag_id = ?`,
+            timeout: 1000,
+            values: [targetUserId, user.id, targetUserId, tag]
+        });
 
         if (results.insertId) {
             // Success

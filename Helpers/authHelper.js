@@ -35,13 +35,15 @@ const authorizedUser = async (headers) => {
         return null;
     }
 
-    let results = await mysql.query(
-        `SELECT users.*
-        FROM users
-        INNER JOIN user_tokens ut ON ut.user_id = users.id
-        WHERE ut.access_token = '${token}'
-        LIMIT 1;`
-    );
+    let results = await mysql.query({
+        sql: `SELECT users.*
+            FROM users
+            INNER JOIN user_tokens ut ON ut.user_id = users.id
+            WHERE ut.access_token = ?
+            LIMIT 1;`,
+        timeout: 1000,
+        values: [token]
+    });
 
     if (results.length === 0) {
         return null;
@@ -51,7 +53,7 @@ const authorizedUser = async (headers) => {
 
 /**
  * Validates a given signature for a gateway
- * 
+ *
  * @param {string} givenSignature Signature to validate
  * @param {mixed} data Request data to validate
  * @param {string} gatewayId Gateway id to validate
@@ -76,7 +78,7 @@ const validateGatewaySignature = async (givenSignature, data, gatewayId, nonce, 
 
 /**
  * Validates the given signature
- * 
+ *
  * @param {string} givenSignature Signature to validate
  * @param {mixed} data Payload to validate
  * @param {integer} timestamp Unix Timestamp of the signature
@@ -100,7 +102,7 @@ const validateSignature = (givenSignature, data, nonce, timestamp, maxAge, secre
 
 /**
  * Creates a signature for the given payload with the parameters.
- * 
+ *
  * @param {mixed} data String or array representing the payload
  * @param {string} nonce Random nonce
  * @param {integer} timestamp Unix timestamp integer
@@ -124,7 +126,7 @@ const createSignature = (data, nonce, timestamp, secret) => {
 module.exports = {
     /* User */
     authorizedUser,
-    
+
     /* Signature */
     validateSignature,
     createSignature,

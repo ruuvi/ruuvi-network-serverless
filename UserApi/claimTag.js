@@ -29,15 +29,17 @@ exports.handler = async (event, context) => {
     let results = null;
 
     try {
-        results = await mysql.query(
-            `INSERT INTO claimed_tags (
-                user_id,
-                tag_id
-            ) VALUES (
-                ${user.id},
-                '${tag}'
-            );`
-        );
+        results = await mysql.query({
+            sql: `INSERT INTO claimed_tags (
+                    user_id,
+                    tag_id
+                ) VALUES (
+                    ?,
+                    ?
+                );`,
+            timeout: 1000,
+            values: [user.id, tag]
+        });
 
         if (results.insertId) {
             // Success
