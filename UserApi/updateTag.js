@@ -38,8 +38,6 @@ exports.handler = async (event, context) => {
 		name = eventBody.name;
 	}
 
-	let changed = false;
-
 	try {
         results = await mysql.query({
 			sql: `UPDATE tags SET name = ? WHERE tag_id = ? AND owner_id = ?`,
@@ -51,10 +49,6 @@ exports.handler = async (event, context) => {
 		}
         await mysql.end();
     } catch (e) {
-        if (e.code === 'ER_DUP_ENTRY') {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, "Tag already claimed.");
-        }
-
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
     }
 
