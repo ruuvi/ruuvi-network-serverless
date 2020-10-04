@@ -21,7 +21,7 @@ exports.handler = async (event, context) => {
     const eventBody = JSON.parse(event.body);
 
     if (!eventBody || !validator.hasKeys(eventBody, ['tag', 'user'])) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing tag or user_id");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing tag or e-mail.");
     }
 
     const tag = eventBody.tag;
@@ -52,10 +52,10 @@ exports.handler = async (event, context) => {
                 ) SELECT
                     ?,
                     tag_id
-                FROM claimed_tags
+                FROM tags
                 WHERE
-                    user_id = ?
-                    AND user_id != ?
+                    owner_id = ?
+                    AND owner_id != ?
                     AND tag_id = ?`,
             timeout: 1000,
             values: [targetUserId, user.id, targetUserId, tag]

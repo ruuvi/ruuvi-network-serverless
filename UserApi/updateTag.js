@@ -26,22 +26,20 @@ exports.handler = async (event, context) => {
 
     const tag = eventBody.tag;
 
-    let results = null;
-    let tagName = validator.hasKeys(eventBody, ['name']) ? eventBody.name : '';
+	let name = null;
 
-    try {
+	if (!validator.hasKeys(eventBody, ['name']) && eventBody.name) {
+		name = eventBody.name;
+	}
+	if (!validator.hasKeys(eventBody, 'picture')) {
+		// Profile image handling
+	}
+
+	try {
         results = await mysql.query({
-            sql: `INSERT INTO tags (
-                    owner_id,
-                    tag_id,
-                    name
-                ) VALUES (
-                    ?,
-                    ?,
-                    ?
-                );`,
+			sql: `UPDATE tags SET name = ? WHERE id = ?`,
             timeout: 1000,
-            values: [user.id, tag, tagName]
+            values: [name, tag]
         });
 
         if (results.insertId) {

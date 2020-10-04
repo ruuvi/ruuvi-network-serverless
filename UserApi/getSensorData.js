@@ -48,10 +48,10 @@ exports.handler = async (event, context) => {
 
     if (user) {
         const hasClaim = await mysql.query({
-            sql: `SELECT claim_id
-                FROM claimed_tags
+            sql: `SELECT id
+                FROM tags
                 WHERE
-                    user_id = ?
+                    owner_id = ?
                     AND tag_id = ?
                 UNION
                 SELECT share_id

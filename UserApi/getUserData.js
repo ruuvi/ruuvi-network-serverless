@@ -20,8 +20,8 @@ exports.handler = async (event, context) => {
         sql: `SELECT
                 tag_id AS Tag,
                 true AS Owner
-            FROM claimed_tags
-            WHERE user_id = ?
+            FROM tags
+            WHERE owner_id = ?
             UNION
             SELECT
                 tag_id AS Tag,
