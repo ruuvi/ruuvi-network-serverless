@@ -46,8 +46,8 @@ exports.handler = async (event, context) => {
             timeout: 1000,
             values: [name, tag, user.id]
         });
-		if (results.affectedRows === 1) {
-			changed = true;
+		if (results.affectedRows !== 1) {
+			return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Tag not claimed or found. Data not updated.");
 		}
         await mysql.end();
     } catch (e) {
@@ -59,6 +59,6 @@ exports.handler = async (event, context) => {
     }
 
     return gatewayHelper.successResponse({
-		updated: changed ? 1 : 0
+        name: name
     });
 }

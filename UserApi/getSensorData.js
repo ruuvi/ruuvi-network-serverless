@@ -76,8 +76,7 @@ exports.handler = async (event, context) => {
 
     // Format data for the API
     let data = [];
-    dataPoints.foreach((item) => {
-        // ['SensorId', 'Coordinates', 'SensorData', 'GatewayMac', 'MeasurementTimestamp', 'RSSI']
+    dataPoints.forEach((item) => {
         data.push({
             sensor: item.SensorId,
             coordinates: item.Coordinates,

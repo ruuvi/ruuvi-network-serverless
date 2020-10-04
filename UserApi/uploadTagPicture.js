@@ -75,7 +75,7 @@ exports.handler = async (event, context) => {
             timeout: 1000,
             values: [finalURL, tag, user.id]
         });
-		if (results.affectedRows === 1) {
+		if (results.affectedRows !== 1) {
             return gatewayHelper.errorResponse(HTTPCodes.NOT_FOUND, 'Tag not owned or found.');
 		}
         await mysql.end();
