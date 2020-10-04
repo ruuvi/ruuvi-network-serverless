@@ -7,10 +7,12 @@
     "doc": "doc"
   },
   "dependencies": {
+    "axios": "^0.20.0",
     "jsonwebtoken": "^8.5.1",
     "loadtest": "^5.0.4",
     "serverless-dynamodb-autoscaling": "^0.6.2",
     "serverless-mysql": "^1.5.4",
+    "uuid": "^8.3.1",
     "yargs": "^15.4.1"
   },
   "devDependencies": {

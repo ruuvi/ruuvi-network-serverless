@@ -12,6 +12,12 @@ const mysql = require('serverless-mysql')({
     }
 });
 
+/**
+ * Updates tag profile (currently name)
+ *
+ * @param {object} event
+ * @param {object} context
+ */
 exports.handler = async (event, context) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
@@ -28,25 +34,21 @@ exports.handler = async (event, context) => {
 
 	let name = null;
 
-	if (!validator.hasKeys(eventBody, ['name']) && eventBody.name) {
+	if (validator.hasKeys(eventBody, ['name']) && eventBody.name) {
 		name = eventBody.name;
 	}
-	if (!validator.hasKeys(eventBody, 'picture')) {
-		// Profile image handling
-	}
+
+	let changed = false;
 
 	try {
         results = await mysql.query({
-			sql: `UPDATE tags SET name = ? WHERE id = ?`,
+			sql: `UPDATE tags SET name = ? WHERE tag_id = ? AND owner_id = ?`,
             timeout: 1000,
-            values: [name, tag]
+            values: [name, tag, user.id]
         });
-
-        if (results.insertId) {
-            // Success
-        }
-
-        // Run clean up function
+		if (results.affectedRows === 1) {
+			changed = true;
+		}
         await mysql.end();
     } catch (e) {
         if (e.code === 'ER_DUP_ENTRY') {
@@ -57,6 +59,6 @@ exports.handler = async (event, context) => {
     }
 
     return gatewayHelper.successResponse({
-        tag: tag
+		updated: changed ? 1 : 0
     });
 }
