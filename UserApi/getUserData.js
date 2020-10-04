@@ -18,15 +18,15 @@ exports.handler = async (event, context) => {
 
     const tags = await mysql.query({
         sql: `SELECT
-                tag_id AS Tag,
-                true AS Owner,
+                tag_id AS tag,
+                true AS owner,
                 picture AS picture
             FROM tags
             WHERE owner_id = ?
             UNION
             SELECT
-                tag_id AS Tag,
-                false AS Owner,
+                tag_id AS tag,
+                false AS owner,
                 '' AS picture
             FROM shared_tags
             WHERE user_id = ?`,
