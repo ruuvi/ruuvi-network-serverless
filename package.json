@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "axios": "^0.20.0",
+    "bcrypt": "^5.0.0",
+    "dateformat": "^3.0.3",
     "jsonwebtoken": "^8.5.1",
     "loadtest": "^5.0.4",
     "serverless-dynamodb-autoscaling": "^0.6.2",

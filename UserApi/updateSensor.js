@@ -13,7 +13,7 @@ const mysql = require('serverless-mysql')({
 });
 
 /**
- * Updates tag profile (currently name)
+ * Updates sensor profile (currently name)
  *
  * @param {object} event
  * @param {object} context
@@ -26,11 +26,11 @@ exports.handler = async (event, context) => {
 
     const eventBody = JSON.parse(event.body);
 
-    if (!eventBody || !validator.hasKeys(eventBody, ['tag'])) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing tag");
+    if (!eventBody || !validator.hasKeys(eventBody, ['sensor'])) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing sensor");
     }
 
-    const tag = eventBody.tag;
+    const sensor = eventBody.sensor;
 
 	let name = null;
 
@@ -40,12 +40,17 @@ exports.handler = async (event, context) => {
 
 	try {
         results = await mysql.query({
-			sql: `UPDATE tags SET name = ? WHERE tag_id = ? AND owner_id = ?`,
+            sql: `UPDATE sensors
+                    SET name = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                  WHERE
+                    sensor_id = ?
+                    AND owner_id = ?`,
             timeout: 1000,
-            values: [name, tag, user.id]
+            values: [name, sensor, user.id]
         });
 		if (results.affectedRows !== 1) {
-			return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Tag not claimed or found. Data not updated.");
+			return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not claimed or found. Data not updated.");
 		}
         await mysql.end();
     } catch (e) {

@@ -20,20 +20,20 @@ exports.handler = async (event, context) => {
 
     const eventBody = JSON.parse(event.body);
 
-    if (!eventBody || !validator.hasKeys(eventBody, ['tag'])) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing tag");
+    if (!eventBody || !validator.hasKeys(eventBody, ['sensor'])) {
+        return gatewayHelper.errorResponse(HTTPCodes.INVALID, "Missing sensor");
     }
 
-    const tag = eventBody.tag;
+    const sensor = eventBody.sensor;
 
     let results = null;
-    let tagName = validator.hasKeys(eventBody, ['name']) ? eventBody.name : '';
+    let sensorName = validator.hasKeys(eventBody, ['name']) ? eventBody.name : '';
 
     try {
         results = await mysql.query({
-            sql: `INSERT INTO tags (
+            sql: `INSERT INTO sensors (
                     owner_id,
-                    tag_id,
+                    sensor_id,
                     name
                 ) VALUES (
                     ?,
@@ -41,7 +41,7 @@ exports.handler = async (event, context) => {
                     ?
                 );`,
             timeout: 1000,
-            values: [user.id, tag, tagName]
+            values: [user.id, sensor, sensorName]
         });
 
         if (results.insertId) {
@@ -52,13 +52,13 @@ exports.handler = async (event, context) => {
         await mysql.end();
     } catch (e) {
         if (e.code === 'ER_DUP_ENTRY') {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, "Tag already claimed.");
+            return gatewayHelper.errorResponse(HTTPCodes.CONFLICT, "Sensor already claimed.");
         }
 
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
+        return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.");
     }
 
     return gatewayHelper.successResponse({
-        tag: tag
+        sensor: sensor
     });
 }

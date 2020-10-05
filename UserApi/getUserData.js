@@ -16,19 +16,19 @@ exports.handler = async (event, context) => {
         return gatewayHelper.unauthorizedResponse();
     }
 
-    const tags = await mysql.query({
+    const sensors = await mysql.query({
         sql: `SELECT
-                tag_id AS tag,
+                sensor_id AS sensor,
                 true AS owner,
                 picture AS picture
-            FROM tags
+            FROM sensors
             WHERE owner_id = ?
             UNION
             SELECT
-                tag_id AS tag,
+                sensor_id AS sensor,
                 false AS owner,
                 '' AS picture
-            FROM shared_tags
+            FROM shared_sensors
             WHERE user_id = ?`,
         timeout: 1000,
         values: [user.id, user.id]
@@ -36,6 +36,6 @@ exports.handler = async (event, context) => {
 
     return gatewayHelper.successResponse({
         email: user.email,
-        tags: tags
+        sensors: sensors
     });
 }

@@ -19,7 +19,7 @@ custom:
   dynamoSensorData: ${self:custom.stage}-SensorData # Main Sensor data
   dynamoGatewayWhitelist: ${self:custom.stage}-GatewayWhitelist
   dynamoAlerts: ${self:custom.stage}-SensorAlerts
-  tagProfileBucket: ${self:custom.stage}-tag-profile-pictures
+  sensorProfileBucket: ${self:custom.stage}-sensor-profile-pictures
 
   sourceEmail: 'otso@ruuvi.com'
   invitationExpirationInterval: 5  # minutes after requested
@@ -117,7 +117,7 @@ provider:
     - Effect: "Allow"
       Action:
         - "s3:*"
-      Resource: "arn:aws:s3:::${self:custom.tagProfileBucket}/*"
+      Resource: "arn:aws:s3:::${self:custom.sensorProfileBucket}/*"
 
 # Lambdas
 functions:
@@ -223,8 +223,8 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
-  claimTag:
-    handler: UserApi/claimTag.handler
+  claimSensor:
+    handler: UserApi/claimSensor.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - httpApi:
@@ -238,8 +238,8 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
-  shareTag:
-    handler: UserApi/shareTag.handler
+  shareSensor:
+    handler: UserApi/shareSensor.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
       - httpApi:
@@ -253,9 +253,9 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
-  # Tag profile + picture updates
-  updateTag:
-    handler: UserApi/updateTag.handler
+  # Sensor profile + picture updates
+  updateSensor:
+    handler: UserApi/updateSensor.handler
     events:
       - httpApi:
           method: POST
@@ -267,8 +267,8 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
-  uploadTagPicture:
-    handler: UserApi/uploadTagPicture.handler
+  uploadSensorPicture:
+    handler: UserApi/uploadSensorPicture.handler
     events:
       - httpApi:
           method: POST
@@ -279,12 +279,12 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
-      BUCKET_NAME: ${self:custom.tagProfileBucket}
+      BUCKET_NAME: ${self:custom.sensorProfileBucket}
       BUCKET_URL:
         !Join
           - ''
           - - 'https://'
-            - ${self:custom.tagProfileBucket}
+            - ${self:custom.sensorProfileBucket}
             - '.s3.'
             - ${opt:region, self:provider.region}
             - '.'
@@ -413,7 +413,7 @@ resources:
           - Arn
         Protocol: sqs
         RawMessageDelivery: 'true'
-        FilterPolicy: "{\"tags\": [\"alert\", \"demo\"]}"
+        FilterPolicy: "{\"sensors\": [\"alert\", \"demo\"]}"
     DynamoGatewayWhitelist:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -451,7 +451,7 @@ resources:
     UploadBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: ${self:custom.tagProfileBucket}
+        BucketName: ${self:custom.sensorProfileBucket}
         AccessControl: PublicRead
         CorsConfiguration:
           CorsRules:

@@ -20,19 +20,19 @@ exports.handler = async (event, context) => {
 
     const eventBody = JSON.parse(event.body);
 
-    if (!eventBody || !validator.hasKeys(eventBody, ['tag', 'user'])) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing tag or e-mail.");
+    if (!eventBody || !validator.hasKeys(eventBody, ['sensor', 'user'])) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing sensor or e-mail.");
     }
 
-    const tag = eventBody.tag;
+    const sensor = eventBody.sensor;
     const targetUserEmail = eventBody.user;
 
     if (!validator.validateEmail(targetUserEmail)) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid E-mail given.");
     }
 
-    if (!validator.validateToken(tag)) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid Tag ID given.");
+    if (!validator.validateAlphaNumeric(sensor)) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid sensor ID given.");
     }
 
     let results = null;
@@ -46,38 +46,38 @@ exports.handler = async (event, context) => {
 
         // Currently Enforces sharing restrictions on database level
         results = await mysql.query({
-            sql: `INSERT INTO shared_tags (
+            sql: `INSERT INTO shared_sensors (
                     user_id,
-                    tag_id
+                    sensor_id
                 ) SELECT
                     ?,
-                    tag_id
-                FROM tags
+                    sensor_id
+                FROM sensors
                 WHERE
                     owner_id = ?
                     AND owner_id != ?
-                    AND tag_id = ?`,
+                    AND sensor_id = ?`,
             timeout: 1000,
-            values: [targetUserId, user.id, targetUserId, tag]
+            values: [targetUserId, user.id, targetUserId, sensor]
         });
 
         if (results.insertId) {
             // Success
         } else {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Unable to share tag.");
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Unable to share sensor.");
         }
 
         // Run clean up function
         await mysql.end();
     } catch (e) {
         if (e.code === 'ER_DUP_ENTRY') {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, "Tag already shared to user.");
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, "Sensor already shared to user.");
         }
 
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
     }
 
     return gatewayHelper.successResponse({
-        tag: tag
+        sensor: sensor
     });
 }

@@ -1,18 +1,31 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const validator = require('../Helpers/validator');
-const guidHelper = require('../Helpers/guidHelper');
 const jwtHelper = require('../Helpers/JWTHelper');
 const userHelper = require('../Helpers/userHelper');
+const sqlHelper = require('../Helpers/sqlHelper');
+
+const dateFormat = require( 'dateformat' );
 
 exports.handler = async (event, context) => {
     if (
         !validator.hasKeys(event.queryStringParameters, ['token'])
-        || !validator.validateToken(event.queryStringParameters.token)
+        || !validator.validateAlphaNumeric(event.queryStringParameters.token)
     ) {
         return gatewayHelper.unauthorizedResponse();
     }
 
-    const token = event.queryStringParameters.token;
+    const short = event.queryStringParameters.token;
+    const row = await sqlHelper.fetchSingle('short_token', short, 'reset_tokens');
+    if (row === null || row.used_at !== null) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.FORBIDDEN, "Code already used.");
+    }
+
+    // Set the code as used
+    var current = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
+    sqlHelper.setValue('used_at', current, 'reset_tokens', 'short_token', short);
+
+    // Validate the long token data
+    const token = row.long_token;
     const decrypted = jwtHelper.verify(token, process.env.SIGNING_SECRET);
     if (!decrypted) {
         return gatewayHelper.unauthorizedResponse();

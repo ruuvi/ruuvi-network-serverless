@@ -1,3 +1,5 @@
+const mysqlHelper = require('../Helpers/sqlHelper');
+
 const mysql = require('serverless-mysql')({
     config: {
         host     : process.env.DATABASE_ENDPOINT,
@@ -18,21 +20,7 @@ const getByEmail = async (email) => {
         return null;
     }
 
-    try {
-        const existingUser = await mysql.query({
-            sql: `SELECT * FROM users WHERE email = ?`,
-            timeout: 10000,
-            values: [email]
-        });
-
-        if (existingUser.length === 1) {
-            return existingUser[0];
-        }
-    } catch (err) {
-        console.error(err);
-        return null;
-    }
-    return null;
+    return await mysqlHelper.fetchSingle('email', email, 'users');
 }
 
 /**
@@ -46,21 +34,7 @@ const getById = async (id) => {
         return null;
     }
 
-    try {
-        const existingUser = await mysql.query({
-            sql: `SELECT * FROM users WHERE id = ?`,
-            timeout: 1000,
-            values: [idInt]
-        });
-
-        if (existingUser.length === 1) {
-            return existingUser[0];
-        }
-    } catch (err) {
-        console.error(err);
-        return null;
-    }
-    return null;
+    return await mysqlHelper.fetchSingle('id', idInt, 'users');
 }
 
 /**
@@ -99,16 +73,23 @@ const createToken = async (userId) => {
         return null;
     }
 
-    const guidHelper = require('../Helpers/guidHelper');
-    const token = guidHelper.guid(64);
+    // Generate new token
+    const tokenGenerator = require('./tokenGenerator');
+    const tokenData = tokenGenerator.create(64, userId);
+
+    // Hash the token
+    const saltRounds = 10;
+    const bcrypt = require('bcrypt');
+    const hash = bcrypt.hashSync(tokenData.token, saltRounds);
 
     try {
         results = await mysql.query({
             sql: `INSERT INTO user_tokens (user_id, access_token) VALUES (?, ?);`,
             timeout: 1000,
-            values: [idInt, token]
+            values: [idInt, hash]
         });
-        return token;
+
+        return tokenData.composite;
     } catch (err) {
         console.error(err);
         return null;
