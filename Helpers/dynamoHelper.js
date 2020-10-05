@@ -75,7 +75,10 @@ const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 10000, sc
 
     let params = {
         TableName: tableName,
-        KeyConditionExpression: keyName + ' = :id',
+        KeyConditionExpression: '#id = :id',
+        ExpressionAttributeNames: {
+            "#id": keyName
+        },
         ExpressionAttributeValues: {
             ":id": keyValue
         },
@@ -89,14 +92,16 @@ const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 10000, sc
             rangeEnd = Date.now();
         }
         if (!rangeStart) {
-            rangeStart = 0;;
+            rangeStart = 0;
         }
 
-        params.ProjectionExpression = "#range between :since and :until";
+        params.KeyConditionExpression += " AND #range BETWEEN :since AND :until";
         params.ExpressionAttributeNames['#range'] = rangeField;
-        params.ExpressionAttributeValues[':since'] = since;
-        params.ExpressionAttributeValues[':until'] = until;
+
+        params.ExpressionAttributeValues[':since'] = rangeStart;
+        params.ExpressionAttributeValues[':until'] = rangeEnd;
     }
+    console.log(params);
 
     const rawData = await ddb.query(params).promise();
     if (!rawData || !rawData.hasOwnProperty('Items')) {
@@ -128,7 +133,10 @@ const getSensorData = async (tag, count, startDate, endDate) => {
         tag,
         ['SensorId', 'Coordinates', 'SensorData', 'GatewayMac', 'MeasurementTimestamp', 'RSSI'],
         count,
-        false
+        false,
+        'MeasurementTimestamp',
+        startDate,
+        endDate
     );
 }
 

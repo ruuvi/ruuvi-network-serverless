@@ -19,10 +19,11 @@ custom:
   dynamoSensorData: ${self:custom.stage}-SensorData # Main Sensor data
   dynamoGatewayWhitelist: ${self:custom.stage}-GatewayWhitelist
   dynamoAlerts: ${self:custom.stage}-SensorAlerts
+  tagProfileBucket: ${self:custom.stage}-tag-profile-pictures
 
   sourceEmail: 'otso@ruuvi.com'
-  invitationExpirationInterval: 15 # minutes after requested
-  requireLoginForData: 0           # 1 for ENABLED
+  invitationExpirationInterval: 5  # minutes after requested
+  requireLoginForData: 1           # 1 for ENABLED
   gatewaySendRate: 60              # every X seconds
   gatewayEnforceSignature: 0       # 1 for ENABLED
   gatewayRequestTTL: 10000         # ms
@@ -113,6 +114,10 @@ provider:
         - "ses:SendEmail"
         - "ses:SendRawEmail"
       Resource: "*"
+    - Effect: "Allow"
+      Action:
+        - "s3:*"
+      Resource: "arn:aws:s3:::${self:custom.tagProfileBucket}/*"
 
 # Lambdas
 functions:
@@ -248,6 +253,42 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
+  # Tag profile + picture updates
+  updateTag:
+    handler: UserApi/updateTag.handler
+    events:
+      - httpApi:
+          method: POST
+          path: /update
+    environment:
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+
+  uploadTagPicture:
+    handler: UserApi/uploadTagPicture.handler
+    events:
+      - httpApi:
+          method: POST
+          path: /upload
+    environment:
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      BUCKET_NAME: ${self:custom.tagProfileBucket}
+      BUCKET_URL:
+        !Join
+          - ''
+          - - 'https://'
+            - ${self:custom.tagProfileBucket}
+            - '.s3.'
+            - ${opt:region, self:provider.region}
+            - '.'
+            - !Ref AWS::URLSuffix
   # NOTE: Workaround for CORS preflight requests
 #  corsOptions:
 #    handler: UserApi/corsHelper.handler
@@ -407,3 +448,19 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 5 # Defaults, using auto-scaling by default
           WriteCapacityUnits: 5
+    UploadBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.tagProfileBucket}
+        AccessControl: PublicRead
+        CorsConfiguration:
+          CorsRules:
+          - AllowedMethods:
+            - GET
+            - PUT
+            - POST
+            - HEAD
+            AllowedOrigins:
+            - "*"
+            AllowedHeaders:
+            - "*"

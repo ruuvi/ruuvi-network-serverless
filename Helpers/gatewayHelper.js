@@ -1,7 +1,7 @@
 /**
  * Amazon API Gateway formatted response
  */
-const response = (code, body, headers) => {
+const response = (code, body, headers, internalCode, internalSubCode) => {
     // Resolve body to a string
     if (body !== null && typeof(body) !== "string") {
         body = JSON.stringify(body, null, 4); // 4 = pretty-print depth (TODO: Change to 0 eventually)
@@ -23,11 +23,21 @@ const response = (code, body, headers) => {
         ...corsHeaders
     };
 
-    return {
+    // Construct response
+    let val = {
         'statusCode': code !== null ? code : 200,
         'headers': completeHeaders,
         'body': body
     };
+
+    if (internalCode) {
+        val.code = internalCode;
+    }
+    if (internalSubCode) {
+        val.sub_code = internalSubCode;
+    }
+
+    return val;
 };
 
 /**
@@ -50,12 +60,12 @@ const RequestRateHeader = 'x-ruuvi-gateway-rate';
 // Helpers for shorter syntax
 const ok = (body, headers) => response(HTTPCodes.OK, body, headers);
 
-const invalid = (headers, body) => response(HTTPCodes.INVALID, body, headers);
-const forbidden = (headers, body) => response(HTTPCodes.FORBIDDEN, body, headers);
-const notFound = (headers, body) => response(HTTPCodes.NOT_FOUND, body, headers);
-const expired = (headers, body) => response(HTTPCodes.EXPIRED, body, headers);
+const invalid = (headers, body, internalCode, internalSubCode) => response(HTTPCodes.INVALID, body, headers, internalCode, internalSubCode);
+const forbidden = (headers, body, internalCode, internalSubCode) => response(HTTPCodes.FORBIDDEN, body, headers, internalCode, internalSubCode);
+const notFound = (headers, body, internalCode, internalSubCode) => response(HTTPCodes.NOT_FOUND, body, headers, internalCode, internalSubCode);
+const expired = (headers, body, internalCode, internalSubCode) => response(HTTPCodes.EXPIRED, body, headers, internalCode, internalSubCode);
 
-const internal = (headers, body) => response(HTTPCodes.INVALID, body, headers);
+const internal = (headers, body, internalCode, internalSubCode) => response(HTTPCodes.INVALID, body, headers, internalCode, internalSubCode);
 
 /**
  * Helper method for logging errors on API calls.
@@ -78,7 +88,7 @@ const logAPIError = (code, errorMessage, errorData) => {
  * @param {object} errorData
  * @param {object} headers
  */
-const errorResponse = (code, errorMessage, errorData, headers) => {
+const errorResponse = (code, errorMessage, errorData, headers, internalCode, internalSubCode) => {
     logAPIError(code, errorMessage, errorData);
 
     if (code === HTTPCodes.OK) {
@@ -91,7 +101,7 @@ const errorResponse = (code, errorMessage, errorData, headers) => {
     if (errorData) {
         errorObject.data = errorData;
     }
-    return response(code, errorObject, headers);
+    return response(code, errorObject, headers, internalCode, internalSubCode);
 };
 
 /**

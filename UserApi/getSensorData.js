@@ -48,10 +48,10 @@ exports.handler = async (event, context) => {
 
     if (user) {
         const hasClaim = await mysql.query({
-            sql: `SELECT claim_id
-                FROM claimed_tags
+            sql: `SELECT id
+                FROM tags
                 WHERE
-                    user_id = ?
+                    owner_id = ?
                     AND tag_id = ?
                 UNION
                 SELECT share_id
@@ -73,14 +73,23 @@ exports.handler = async (event, context) => {
     }
 
     const dataPoints = await dynamoHelper.getSensorData(tag, process.env.DEFAULT_RESULTS, sinceTime, untilTime);
-    if (dataPoints.length === 0) {
-        // Not found
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Not found.");
-    }
+
+    // Format data for the API
+    let data = [];
+    dataPoints.forEach((item) => {
+        data.push({
+            sensor: item.SensorId,
+            coordinates: item.Coordinates,
+            data: item.SensorData,
+            gwmac: item.GatewayMac,
+            timestamp: item.MeasurementTimestamp,
+            rssi: item.RSSI
+        });
+    });
 
     return gatewayHelper.successResponse({
         sensor: tag,
-        total: dataPoints.length,
-        measurements: dataPoints
+        total: data.length,
+        measurements: data
     });
 };

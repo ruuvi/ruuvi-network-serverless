@@ -12,6 +12,12 @@ const mysql = require('serverless-mysql')({
     }
 });
 
+/**
+ * Updates tag profile (currently name)
+ *
+ * @param {object} event
+ * @param {object} context
+ */
 exports.handler = async (event, context) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
@@ -26,39 +32,27 @@ exports.handler = async (event, context) => {
 
     const tag = eventBody.tag;
 
-    let results = null;
-    let tagName = validator.hasKeys(eventBody, ['name']) ? eventBody.name : '';
+	let name = null;
 
-    try {
+	if (validator.hasKeys(eventBody, ['name']) && eventBody.name) {
+		name = eventBody.name;
+	}
+
+	try {
         results = await mysql.query({
-            sql: `INSERT INTO tags (
-                    owner_id,
-                    tag_id,
-                    name
-                ) VALUES (
-                    ?,
-                    ?,
-                    ?
-                );`,
+			sql: `UPDATE tags SET name = ? WHERE tag_id = ? AND owner_id = ?`,
             timeout: 1000,
-            values: [user.id, tag, tagName]
+            values: [name, tag, user.id]
         });
-
-        if (results.insertId) {
-            // Success
-        }
-
-        // Run clean up function
+		if (results.affectedRows !== 1) {
+			return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Tag not claimed or found. Data not updated.");
+		}
         await mysql.end();
     } catch (e) {
-        if (e.code === 'ER_DUP_ENTRY') {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, "Tag already claimed.");
-        }
-
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
     }
 
     return gatewayHelper.successResponse({
-        tag: tag
+        name: name
     });
 }
