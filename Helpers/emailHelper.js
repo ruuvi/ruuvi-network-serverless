@@ -27,8 +27,12 @@ const sendEmail = async (email, from, title, body) => {
     return ses.sendEmail(params).promise();
 };
 
-const sendEmailVerification = async (email, token, from) => {
-    const link = `${process.env.BASE_API_URL}/verify?token=${token}`;
+const sendEmailVerification = async (email, token, from, sourceDomain) => {
+    let domain = process.env.BASE_API_URL;
+    if (sourceDomain) {
+        domain = sourceDomain;
+    }
+    const link = `${domain}/verify?token=${token}`;
 
     // TODO: This would be nicer to maintain by SES templates
     const htmlBody = `
@@ -53,8 +57,12 @@ const sendEmailVerification = async (email, token, from) => {
     return sendEmail(email, from, "Ruuvi Account E-mail Confirmation", htmlBody);
 };
 
-const sendResetEmail = async (email, token, from) => {
-    const link = `${process.env.BASE_API_URL}/verify?token=${token}`;
+const sendResetEmail = async (email, token, from, sourceDomain) => {
+    let domain = process.env.BASE_API_URL;
+    if (sourceDomain) {
+        domain = sourceDomain;
+    }
+    const link = `${domain}/verify?token=${token}`;
 
     // TODO: This would be nicer to maintain by SES templates
     const htmlBody = `

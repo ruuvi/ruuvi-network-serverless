@@ -17,7 +17,7 @@ exports.handler = async (event, context) => {
     const short = event.queryStringParameters.token;
     const row = await sqlHelper.fetchSingle('short_token', short, 'reset_tokens');
     if (row === null || row.used_at !== null) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.FORBIDDEN, "Code already used.");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.FORBIDDEN, "Code used or expired.");
     }
 
     // Set the code as used
