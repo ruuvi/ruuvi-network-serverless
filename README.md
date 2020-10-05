@@ -26,12 +26,12 @@ Enjoy!
 ## Current Status
 
 ### Services and Limits
-- [ ] Apply to get out of SES Sandbox (if necessary)
+- [x] Apply to get out of SES Sandbox (if necessary)
 
 ### Receiver
 - [ ] CloudFront for Throttling (This might be built in)
 - [x] API Gateway forwards payloads to Receiver Lambda
-- [ ] Receiver Lambda authorizes request
+- [x] Receiver Lambda authorizes request
 - [x] Receiver Lambda validates request (rudimentary)
 - [x] Receiver relays data to SQS
 
@@ -41,10 +41,11 @@ Enjoy!
 
 ### Client API
 - [x] Register User
-- [x] Claim RuuviTag
-- [x] Share RuuviTag
+- [x] Claim sensor
+- [x] Share sensor
 - [x] Read Sensor Data (currently authorized with static Bearer string)
-- [ ] Advanced querying (by Date / etc)
+- [x] Update sensor information
+- [x] Advanced querying (by Date / etc)
 
 ### Cleaners / Archivers
 - [ ] Lambda to archive to S3

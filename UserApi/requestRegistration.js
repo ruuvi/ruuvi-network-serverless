@@ -1,9 +1,18 @@
-const guidHelper = require('../Helpers/guidHelper');
+const tokenGenerator = require('../Helpers/tokenGenerator');
 const gatewayHelper = require('../Helpers/gatewayHelper.js');
 const emailHelper = require('../Helpers/emailHelper');
 const validator = require('../Helpers/validator');
 const jwtHelper = require('../Helpers/JWTHelper');
 const userHelper = require('../Helpers/userHelper');
+
+const mysql = require('serverless-mysql')({
+    config: {
+        host     : process.env.DATABASE_ENDPOINT,
+        database : process.env.DATABASE_NAME,
+        user     : process.env.DATABASE_USERNAME,
+        password : process.env.DATABASE_PASSWORD
+    }
+});
 
 exports.handler = async (event, context) => {
     // TODO: This should no longer be required
@@ -29,12 +38,24 @@ exports.handler = async (event, context) => {
 
     try {
         const jwt = jwtHelper.sign(userInfo, process.env.SIGNING_SECRET, process.env.INVITATION_EXPIRATION_INTERVAL * 60);
+        const tokenData = tokenGenerator.create(6);
+        const short = tokenData.token.toUpperCase();
+
+        result = await mysql.query({
+            sql: `INSERT INTO reset_tokens (short_token, long_token) VALUES (?, ?)`,
+            timeout: 1000,
+            values: [short, jwt]
+        });
+
+        if (!result.insertId) {
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Unknown error occurred. (13)');
+        }
 
         let emailResult = {};
         if (userInfo.type === 'registration') {
-            emailResult = await emailHelper.sendEmailVerification(userInfo.email, jwt, process.env.SOURCE_EMAIL);
+            emailResult = await emailHelper.sendEmailVerification(userInfo.email, short, process.env.SOURCE_EMAIL, process.env.SOURCE_DOMAIN);
         } else if (userInfo.type === 'reset') {
-            emailResult = await emailHelper.sendResetEmail(userInfo.email, jwt, process.env.SOURCE_EMAIL);
+            emailResult = await emailHelper.sendResetEmail(userInfo.email, short, process.env.SOURCE_EMAIL, process.env.SOURCE_DOMAIN);
         }
         if (!emailResult.hasOwnProperty("MessageId")) {
             throw new Error("Error sending e-mail: " + emailResult);

@@ -24,20 +24,20 @@ exports.handler = async (event) => {
         const coordinates = messageAttributes.coordinates.stringValue;
         const timestamp = messageAttributes.timestamp.stringValue;
 
-        let tags = JSON.parse(body);
+        let sensors = JSON.parse(body);
 
-        Object.keys(tags).forEach(function(key) {
+        Object.keys(sensors).forEach(function(key) {
             // Dedupe
-            if (batchedIds.includes(key + "," + tags[key]['timestamp'])) {
+            if (batchedIds.includes(key + "," + sensors[key]['timestamp'])) {
                 return;
             }
-            tags[key].id = key;
-            tags[key].gwmac = gwmac;
-            tags[key].coordinates = coordinates;
-            tags[key].received = timestamp;
+            sensors[key].id = key;
+            sensors[key].gwmac = gwmac;
+            sensors[key].coordinates = coordinates;
+            sensors[key].received = timestamp;
 
-            flattenedData.push(tags[key]);
-            batchedIds.push(key + "," + tags[key]['timestamp']);
+            flattenedData.push(sensors[key]);
+            batchedIds.push(key + "," + sensors[key]['timestamp']);
 
             if (flattenedData.length >= 25) {
                uploadBatchPromises.push(sendBatch(flattenedData));

@@ -14,7 +14,7 @@ const sendEmail = async (email, from, title, body) => {
                 Html: {
                     Charset: 'UTF-8',
                     Data: body
-                }  
+                }
             },
             Subject: {
                 Charset: 'UTF-8',
@@ -27,8 +27,12 @@ const sendEmail = async (email, from, title, body) => {
     return ses.sendEmail(params).promise();
 };
 
-const sendEmailVerification = async (email, token, from) => {
-    const link = `${process.env.BASE_API_URL}/verify?token=${token}`;
+const sendEmailVerification = async (email, token, from, sourceDomain) => {
+    let domain = process.env.BASE_API_URL;
+    if (sourceDomain) {
+        domain = sourceDomain;
+    }
+    const link = `${domain}/verify?token=${token}`;
 
     // TODO: This would be nicer to maintain by SES templates
     const htmlBody = `
@@ -36,9 +40,15 @@ const sendEmailVerification = async (email, token, from) => {
       <html>
         <head></head>
         <body>
-            <h1>Confirm your account e-mail!</h1>
+            <h1>Confirm your Ruuvi account e-mail!</h1>
             <p>
-                Please follow <a href="${link}">this link</a> to confirm your e-mail.
+                Please enter the code to your mobile application to complete the registration:
+                <div style="width:200px;text-align:center;">
+                    <h2 style="border:1px solid;padding:5px;">${token}</h2>
+                </div>
+            </p>
+            <p>
+            (...or follow <a href="${link}">this link</a>)
             </p>
         </body>
       </html>
@@ -47,8 +57,12 @@ const sendEmailVerification = async (email, token, from) => {
     return sendEmail(email, from, "Ruuvi Account E-mail Confirmation", htmlBody);
 };
 
-const sendResetEmail = async (email, token, from) => {
-    const link = `${process.env.BASE_API_URL}/verify?token=${token}`;
+const sendResetEmail = async (email, token, from, sourceDomain) => {
+    let domain = process.env.BASE_API_URL;
+    if (sourceDomain) {
+        domain = sourceDomain;
+    }
+    const link = `${domain}/verify?token=${token}`;
 
     // TODO: This would be nicer to maintain by SES templates
     const htmlBody = `
@@ -56,9 +70,15 @@ const sendResetEmail = async (email, token, from) => {
       <html>
         <head></head>
         <body>
-            <h1>Reset your credentials!</h1>
+            <h1>Reset your Ruuvi credentials!</h1>
             <p>
-                Please follow <a href="${link}">this link</a> to reset your credentials.
+                Please enter the code to your mobile application to complete the reset:
+                <div style="width:200px;text-align:center;">
+                    <h2 style="border:1px solid;padding:5px;">${token}</h2>
+                </div>
+            </p>
+            <p>
+                (...or follow <a href="${link}">this link</a>)
             </p>
         </body>
       </html>

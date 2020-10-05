@@ -16,7 +16,7 @@ const mysql = require('serverless-mysql')({
 });
 
 /**
- * Updates tag profile (currently name)
+ * Gets a signed profile image upload URL
  *
  * @param {object} event
  * @param {object} context
@@ -28,12 +28,12 @@ exports.handler = async (event, context) => {
     }
 
     const eventBody = JSON.parse(event.body);
-    if (!eventBody || !validator.hasKeys(eventBody, ['type', 'tag'])) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing type or tag");
+    if (!eventBody || !validator.hasKeys(eventBody, ['type', 'sensor'])) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing type or sensor");
     }
 
     const fileType = eventBody.type;
-    const tag = eventBody.tag;
+    const sensor = eventBody.sensor;
 
     // Generate filename
     let ext = '';
@@ -71,17 +71,23 @@ exports.handler = async (event, context) => {
 
     try {
         results = await mysql.query({
-			sql: `UPDATE tags SET picture = ? WHERE tag_id = ? AND owner_id = ?`,
+            sql: `UPDATE sensors
+                  SET
+                    picture = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                  WHERE
+                    sensor_id = ?
+                    AND owner_id = ?`,
             timeout: 1000,
-            values: [finalURL, tag, user.id]
+            values: [finalURL, sensor, user.id]
         });
 		if (results.affectedRows !== 1) {
-            return gatewayHelper.errorResponse(HTTPCodes.NOT_FOUND, 'Tag not owned or found.');
+            return gatewayHelper.errorResponse(HTTPCodes.NOT_FOUND, 'Sensor not owned or found.');
 		}
         await mysql.end();
     } catch (e) {
 		if (results.affectedRows === 1) {
-            return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error storing tag metadata.');
+            return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error storing sensor metadata.');
 		}
     }
     return gatewayHelper.successResponse({

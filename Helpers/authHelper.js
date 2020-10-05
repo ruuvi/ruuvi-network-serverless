@@ -1,4 +1,7 @@
 const validator = require('../Helpers/validator');
+const generator = require('../Helpers/tokenGenerator');
+const sqlHelper = require('../Helpers/sqlHelper');
+const userHelper = require('../Helpers/userHelper');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -35,20 +38,29 @@ const authorizedUser = async (headers) => {
         return null;
     }
 
-    let results = await mysql.query({
-        sql: `SELECT users.*
-            FROM users
-            INNER JOIN user_tokens ut ON ut.user_id = users.id
-            WHERE ut.access_token = ?
-            LIMIT 1;`,
-        timeout: 1000,
-        values: [token]
-    });
-
-    if (results.length === 0) {
+    // Parse sectioned token
+    const parsed = generator.parse(token);
+    if (!parsed.userId) {
         return null;
     }
-    return results[0];
+
+    // Fetch hashed version
+    const tokenResult = await sqlHelper.fetchAll('user_id', parsed.userId, 'user_tokens');
+    if (!tokenResult || tokenResult.length === 0) {
+        return null;
+    }
+
+    // Compare tokens
+    const bcrypt = require('bcrypt');
+
+    for (let i = 0; i < tokenResult.length; i++) {
+        const token = tokenResult[i].access_token;
+        if (bcrypt.compareSync(parsed.token, token)) {
+            return await userHelper.getById(parsed.userId);
+        }
+    }
+
+    return null;
 };
 
 /**

@@ -27,8 +27,8 @@ exports.handler = async (event, context) => {
     // Validation
     if (
         !query
-        || !query.hasOwnProperty('tag')
-        || !validator.validateToken(query.tag)) {
+        || !query.hasOwnProperty('sensor')
+        || !validator.validateAlphaNumeric(query.sensor)) {
 
         // Invalid request
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid request format.');
@@ -44,27 +44,27 @@ exports.handler = async (event, context) => {
         untilTime = parseInt(query.until);
     }
 
-    const tag = query.tag;
+    const sensor = query.sensor;
 
     if (user) {
         const hasClaim = await mysql.query({
             sql: `SELECT id
-                FROM tags
+                FROM sensors
                 WHERE
                     owner_id = ?
-                    AND tag_id = ?
+                    AND sensor_id = ?
                 UNION
                 SELECT share_id
-                FROM shared_tags
+                FROM shared_sensors
                 WHERE
                     user_id = ?
-                    AND tag_id = ?`,
+                    AND sensor_id = ?`,
             timeout: 1000,
             values: [
                 user.id,
-                tag,
+                sensor,
                 user.id,
-                tag
+                sensor
             ]
         });
         if (hasClaim.length === 0) {
@@ -72,7 +72,7 @@ exports.handler = async (event, context) => {
         }
     }
 
-    const dataPoints = await dynamoHelper.getSensorData(tag, process.env.DEFAULT_RESULTS, sinceTime, untilTime);
+    const dataPoints = await dynamoHelper.getSensorData(sensor, process.env.DEFAULT_RESULTS, sinceTime, untilTime);
 
     // Format data for the API
     let data = [];
@@ -88,7 +88,7 @@ exports.handler = async (event, context) => {
     });
 
     return gatewayHelper.successResponse({
-        sensor: tag,
+        sensor: sensor,
         total: data.length,
         measurements: data
     });

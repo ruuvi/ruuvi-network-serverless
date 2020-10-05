@@ -116,12 +116,12 @@ const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 10000, sc
  * Retrieves sensor data from Dynamo based on parameters.
  * Fetches most recent if date range is not given.
  *
- * @param {string} tag Tag ID / MAC
+ * @param {string} sensor Sensor ID / MAC
  * @param {int} count Desired maximum result count
  * @param {date} startDate Start date for results
  * @param {date} endDate End date for results
  */
-const getSensorData = async (tag, count, startDate, endDate) => {
+const getSensorData = async (sensor, count, startDate, endDate) => {
     if (typeof(process.env.TABLE_NAME) === 'undefined') {
         console.error('TABLE_NAME not defined in environment.');
         return [];
@@ -130,7 +130,7 @@ const getSensorData = async (tag, count, startDate, endDate) => {
     return fetch(
         process.env.TABLE_NAME,
         'SensorId',
-        tag,
+        sensor,
         ['SensorId', 'Coordinates', 'SensorData', 'GatewayMac', 'MeasurementTimestamp', 'RSSI'],
         count,
         false,
