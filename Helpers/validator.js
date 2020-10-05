@@ -31,7 +31,7 @@ const validateEmail = (email) => {
  * @param {string} token
  */
 const validateToken = (token) => {
-    const tokenValidationRegexp = /^[0-9a-f]\/\$2[ayb]\$.{56}?$/;
+    const tokenValidationRegexp = /^[0-9a-f]+?\/[0-9a-zA-Z]+?$/;
     return tokenValidationRegexp.test(token);
 };
 

@@ -46,17 +46,19 @@ const authorizedUser = async (headers) => {
 
     // Fetch hashed version
     const tokenResult = await sqlHelper.fetchAll('user_id', parsed.userId, 'user_tokens');
-    if (!tokenResult) {
+    if (!tokenResult || tokenResult.length === 0) {
         return null;
     }
 
     // Compare tokens
     const bcrypt = require('bcrypt');
-    tokenResult.forEach(async (token) => {
-        if (bcrypt.compareSync(parsed.token, token.access_token)) {
+
+    for (let i = 0; i < tokenResult.length; i++) {
+        const token = tokenResult[i].access_token;
+        if (bcrypt.compareSync(parsed.token, token)) {
             return await userHelper.getById(parsed.userId);
         }
-    });
+    }
 
     return null;
 };
