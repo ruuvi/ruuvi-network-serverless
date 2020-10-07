@@ -28,7 +28,7 @@ exports.handler = async (event, context) => {
     if (
         !query
         || !query.hasOwnProperty('sensor')
-        || !validator.validateAlphaNumeric(query.sensor)) {
+        || !validator.validateMacAddress(query.sensor)) {
 
         // Invalid request
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid request format.');
