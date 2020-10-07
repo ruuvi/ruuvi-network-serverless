@@ -51,7 +51,10 @@ exports.handler = async (event, context) => {
             sql: `SELECT id
                 FROM sensors
                 WHERE
-                    owner_id = ?
+                    (
+                        owner_id = ?
+                        OR public = 1
+                    )
                     AND sensor_id = ?
                 UNION
                 SELECT share_id

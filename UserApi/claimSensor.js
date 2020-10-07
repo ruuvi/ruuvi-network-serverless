@@ -54,7 +54,7 @@ exports.handler = async (event, context) => {
         if (e.code === 'ER_DUP_ENTRY') {
             return gatewayHelper.errorResponse(HTTPCodes.CONFLICT, "Sensor already claimed.");
         }
-
+        console.error(e);
         return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.");
     }
 

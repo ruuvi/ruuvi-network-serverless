@@ -32,22 +32,37 @@ exports.handler = async (event, context) => {
 
     const sensor = eventBody.sensor;
 
-	let name = null;
+    let updates = [];
+    let values = [];
 
 	if (validator.hasKeys(eventBody, ['name']) && eventBody.name) {
-		name = eventBody.name;
-	}
+        updates.push('name = ?');
+        values.push(eventBody.name);
+    }
+	if (validator.hasKeys(eventBody, ['public']) && (parseInt(eventBody.public) === 0 || parseInt(eventBody.public) === 1)) {
+        updates.push('public = ?');
+        values.push(parseInt(eventBody.public));
+    }
+    if (updates.length === 0) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No values provided for update.");
+    }
+
+    const updateString = updates.join(', ');
+
+    // Where condition values
+    values.push(sensor);
+    values.push(user.id);
 
 	try {
         results = await mysql.query({
             sql: `UPDATE sensors
-                    SET name = ?,
+                    SET ${updateString},
                     updated_at = CURRENT_TIMESTAMP
                   WHERE
                     sensor_id = ?
                     AND owner_id = ?`,
             timeout: 1000,
-            values: [name, sensor, user.id]
+            values: values
         });
 		if (results.affectedRows !== 1) {
 			return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not claimed or found. Data not updated.");
@@ -58,6 +73,6 @@ exports.handler = async (event, context) => {
     }
 
     return gatewayHelper.successResponse({
-        name: name
+        name: eventBody.name
     });
 }

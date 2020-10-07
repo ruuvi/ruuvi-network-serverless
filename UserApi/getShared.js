@@ -10,6 +10,12 @@ const mysql = require('serverless-mysql')({
     }
 });
 
+/**
+ * Fetches list of tags the user has shared.
+ * 
+ * @param {object} event 
+ * @param {object} context 
+ */
 exports.handler = async (event, context) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
@@ -20,35 +26,26 @@ exports.handler = async (event, context) => {
         sql: `SELECT
                 sensors.sensor_id AS sensor,
                 sensors.name AS name,
-                true AS owner,
                 sensors.picture AS picture,
-                sensors.public AS public
-            FROM sensors
-            WHERE sensors.owner_id = ?
-            UNION
-            SELECT
-                sensors.sensor_id AS sensor,
-                sensors.name AS name,
-                false AS owner,
-                sensors.picture AS picture,
-                sensors.public AS public
+                sensors.public AS public,
+                users.email AS shared_to
             FROM shared_sensors
             INNER JOIN sensors ON sensors.sensor_id = shared_sensors.sensor_id
-            WHERE shared_sensors.user_id = ?`,
+            INNER JOIN users ON users.id = shared_sensors.user_id
+            WHERE
+                sensors.owner_id = ?`,
         timeout: 1000,
-        values: [user.id, user.id]
+        values: [user.id]
     });
 
     // Format returned data properly
     let formatted = [];
     sensors.forEach((sensor) => {
         sensor.public = sensor.public ? true : false;
-        sensor.owner = sensor.owner ? true : false;
         formatted.push(sensor);
     });
 
     return gatewayHelper.successResponse({
-        email: user.email,
         sensors: formatted
     });
 }

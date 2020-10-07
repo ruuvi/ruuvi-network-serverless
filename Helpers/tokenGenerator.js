@@ -43,8 +43,6 @@ const parse = (token) => {
 
       const userHex = token.substring(0, token.indexOf('/'));
       const uidStr = Buffer.from(userHex, 'hex').toString();
-      console.log(uidStr);
-      console.log((Buffer.from(userHex, 'hex')).toString());
       if (uidStr.substring(0, 1) !== 'u') {
          // Invalid format
          return ret;
