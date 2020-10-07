@@ -31,7 +31,7 @@ exports.handler = async (event, context) => {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid E-mail given.");
     }
 
-    if (!validator.validateAlphaNumeric(sensor)) {
+    if (!validator.validateMacAddress(sensor)) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid sensor ID given.");
     }
 

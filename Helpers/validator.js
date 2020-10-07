@@ -46,11 +46,22 @@ const validateAlphaNumeric = (str) => {
 };
 
 /**
+ * Validates that string is a MAC address
+ *
+ * @param {string} str String to validate
+ */
+const validateMacAddress = (str) => {
+    const reg = /^[a-fA-F0-9:]+$/;
+    return reg.test(str);
+};
+
+/**
  * Exports
  */
 module.exports = {
     hasKeys,
     validateEmail,
     validateToken,
-    validateAlphaNumeric
+    validateAlphaNumeric,
+    validateMacAddress
 };
