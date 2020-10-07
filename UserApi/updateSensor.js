@@ -73,6 +73,6 @@ exports.handler = async (event, context) => {
     }
 
     return gatewayHelper.successResponse({
-        name: name
+        name: eventBody.name
     });
 }
