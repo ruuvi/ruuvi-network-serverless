@@ -18,24 +18,37 @@ exports.handler = async (event, context) => {
 
     const sensors = await mysql.query({
         sql: `SELECT
-                sensor_id AS sensor,
+                sensors.sensor_id AS sensor,
+                sensors.name AS name,
                 true AS owner,
-                picture AS picture
+                sensors.picture AS picture,
+                sensors.public AS public
             FROM sensors
-            WHERE owner_id = ?
+            WHERE sensors.owner_id = ?
             UNION
             SELECT
-                sensor_id AS sensor,
+                sensors.sensor_id AS sensor,
+                sensors.name AS name,
                 false AS owner,
-                '' AS picture
+                sensors.picture AS picture,
+                sensors.public AS public
             FROM shared_sensors
-            WHERE user_id = ?`,
+            INNER JOIN sensors ON sensors.sensor_id = shared_sensors.sensor_id
+            WHERE shared_sensors.user_id = ?`,
         timeout: 1000,
         values: [user.id, user.id]
     });
 
+    // Format returned data properly
+    let formatted = [];
+    sensors.forEach((sensor) => {
+        sensor.public = sensor.public ? true : false;
+        sensor.owner = sensor.owner ? true : false;
+        formatted.push(sensor);
+    });
+
     return gatewayHelper.successResponse({
         email: user.email,
-        sensors: sensors
+        sensors: formatted
     });
 }

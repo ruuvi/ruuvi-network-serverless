@@ -240,6 +240,21 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
+  unclaimSensor:
+    handler: UserApi/unclaimSensor.handler
+    #reservedConcurrency: ${self:custom.lambdaConcurrency}
+    events:
+      - httpApi:
+          method: POST
+          path: /unclaim
+          #payload: '2.0'
+    environment:
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+
   shareSensor:
     handler: UserApi/shareSensor.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}

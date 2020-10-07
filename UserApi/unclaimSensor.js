@@ -12,6 +12,12 @@ const mysql = require('serverless-mysql')({
     }
 });
 
+/**
+ * Unclaims a sensor.
+ * 
+ * @param {object} event 
+ * @param {object} context 
+ */
 exports.handler = async (event, context) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
@@ -21,44 +27,30 @@ exports.handler = async (event, context) => {
     const eventBody = JSON.parse(event.body);
 
     if (!eventBody || !validator.hasKeys(eventBody, ['sensor'])) {
-        return gatewayHelper.errorResponse(HTTPCodes.INVALID, "Missing sensor");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing sensor id.");
     }
 
     const sensor = eventBody.sensor;
 
-    let results = null;
-    let sensorName = validator.hasKeys(eventBody, ['name']) ? eventBody.name : '';
-
-    try {
+	try {
+        // NOTE: We might want to soft-delete this instead
         results = await mysql.query({
-            sql: `INSERT INTO sensors (
-                    owner_id,
-                    sensor_id,
-                    name
-                ) VALUES (
-                    ?,
-                    ?,
-                    ?
-                );`,
+            sql: `DELETE FROM sensors
+                  WHERE
+                    sensor_id = ?
+                    AND owner_id = ?`,
             timeout: 1000,
-            values: [user.id, sensor, sensorName]
+            values: [sensor, user.id]
         });
-
-        if (results.insertId) {
-            // Success
-        }
-
-        // Run clean up function
+		if (results.affectedRows !== 1) {
+            console.log(`User ${user.id} successfully unclaimed ${sensor_id}`);
+			return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor does not belong to user.");
+		}
         await mysql.end();
     } catch (e) {
-        if (e.code === 'ER_DUP_ENTRY') {
-            return gatewayHelper.errorResponse(HTTPCodes.CONFLICT, "Sensor already claimed.");
-        }
         console.error(e);
-        return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
     }
 
-    return gatewayHelper.successResponse({
-        sensor: sensor
-    });
+    return gatewayHelper.successResponse();
 }
