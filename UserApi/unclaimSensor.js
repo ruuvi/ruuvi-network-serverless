@@ -33,6 +33,19 @@ exports.handler = async (event, context) => {
     const sensor = eventBody.sensor;
 
 	try {
+        // Remove shares (if any)
+        await mysql.query({
+            sql: `DELETE shared_sensors
+                  FROM shared_sensors
+                  INNER JOIN sensors ON sensors.sensor_id = shared_sensors.sensor_id
+                  WHERE
+                    shared_sensors.sensor_id = ?
+                    AND sensors.owner_id = ?
+                    AND sensors.sensor_id = ?`,
+            timeout: 1000,
+            values: [sensor, user.id, sensor]
+        });
+
         // NOTE: We might want to soft-delete this instead
         results = await mysql.query({
             sql: `DELETE FROM sensors
