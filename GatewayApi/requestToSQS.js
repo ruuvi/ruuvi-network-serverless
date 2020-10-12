@@ -22,7 +22,7 @@ exports.handler = async (event, context) => {
     if (
         !eventBody.hasOwnProperty('data')
         || !data.hasOwnProperty('tags')
-        || !data.hasOwnProperty('gwmac')
+        || !data.hasOwnProperty('gw_mac')
         || !data.hasOwnProperty('timestamp')
         || !data.hasOwnProperty('coordinates')
     ) {
@@ -34,7 +34,7 @@ exports.handler = async (event, context) => {
         const validationResult = await auth.validateGatewaySignature(
             signature,
             eventBody,
-            data.gwmac,
+            data.gw_mac,
             nonce,
             timestamp,
             process.env.GATEWAY_REQUEST_TTL,
@@ -61,7 +61,7 @@ exports.handler = async (event, context) => {
         MessageAttributes: {
             "gwmac": {
                 DataType: "String",
-                StringValue: data.gwmac
+                StringValue: data.gw_mac
             },
             "timestamp": {
                 DataType: "Number",
