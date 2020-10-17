@@ -58,9 +58,10 @@ exports.handler = async (event, context) => {
         ? Math.min(parseInt(query.limit), 100)
         : process.env.DEFAULT_RESULTS;
 
-    if (user) {
+    let name = '';
+    try {
         const hasClaim = await mysql.query({
-            sql: `SELECT id
+            sql: `SELECT id, name
                 FROM sensors
                 WHERE
                     (
@@ -69,7 +70,7 @@ exports.handler = async (event, context) => {
                     )
                     AND sensor_id = ?
                 UNION
-                SELECT share_id
+                SELECT share_id, ''
                 FROM shared_sensors
                 WHERE
                     user_id = ?
@@ -85,6 +86,10 @@ exports.handler = async (event, context) => {
         if (hasClaim.length === 0) {
             return gatewayHelper.forbiddenResponse();
         }
+        name = hasClaim[0].name;
+    } catch (e) {
+        console.error(e);
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Internal server error.');
     }
 
     const dataPoints = await dynamoHelper.getSensorData(sensor, resultLimit, sinceTime, untilTime, ascending);
@@ -93,7 +98,6 @@ exports.handler = async (event, context) => {
     let data = [];
     dataPoints.forEach((item) => {
         data.push({
-            sensor: item.SensorId,
             coordinates: item.Coordinates,
             data: item.SensorData,
             gwmac: item.GatewayMac,
@@ -104,6 +108,7 @@ exports.handler = async (event, context) => {
 
     return gatewayHelper.successResponse({
         sensor: sensor,
+        name: name,
         total: data.length,
         measurements: data
     });
