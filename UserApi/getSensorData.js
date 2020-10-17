@@ -34,6 +34,13 @@ exports.handler = async (event, context) => {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid request format.');
     }
 
+    if (
+        query.hasOwnProperty('sort')
+        && !(['asc', 'desc'].includes(query.sort))
+    ) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid sort argument.');
+    }
+
     let sinceTime = null;
     let untilTime = null;
 
@@ -44,11 +51,17 @@ exports.handler = async (event, context) => {
         untilTime = parseInt(query.until);
     }
 
+    // Format arguments
+    const ascending = query.hasOwnProperty('sort') && query.sort === 'asc';
     const sensor = query.sensor;
+    const resultLimit = query.hasOwnProperty('limit')
+        ? Math.min(parseInt(query.limit), 100)
+        : process.env.DEFAULT_RESULTS;
 
-    if (user) {
+    let name = '';
+    try {
         const hasClaim = await mysql.query({
-            sql: `SELECT id
+            sql: `SELECT id, name
                 FROM sensors
                 WHERE
                     (
@@ -57,7 +70,7 @@ exports.handler = async (event, context) => {
                     )
                     AND sensor_id = ?
                 UNION
-                SELECT share_id
+                SELECT share_id, ''
                 FROM shared_sensors
                 WHERE
                     user_id = ?
@@ -73,15 +86,18 @@ exports.handler = async (event, context) => {
         if (hasClaim.length === 0) {
             return gatewayHelper.forbiddenResponse();
         }
+        name = hasClaim[0].name;
+    } catch (e) {
+        console.error(e);
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Internal server error.');
     }
 
-    const dataPoints = await dynamoHelper.getSensorData(sensor, process.env.DEFAULT_RESULTS, sinceTime, untilTime);
+    const dataPoints = await dynamoHelper.getSensorData(sensor, resultLimit, sinceTime, untilTime, ascending);
 
     // Format data for the API
     let data = [];
     dataPoints.forEach((item) => {
         data.push({
-            sensor: item.SensorId,
             coordinates: item.Coordinates,
             data: item.SensorData,
             gwmac: item.GatewayMac,
@@ -92,6 +108,7 @@ exports.handler = async (event, context) => {
 
     return gatewayHelper.successResponse({
         sensor: sensor,
+        name: name,
         total: data.length,
         measurements: data
     });

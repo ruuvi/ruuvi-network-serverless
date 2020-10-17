@@ -120,8 +120,9 @@ const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 10000, sc
  * @param {int} count Desired maximum result count
  * @param {date} startDate Start date for results
  * @param {date} endDate End date for results
+ * @param {ascending} ascending When true, returns oldest result first
  */
-const getSensorData = async (sensor, count, startDate, endDate) => {
+const getSensorData = async (sensor, count, startDate, endDate, ascending = false) => {
     if (typeof(process.env.TABLE_NAME) === 'undefined') {
         console.error('TABLE_NAME not defined in environment.');
         return [];
@@ -133,7 +134,7 @@ const getSensorData = async (sensor, count, startDate, endDate) => {
         sensor,
         ['SensorId', 'Coordinates', 'SensorData', 'GatewayMac', 'MeasurementTimestamp', 'RSSI'],
         count,
-        false,
+        ascending,
         'MeasurementTimestamp',
         startDate,
         endDate

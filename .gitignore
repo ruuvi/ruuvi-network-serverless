@@ -7,3 +7,4 @@ jspm_packages
 
 # Additional
 temp
+tests/integration/integrationCredentials.js

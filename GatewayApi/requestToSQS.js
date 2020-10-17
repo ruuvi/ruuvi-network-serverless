@@ -19,14 +19,15 @@ exports.handler = async (event, context) => {
     const data = eventBody.data;
 
     // TODO: This validation is pretty rudimentary
+    const MAX_UPLOAD_DELAY = 30 * 24 * 60 * 60 * 1000; // 1 month
     if (
         !eventBody.hasOwnProperty('data')
         || !data.hasOwnProperty('tags')
-        || !data.hasOwnProperty('gwmac')
+        || !data.hasOwnProperty('gw_mac')
         || !data.hasOwnProperty('timestamp')
         || !data.hasOwnProperty('coordinates')
+        || data.timestamp < Date.now() - MAX_UPLOAD_DELAY // Cap history upload
     ) {
-        console.error("Invalid Data: " + event.body);
         return gatewayHelper.invalid();
     }
 
@@ -34,7 +35,7 @@ exports.handler = async (event, context) => {
         const validationResult = await auth.validateGatewaySignature(
             signature,
             eventBody,
-            data.gwmac,
+            data.gw_mac,
             nonce,
             timestamp,
             process.env.GATEWAY_REQUEST_TTL,
@@ -61,7 +62,7 @@ exports.handler = async (event, context) => {
         MessageAttributes: {
             "gwmac": {
                 DataType: "String",
-                StringValue: data.gwmac
+                StringValue: data.gw_mac
             },
             "timestamp": {
                 DataType: "Number",

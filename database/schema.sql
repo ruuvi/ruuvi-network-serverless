@@ -50,7 +50,7 @@ CREATE TABLE sensors (
 CREATE TABLE shared_sensors (
         share_id BIGINT NOT NULL AUTO_INCREMENT,
         user_id INT NOT NULL,
-        sensor_id VARCHAR(16) NOT NULL,
+        sensor_id VARCHAR(64) NOT NULL,
         shared_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY(share_id),
         UNIQUE INDEX share_idx (user_id, sensor_id),
