@@ -34,14 +34,19 @@ exports.handler = async (event, context) => {
 
     let updates = [];
     let values = [];
+    let ret = {
+        sensor: sensor
+    };
 
 	if (validator.hasKeys(eventBody, ['name']) && eventBody.name) {
         updates.push('name = ?');
         values.push(eventBody.name);
+        ret.name = eventBody.name;
     }
 	if (validator.hasKeys(eventBody, ['public']) && (parseInt(eventBody.public) === 0 || parseInt(eventBody.public) === 1)) {
         updates.push('public = ?');
         values.push(parseInt(eventBody.public));
+        ret.public = eventBody.public;
     }
     if (updates.length === 0) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No values provided for update.");
@@ -72,7 +77,5 @@ exports.handler = async (event, context) => {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
     }
 
-    return gatewayHelper.successResponse({
-        name: eventBody.name
-    });
+    return gatewayHelper.successResponse(ret);
 }
