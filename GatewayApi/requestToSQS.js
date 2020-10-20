@@ -18,6 +18,8 @@ exports.handler = async (event, context) => {
 
     const data = eventBody.data;
 
+    console.log(data);
+
     // TODO: This validation is pretty rudimentary
     const MAX_UPLOAD_DELAY = 30 * 24 * 60 * 60 * 1000; // 1 month
     if (
@@ -26,7 +28,7 @@ exports.handler = async (event, context) => {
         || !data.hasOwnProperty('gw_mac')
         || !data.hasOwnProperty('timestamp')
         || !data.hasOwnProperty('coordinates')
-        || data.timestamp < Date.now() - MAX_UPLOAD_DELAY // Cap history upload
+        || (parseInt(data.timestamp) * 1000) < Date.now() - MAX_UPLOAD_DELAY // Cap history upload
     ) {
         return gatewayHelper.invalid();
     }

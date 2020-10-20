@@ -53,6 +53,8 @@ const testData = utils.randomHex(32);
 const newEmail = utils.randomHex(8) + '@' + utils.randomHex(8) + '.com';
 
 describe('Full integration tests', () => {
+	//console.log('Running tests for: ' + stage);
+
 	// INTERNAL
 	itif(RI)('`whitelist` without internal token fails', async () => {
 
