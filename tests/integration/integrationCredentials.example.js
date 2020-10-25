@@ -1,11 +1,17 @@
 // FILL AND RENAME TO 'integrationCredentials.js'
-module.export = {
+module.exports = {
 	prod: {
 		primary: 'PRODUCTION ACCESS TOKEN 1',
-		secondary: 'PRODUCTION ACCESS TOKEN 2'
+		primaryEmail: 'test@ruuvi.com',
+		secondary: 'PRODUCTION ACCESS TOKEN 2',
+		secondaryEmail: 'test2@ruuvi.com',
+		url: 'PRODUCTION URL'
 	},
 	dev: {
 		primary: 'DEV ACCESS TOKEN 1',
-		secondary: 'DEV ACCESS TOKEN 2'
+		primaryEmail: 'test@ruuvi.com',
+		secondary: 'DEV ACCESS TOKEN 2',
+		secondaryEmail: 'test2@ruuvi.com',
+		url: 'DEVELOPMENT URL'
 	}
 }

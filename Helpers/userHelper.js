@@ -96,6 +96,22 @@ const createToken = async (userId) => {
     }
 }
 
+const createSubscription = async (userId) => {
+    const idInt = parseInt(userId);
+    if (!idInt) {
+        return;
+    }
+
+    try {
+        results = await mysql.query({
+            sql: `INSERT INTO subscriptions (user_id) VALUES (?);`,
+            timeout: 1000,
+            values: [idInt]
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
 
 /**
  * Exports
@@ -104,5 +120,6 @@ module.exports = {
     getByEmail,
     getById,
     create,
-    createToken
+    createToken,
+    createSubscription
  };

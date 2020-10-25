@@ -56,3 +56,12 @@ CREATE TABLE shared_sensors (
         UNIQUE INDEX share_idx (user_id, sensor_id),
         FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+
+CREATE TABLE subscriptions (
+        user_id INT NOT NULL,
+        max_shares INT NOT NULL DEFAULT 40,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY user_idx (user_id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_unicode_ci;

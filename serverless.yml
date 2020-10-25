@@ -168,6 +168,7 @@ functions:
       REQUIRE_LOGIN: ${self:custom.requireLoginForData}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       DEFAULT_RESULTS: 15
+      MAX_RESULTS: 10000
 
   getUserData:
     handler: UserApi/getUserData.handler
@@ -269,6 +270,8 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SOURCE_EMAIL: ${self:custom.sourceEmail}
+      SOURCE_DOMAIN: ${self:custom.sourceDomain}
 
   unshareSensor:
     handler: UserApi/unshareSensor.handler

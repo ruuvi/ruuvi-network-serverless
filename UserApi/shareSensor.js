@@ -1,7 +1,9 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
-const userHelper = require('../Helpers/userHelper')
+const userHelper = require('../Helpers/userHelper');
+const emailHelper = require('../Helpers/emailHelper');
+const sqlHelper = require('../Helpers/sqlHelper');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -34,7 +36,7 @@ exports.handler = async (event, context) => {
     if (!validator.validateMacAddress(sensor)) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid sensor ID given.");
     }
-
+    
     let results = null;
 
     try {
@@ -42,6 +44,29 @@ exports.handler = async (event, context) => {
         if (!targetUser) {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "User not found.");
         }
+
+        // Get Subscription
+        const subscription = await sqlHelper.fetchSingle('user_id', user.id, 'subscriptions');
+        if (!subscription) {
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'No subscription found.');
+        }
+        const maxShares = parseInt(subscription.max_shares);
+
+        const currentShares = await mysql.query({
+            sql: `SELECT COUNT(*) AS sensor_count
+                FROM shared_sensors
+                INNER JOIN sensors ON sensors.sensor_id = shared_sensors.sensor_id
+                INNER JOIN users ON users.id = shared_sensors.user_id
+                WHERE
+                    sensors.owner_id = ?`,
+            timeout: 1000,
+            values: [user.id]
+        });
+    
+        if (currentShares[0].sensor_count >= maxShares) {
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Maximum share count reached.');
+        }
+
         const targetUserId = targetUser.id;
 
         // Currently Enforces sharing restrictions on database level
@@ -75,6 +100,21 @@ exports.handler = async (event, context) => {
         }
 
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
+    }
+
+    // Sharing was successful, send notification e-mail
+    try {
+        const sensorData = await sqlHelper.fetchSingle('sensor_id', sensor, 'sensors');
+        emailHelper.sendShareNotification(
+            targetUserEmail,
+            sensorData.name,
+            user.email,
+            process.env.SOURCE_EMAIL,
+            process.env.SOURCE_DOMAIN
+        );
+    } catch (e) {
+        console.error(e.message);
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Share successful. Failed to send notification.");
     }
 
     return gatewayHelper.successResponse({

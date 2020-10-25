@@ -55,7 +55,7 @@ exports.handler = async (event, context) => {
     const ascending = query.hasOwnProperty('sort') && query.sort === 'asc';
     const sensor = query.sensor;
     const resultLimit = query.hasOwnProperty('limit')
-        ? Math.min(parseInt(query.limit), 100)
+        ? Math.min(parseInt(query.limit), process.env.MAX_RESULTS)
         : process.env.DEFAULT_RESULTS;
 
     let name = '';
@@ -70,11 +70,12 @@ exports.handler = async (event, context) => {
                     )
                     AND sensor_id = ?
                 UNION
-                SELECT share_id, ''
+                SELECT shared_sensors.share_id, sensors.name AS name
                 FROM shared_sensors
+                INNER JOIN sensors ON sensors.sensor_id = shared_sensors.sensor_id
                 WHERE
-                    user_id = ?
-                    AND sensor_id = ?`,
+                    shared_sensors.user_id = ?
+                    AND shared_sensors.sensor_id = ?`,
             timeout: 1000,
             values: [
                 user.id,

@@ -51,7 +51,7 @@ const validateAlphaNumeric = (str) => {
  * @param {string} str String to validate
  */
 const validateMacAddress = (str) => {
-    const reg = /^[a-fA-F0-9:]+$/;
+    const reg = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
     return reg.test(str);
 };
 

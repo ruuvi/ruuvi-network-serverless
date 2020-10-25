@@ -87,8 +87,41 @@ const sendResetEmail = async (email, token, from, sourceDomain) => {
     return sendEmail(email, from, "Ruuvi Account Reset Confirmation", htmlBody);
 };
 
+const sendShareNotification = async (email, sensorName, sharerName, from, sourceDomain) => {
+    let domain = process.env.BASE_API_URL;
+    if (sourceDomain) {
+        domain = sourceDomain;
+    }
+
+    let sensorNameString = '';
+    if (sensorName) {
+        sensorNameString = `sensor "${sensorName}"`;
+    } else {
+        sensorNameString = `a sensor`;
+    }
+
+    // TODO: This would be nicer to maintain by SES templates
+    const htmlBody = `
+      <!DOCTYPE html>
+      <html>
+        <head></head>
+        <body>
+            <h1>Ruuvi sensor was shared with you!</h1>
+            <p>
+                Ruuvi Network user ${sharerName} shared ${sensorNameString} with you!
+            </p>
+            <p>
+                Log in to the mobile application to view it!
+            </p>
+        </body>
+      </html>
+    `;
+
+    return sendEmail(email, from, `${sharerName} shared a Ruuvi sensor with you!`, htmlBody);
+};
 
 module.exports = {
     sendEmailVerification,
-    sendResetEmail
+    sendResetEmail,
+    sendShareNotification
 };

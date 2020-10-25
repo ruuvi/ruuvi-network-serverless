@@ -53,6 +53,10 @@ exports.handler = async (event, context) => {
         if (userInfo.accessToken) {
             console.info("Successfully created token for user: " + userInfo.email);
         }
+
+        if (!isReset) {
+            userInfo.subscription = await userHelper.createSubscription(userId);
+        }
     } else {
         console.error("Unable to create user " + userInfo.email);
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unable to register user.");
