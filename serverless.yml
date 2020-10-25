@@ -270,6 +270,8 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SOURCE_EMAIL: ${self:custom.sourceEmail}
+      SOURCE_DOMAIN: ${self:custom.sourceDomain}
 
   unshareSensor:
     handler: UserApi/unshareSensor.handler

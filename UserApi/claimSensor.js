@@ -21,6 +21,7 @@ exports.handler = async (event, context) => {
     const eventBody = JSON.parse(event.body);
 
     if (!eventBody || !validator.hasKeys(eventBody, ['sensor']) || !validator.validateMacAddress(eventBody.sensor)) {
+        console.log("Invalid Sensor: " + eventBody.sensor);
         return gatewayHelper.errorResponse(HTTPCodes.INVALID, "Missing or invalid sensor given");
     }
 

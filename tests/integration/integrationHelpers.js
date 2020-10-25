@@ -10,6 +10,15 @@ function randomHex(length) {
 	return result;
 }
 
+function randomMac() {
+	let hexes = [];
+	for (let i = 0; i < 6; i++) {
+		hexes.push(randomHex(1)); 
+	}
+	return hexes.join(':');
+}
+
 module.exports = {
-	randomHex
+	randomHex,
+	randomMac
 }

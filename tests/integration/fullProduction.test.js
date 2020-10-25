@@ -48,8 +48,8 @@ const post = async (endpoint, body) => {
 }
 
 // Set up some defaults
-const newSensorMac = utils.randomHex(12);
-const newGatewayMac = utils.randomHex(12);
+const newSensorMac = utils.randomMac();
+const newGatewayMac = utils.randomMac();
 const testData = utils.randomHex(32);
 
 // Verifiable test e-mail here would be best
