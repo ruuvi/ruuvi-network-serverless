@@ -11,9 +11,12 @@ const itif = (condition) => condition ? it : it.skip;
 // Load configuration
 const stage = process.env.STAGE ? process.env.STAGE : 'dev';
 const stageConfig = require('./integrationCredentials');
+
 const baseURL = stageConfig[stage]['url'];
 const token = stageConfig[stage]['primary'];
 const RI = process.env.IS_INTEGRATION_TEST;
+const primaryEmail = stageConfig[stage]['primaryEmail'];
+const secondaryEmail = stageConfig[stage]['secondaryEmail'];
 
 /**
  * HTTP Client with Authorization set up
@@ -120,7 +123,7 @@ describe('Full integration tests', () => {
 
 	itif(RI)('`user` returns email', async () => {
 		const userData = await get('user');
-		expect(userData.data.data.email).toBe('test@ruuvi.com');
+		expect(userData.data.data.email).toBe(primaryEmail);
 	});
 
 	itif(RI)('`claim` returns 200 OK', async () => {
@@ -172,7 +175,7 @@ describe('Full integration tests', () => {
 	itif(RI)('`share` is successful', async () => {
 		const shareResult = await post('share', {
 			sensor: newSensorMac,
-			user: 'sharee@ruuvi.com'
+			user: secondaryEmail
 		});
 
 		expect(shareResult.status).toBe(200);
@@ -188,14 +191,14 @@ describe('Full integration tests', () => {
 		const sharedSensorData = userShareData.data.data.sensors[0];
 		expect(sharedSensorData.sensor).toBe(newSensorMac);
 		expect(sharedSensorData.public).toBe(false);
-		expect(sharedSensorData.shared_to).toBe('sharee@ruuvi.com');
+		expect(sharedSensorData.shared_to).toBe(secondaryEmail);
 	});
 
 	// DEPENDENT ON THE ABOVE
 	itif(RI)('`unshare` is successful', async () => {
 		const unshareResult = await post('unshare', {
 			sensor: newSensorMac,
-			user: 'sharee@ruuvi.com'
+			user: secondaryEmail
 		});
 
 		expect(unshareResult.status).toBe(200);
