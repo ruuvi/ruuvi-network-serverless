@@ -55,6 +55,10 @@ const validateMacAddress = (str) => {
     return reg.test(str);
 };
 
+const now = () => {
+    return Date.now() / 1000;
+}
+
 /**
  * Exports
  */
@@ -63,5 +67,6 @@ module.exports = {
     validateEmail,
     validateToken,
     validateAlphaNumeric,
-    validateMacAddress
+    validateMacAddress,
+    now
 };

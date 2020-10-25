@@ -20,19 +20,7 @@ exports.handler = async (event, context) => {
         sql: `SELECT
                 sensors.sensor_id AS sensor,
                 COALESCE(sensor_profiles.name, '') AS name,
-                true AS owner,
-                COALESCE(sensor_profiles.picture, '') AS picture,
-                sensors.public AS public
-            FROM sensors
-            INNER JOIN sensor_profiles ON
-                sensor_profiles.sensor_id = sensors.sensor_id
-                AND sensor_profiles.user_id = sensors.owner_id
-            WHERE sensors.owner_id = ?
-            UNION
-            SELECT
-                sensors.sensor_id AS sensor,
-                COALESCE(sensor_profiles.name, '') AS name,
-                false AS owner,
+                IF(sensors.owner_id = sensor_profiles.user_id, 1, 0) AS owner,
                 COALESCE(sensor_profiles.picture, '') AS picture,
                 sensors.public AS public
             FROM sensor_profiles

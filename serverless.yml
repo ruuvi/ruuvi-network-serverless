@@ -17,9 +17,12 @@ custom:
 
   # Dynamo DB Tables
   dynamoSensorData: ${self:custom.stage}-SensorData # Main Sensor data
+  dynamoSensorDataReduced: ${self:custom.stage}-SensorDataReduced
   dynamoGatewayWhitelist: ${self:custom.stage}-GatewayWhitelist
   dynamoAlerts: ${self:custom.stage}-SensorAlerts
   sensorProfileBucket: ${self:custom.stage}-sensor-profile-pictures
+  longTermStorageInterval: 960 # seconds
+  rawDataTTL: 3600             # 7776000 = 3 months
 
   sourceEmail: 'otso@ruuvi.com'
   sourceDomain: 'https://network.ruuvi.com'
@@ -39,6 +42,15 @@ custom:
       write:
         minimum: 15       # Minimum write capacity
         maximum: 1000     # Maximum write capacity
+        usage: 0.2        # Targeted usage percentage
+    - table: DynamoSensorDataReduced  # Resource
+      read:
+        minimum: 15       # Minimum read capacity
+        maximum: 100     # Maximum read capacity
+        usage: 0.2        # Targeted usage percentage
+      write:
+        minimum: 15       # Minimum write capacity
+        maximum: 200      # Maximum write capacity
         usage: 0.2        # Targeted usage percentage
     - table: DynamoAlerts
       read:
@@ -150,6 +162,9 @@ functions:
           batchSize: 10
     environment:
       TABLE_NAME: ${self:custom.dynamoSensorData}
+      REDUCED_TABLE_NAME: ${self:custom.dynamoSensorDataReduced}
+      LONG_TERM_STORAGE_INTERVAL: ${self:custom.longTermStorageInterval}
+      RAW_DATA_TTL: ${self:custom.rawDataTTL}
 
   # User Facing API
   getSensorData:
@@ -165,6 +180,8 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       TABLE_NAME: ${self:custom.dynamoSensorData}
+      REDUCED_TABLE_NAME: ${self:custom.dynamoSensorDataReduced}
+      RAW_DATA_TTL: ${self:custom.rawDataTTL}
       REQUIRE_LOGIN: ${self:custom.requireLoginForData}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       DEFAULT_RESULTS: 15
@@ -384,6 +401,26 @@ resources:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${self:custom.dynamoSensorData}
+        AttributeDefinitions:
+          - AttributeName: SensorId
+            AttributeType: S
+          - AttributeName: MeasurementTimestamp
+            AttributeType: N
+        KeySchema:
+          - AttributeName: SensorId
+            KeyType: HASH
+          - AttributeName: MeasurementTimestamp
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5 # Defaults, using auto-scaling by default
+          WriteCapacityUnits: 5
+        TimeToLiveSpecification:
+          AttributeName: TimeToLive
+          Enabled: TRUE
+    DynamoSensorDataReduced:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.dynamoSensorDataReduced}
         AttributeDefinitions:
           - AttributeName: SensorId
             AttributeType: S

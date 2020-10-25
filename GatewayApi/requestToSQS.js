@@ -18,8 +18,6 @@ exports.handler = async (event, context) => {
 
     const data = eventBody.data;
 
-    console.log(data);
-
     // TODO: This validation is pretty rudimentary
     const MAX_UPLOAD_DELAY = 30 * 24 * 60 * 60 * 1000; // 1 month
     if (

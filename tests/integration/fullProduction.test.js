@@ -23,7 +23,7 @@ const secondaryEmail = stageConfig[stage]['secondaryEmail'];
  */
 const instance = axios.create({
 	baseURL: baseURL,
-	timeout: 1000,
+	timeout: 3000,
 	headers: { Authorization: `Bearer ${token}`}
 });
 
