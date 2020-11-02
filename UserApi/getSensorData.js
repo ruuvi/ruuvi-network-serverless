@@ -61,21 +61,29 @@ exports.handler = async (event, context) => {
     let name = '';
     try {
         const hasClaim = await mysql.query({
-            sql: `SELECT id, name
+            sql: `SELECT
+                    sensors.id,
+                    sensor_profiles.name AS name
                 FROM sensors
+                INNER JOIN sensor_profiles ON
+                    sensor_profiles.sensor_id = sensors.sensor_id
+                    AND sensor_profiles.user_id = sensors.owner_id
                 WHERE
                     (
-                        owner_id = ?
-                        OR public = 1
+                        sensors.owner_id = ?
+                        OR sensors.public = 1
                     )
-                    AND sensor_id = ?
+                    AND sensors.sensor_id = ?
                 UNION
-                SELECT shared_sensors.share_id, sensors.name AS name
-                FROM shared_sensors
-                INNER JOIN sensors ON sensors.sensor_id = shared_sensors.sensor_id
+                SELECT
+                    sensor_profiles.id,
+                    sensor_profiles.name AS name
+                FROM sensor_profiles
+                INNER JOIN sensors ON sensor_profiles.sensor_id = sensors.sensor_id
                 WHERE
-                    shared_sensors.user_id = ?
-                    AND shared_sensors.sensor_id = ?`,
+                    sensor_profiles.user_id = ?
+                    AND sensor_profiles.sensor_id = ?
+                    AND sensor_profiles.is_active = 1`,
             timeout: 1000,
             values: [
                 user.id,

@@ -46,11 +46,12 @@ exports.handler = async (event, context) => {
 
         // NOTE: We might want to change this into soft-delete
         results = await mysql.query({
-            sql: `DELETE shared_sensors
-                  FROM shared_sensors
-                  INNER JOIN sensors ON sensors.sensor_id = shared_sensors.sensor_id
+            sql: `DELETE sensor_profiles
+                  FROM sensor_profiles
+                  INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
                   WHERE
-                    shared_sensors.user_id = ?
+                    sensor_profiles.user_id = ?
+                    AND sensor_profiles.is_active = 1
                     AND sensors.owner_id = ?
                     AND sensors.owner_id != ?
                     AND sensors.sensor_id = ?`,

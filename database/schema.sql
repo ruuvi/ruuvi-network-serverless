@@ -33,9 +33,8 @@ CREATE TABLE reset_tokens (
 CREATE TABLE sensors (
         id BIGINT NOT NULL AUTO_INCREMENT,
         owner_id INT NOT NULL,
-        name VARCHAR(64) NOT NULL DEFAULT '',
         sensor_id VARCHAR(64) NOT NULL,
-        picture VARCHAR(2083) NOT NULL DEFAULT '',
+        -- offsets
         public TINYINT(1) NOT NULL DEFAULT 0,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -47,16 +46,23 @@ CREATE TABLE sensors (
         FOREIGN KEY (owner_id) REFERENCES users(id)
 ) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
-CREATE TABLE shared_sensors (
-        share_id BIGINT NOT NULL AUTO_INCREMENT,
-        user_id INT NOT NULL,
+-- Sensor Profiles (per user)
+CREATE TABLE sensor_profiles (
+        id BIGINT NOT NULL AUTO_INCREMENT,
         sensor_id VARCHAR(64) NOT NULL,
-        shared_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY(share_id),
-        UNIQUE INDEX share_idx (user_id, sensor_id),
+        user_id INT NOT NULL,
+        name VARCHAR(64) NOT NULL DEFAULT '',
+        picture VARCHAR(2083) NOT NULL DEFAULT '',
+        is_active TINYINT(1) NOT NULL DEFAULT 1,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY(id),
+        -- Only one user can own a sensor profile
+        UNIQUE INDEX sensor_user_idx (user_id, sensor_id),
         FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
+-- Ruuvi Subscriptions
 CREATE TABLE subscriptions (
         user_id INT NOT NULL,
         max_shares INT NOT NULL DEFAULT 40,

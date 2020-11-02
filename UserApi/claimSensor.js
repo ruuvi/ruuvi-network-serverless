@@ -34,18 +34,36 @@ exports.handler = async (event, context) => {
         results = await mysql.query({
             sql: `INSERT INTO sensors (
                     owner_id,
+                    sensor_id
+                ) VALUES (
+                    ?,
+                    ?
+                );`,
+            timeout: 1000,
+            values: [user.id, sensor]
+        });
+
+        if (results.insertId) {
+            // Success
+        }
+
+        const profileResults = await mysql.query({
+            sql: `INSERT INTO sensor_profiles (
+                    user_id,
                     sensor_id,
-                    name
+                    name,
+                    picture
                 ) VALUES (
                     ?,
                     ?,
-                    ?
+                    ?,
+                    ''
                 );`,
             timeout: 1000,
             values: [user.id, sensor, sensorName]
         });
 
-        if (results.insertId) {
+        if (profileResults.insertId) {
             // Success
         }
 

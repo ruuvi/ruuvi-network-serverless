@@ -54,13 +54,14 @@ exports.handler = async (event, context) => {
 
         const currentShares = await mysql.query({
             sql: `SELECT COUNT(*) AS sensor_count
-                FROM shared_sensors
-                INNER JOIN sensors ON sensors.sensor_id = shared_sensors.sensor_id
-                INNER JOIN users ON users.id = shared_sensors.user_id
+                FROM sensor_profiles
+                INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
+                INNER JOIN users ON users.id = sensor_profiles.user_id
                 WHERE
-                    sensors.owner_id = ?`,
+                    sensors.owner_id = ?
+                    AND sensor_profiles.user_id != ?`,
             timeout: 1000,
-            values: [user.id]
+            values: [user.id, user.id]
         });
     
         if (currentShares[0].sensor_count >= maxShares) {
@@ -70,18 +71,25 @@ exports.handler = async (event, context) => {
         const targetUserId = targetUser.id;
 
         // Currently Enforces sharing restrictions on database level
+        console.log(targetUserId);
+        console.log(user.id);
+        console.log(sensor);
         results = await mysql.query({
-            sql: `INSERT INTO shared_sensors (
+            sql: `INSERT INTO sensor_profiles (
                     user_id,
-                    sensor_id
+                    sensor_id,
+                    name,
+                    picture
                 ) SELECT
                     ?,
-                    sensor_id
+                    sensor_id,
+                    '',
+                    ''
                 FROM sensors
                 WHERE
-                    owner_id = ?
-                    AND owner_id != ?
-                    AND sensor_id = ?`,
+                    sensors.owner_id = ?
+                    AND sensors.owner_id != ?
+                    AND sensors.sensor_id = ?`,
             timeout: 1000,
             values: [targetUserId, user.id, targetUserId, sensor]
         });

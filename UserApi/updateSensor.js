@@ -2,6 +2,7 @@ const gatewayHelper = require('../Helpers/gatewayHelper');
 const { HTTPCodes } = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
+const sqlHelper = require('../Helpers/sqlHelper');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -32,46 +33,59 @@ exports.handler = async (event, context) => {
 
     const sensor = eventBody.sensor;
 
-    let updates = [];
-    let values = [];
+    let sensorUpdates = [];
+    let sensorValues = [];
+
+    let profileUpdates = [];
+    let profileValues = [];
+
     let ret = {
         sensor: sensor
     };
 
 	if (validator.hasKeys(eventBody, ['name']) && eventBody.name) {
-        updates.push('name = ?');
-        values.push(eventBody.name);
+        profileUpdates.push('name = ?');
+        profileValues.push(eventBody.name);
         ret.name = eventBody.name;
     }
 	if (validator.hasKeys(eventBody, ['public']) && (parseInt(eventBody.public) === 0 || parseInt(eventBody.public) === 1)) {
-        updates.push('public = ?');
-        values.push(parseInt(eventBody.public));
+        sensorUpdates.push('public = ?');
+        sensorValues.push(parseInt(eventBody.public));
         ret.public = eventBody.public;
     }
-    if (updates.length === 0) {
+    if (sensorUpdates.length === 0 && profileUpdates.length === 0) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No values provided for update.");
     }
 
-    const updateString = updates.join(', ');
-
-    // Where condition values
-    values.push(sensor);
-    values.push(user.id);
-
 	try {
-        results = await mysql.query({
-            sql: `UPDATE sensors
-                    SET ${updateString},
-                    updated_at = CURRENT_TIMESTAMP
-                  WHERE
-                    sensor_id = ?
-                    AND owner_id = ?`,
-            timeout: 1000,
-            values: values
-        });
-		if (results.affectedRows !== 1) {
-			return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not claimed or found. Data not updated.");
-		}
+        if (profileUpdates.length) {
+            const profileResult = await sqlHelper.updateValues(
+                'sensor_profiles',
+                profileUpdates,
+                profileValues,
+                ['sensor_id = ?', 'user_id = ?', 'is_active = ?'],
+                [sensor, user.id, 1]
+            );
+
+            if (profileResult !== 1) {
+                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not claimed or found. Data not updated.");
+            }    
+        }
+
+        if (sensorUpdates.length) {
+            const sensorResult = await sqlHelper.updateValues(
+                'sensors',
+                sensorUpdates,
+                sensorValues,
+                ['sensor_id = ?', 'owner_id = ?'],
+                [sensor, user.id]
+            );
+
+            if (sensorResult !== 1) {
+                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not claimed or found. Data not updated.");
+            }    
+        }
+
         await mysql.end();
     } catch (e) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
