@@ -31,7 +31,7 @@ exports.handler = async (event, context) => {
             UNION
             SELECT
                 sensors.sensor_id AS sensor,
-                COALESCE(sensors.name, '') AS name,
+                COALESCE(sensor_profiles.name, '') AS name,
                 false AS owner,
                 COALESCE(sensor_profiles.picture, '') AS picture,
                 sensors.public AS public

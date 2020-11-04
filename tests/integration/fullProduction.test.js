@@ -191,7 +191,7 @@ describe('Full integration tests', () => {
 		const sharedSensorData = userShareData.data.data.sensors[0];
 		expect(sharedSensorData.sensor).toBe(newSensorMac);
 		expect(sharedSensorData.public).toBe(false);
-		expect(sharedSensorData.shared_to).toBe(secondaryEmail);
+		expect(sharedSensorData.sharedTo).toBe(secondaryEmail);
 	});
 
 	// DEPENDENT ON THE ABOVE

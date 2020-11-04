@@ -28,7 +28,7 @@ exports.handler = async (event, context) => {
                 sensor_profiles.name AS name,
                 sensor_profiles.picture AS picture,
                 sensors.public AS public,
-                users.email AS shared_to
+                users.email AS sharedTo
             FROM sensor_profiles
             INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
             INNER JOIN users ON users.id = sensor_profiles.user_id
