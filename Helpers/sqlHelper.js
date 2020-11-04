@@ -121,6 +121,6 @@ const updateValues = async (table, fields, values, whereConditions, whereValues)
 module.exports = {
 	fetchAll,
 	fetchSingle,
-    setValue,
-    updateValues
- };
+	setValue,
+	updateValues
+};
