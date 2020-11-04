@@ -71,13 +71,14 @@ exports.handler = async (event, context) => {
 
     try {
         results = await mysql.query({
-            sql: `UPDATE sensors
+            sql: `UPDATE sensor_profiles
                   SET
                     picture = ?,
                     updated_at = CURRENT_TIMESTAMP
                   WHERE
                     sensor_id = ?
-                    AND owner_id = ?`,
+                    AND user_id = ?
+                    AND is_active = 1`,
             timeout: 1000,
             values: [finalURL, sensor, user.id]
         });

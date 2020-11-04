@@ -89,11 +89,38 @@ const setValue = async (field, value, table, keyField, keyValue) => {
     return false;
 }
 
+const updateValues = async (table, fields, values, whereConditions, whereValues) => {
+    // Append where values to the what is being passed
+    whereValues.forEach((value) => {
+        values.push(value);
+    })
+    
+    const updateString = fields.join(', ');
+    const whereString = whereConditions.join(' AND ');
+
+    try {
+        results = await mysql.query({
+            sql: `UPDATE ${table}
+                    SET ${updateString},
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE ${whereString}`,
+            timeout: 1000,
+            values: values
+        });
+    } catch (err) {
+        console.error(err);
+        return 0;
+    }
+
+    return results.affectedRows;
+}
+
 /**
  * Exports
  */
 module.exports = {
 	fetchAll,
 	fetchSingle,
-	setValue
- };
+	setValue,
+	updateValues
+};

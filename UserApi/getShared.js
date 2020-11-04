@@ -25,17 +25,19 @@ exports.handler = async (event, context) => {
     const sensors = await mysql.query({
         sql: `SELECT
                 sensors.sensor_id AS sensor,
-                sensors.name AS name,
-                sensors.picture AS picture,
+                sensor_profiles.name AS name,
+                sensor_profiles.picture AS picture,
                 sensors.public AS public,
-                users.email AS shared_to
-            FROM shared_sensors
-            INNER JOIN sensors ON sensors.sensor_id = shared_sensors.sensor_id
-            INNER JOIN users ON users.id = shared_sensors.user_id
+                users.email AS sharedTo
+            FROM sensor_profiles
+            INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
+            INNER JOIN users ON users.id = sensor_profiles.user_id
             WHERE
-                sensors.owner_id = ?`,
+                sensors.owner_id = ?
+                AND sensor_profiles.is_active = 1
+                AND sensor_profiles.user_id != ?`,
         timeout: 1000,
-        values: [user.id]
+        values: [user.id, user.id]
     });
 
     // Format returned data properly
