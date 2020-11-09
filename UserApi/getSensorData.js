@@ -65,31 +65,23 @@ exports.handler = async (event, context) => {
                     sensors.id,
                     sensor_profiles.name AS name
                 FROM sensors
-                INNER JOIN sensor_profiles ON
+                LEFT JOIN sensor_profiles ON
                     sensor_profiles.sensor_id = sensors.sensor_id
-                    AND sensor_profiles.user_id = sensors.owner_id
                 WHERE
-                    (
-                        sensors.owner_id = ?
-                        OR sensors.public = 1
-                    )
-                    AND sensors.sensor_id = ?
-                UNION
-                SELECT
-                    sensor_profiles.id,
-                    sensor_profiles.name AS name
-                FROM sensor_profiles
-                INNER JOIN sensors ON sensor_profiles.sensor_id = sensors.sensor_id
-                WHERE
-                    sensor_profiles.user_id = ?
-                    AND sensor_profiles.sensor_id = ?
-                    AND sensor_profiles.is_active = 1`,
+                    sensors.sensor_id = ?
+                    AND (
+                        (
+                            sensor_profiles.user_id = ?
+                            AND sensor_profiles.is_active = 1
+                        ) OR (
+                            sensors.public = 1
+                            AND sensor_profiles.user_id = sensors.owner_id
+                        )
+                    )`,
             timeout: 1000,
             values: [
-                user.id,
                 sensor,
-                user.id,
-                sensor
+                user.id
             ]
         });
         if (hasClaim.length === 0) {
@@ -101,7 +93,14 @@ exports.handler = async (event, context) => {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Internal server error.');
     }
 
-    const dataPoints = await dynamoHelper.getSensorData(sensor, resultLimit, sinceTime, untilTime, ascending);
+    // Fetch from long term storage if requested for longer than TTL
+    let tableName = process.env.TABLE_NAME;
+    if (sinceTime < validator.now() - process.env.RAW_DATA_TTL) {
+        tableName = process.env.REDUCED_TABLE_NAME;
+    }
+
+    console.log('Fetching from ' + tableName);
+    const dataPoints = await dynamoHelper.getSensorData(sensor, resultLimit, sinceTime, untilTime, ascending, tableName);
 
     // Format data for the API
     let data = [];

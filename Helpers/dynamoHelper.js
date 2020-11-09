@@ -1,4 +1,5 @@
 const AWS = require('aws-sdk');
+const validator = require('./validator');
 var ddb = new AWS.DynamoDB.DocumentClient();
 
 /**
@@ -23,7 +24,7 @@ const validateSensorData = (data) => {
  * Formats the raw sensor data to DynamoDB row format.
  */
 const dynamoFormat = (inputData) => {
-    return {
+    let data = {
         "SensorId": { "S": inputData.id },
         "MeasurementTimestamp": { "N": inputData.timestamp.toString() },
         "SensorData": { "S": inputData.data },
@@ -33,23 +34,32 @@ const dynamoFormat = (inputData) => {
         "Coordinates": { "S": inputData.coordinates },
         "ReceivedAt": { "N": Date.now().toString() }
     };
+
+    if (inputData.ttl) {
+        data['TimeToLive'] = { "N": inputData.ttl.toString() };
+    }
+
+    return data;
 }
 
 /**
  * Formats the raw JSON objects into a batch for DynamoDB.
  */
-const getDynamoBatch = (inputData) => {
+const getDynamoBatch = (inputData, tableName = null) => {
+    if (!tableName) {
+        tableName = process.env.TABLE_NAME;
+    }
     let batch = {
         RequestItems: { }
     };
-    batch.RequestItems[process.env.TABLE_NAME] = [];
+    batch.RequestItems[tableName] = [];
 
     for (let i = 0, len = inputData.length; i < len; i++) {
         if (!validateSensorData(inputData[i])) {
             return null;
         }
 
-        batch.RequestItems[process.env.TABLE_NAME].push({
+        batch.RequestItems[tableName].push({
             PutRequest: {
                 Item: dynamoFormat(inputData[i])
             }
@@ -89,7 +99,7 @@ const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 10000, sc
 
     if (rangeField && (rangeStart || rangeEnd)) {
         if (!rangeEnd) {
-            rangeEnd = Date.now();
+            rangeEnd = validator.now();
         }
         if (!rangeStart) {
             rangeStart = 0;
@@ -101,7 +111,6 @@ const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 10000, sc
         params.ExpressionAttributeValues[':since'] = rangeStart;
         params.ExpressionAttributeValues[':until'] = rangeEnd;
     }
-    console.log(params);
 
     const rawData = await ddb.query(params).promise();
     if (!rawData || !rawData.hasOwnProperty('Items')) {
@@ -120,16 +129,20 @@ const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 10000, sc
  * @param {int} count Desired maximum result count
  * @param {date} startDate Start date for results
  * @param {date} endDate End date for results
- * @param {ascending} ascending When true, returns oldest result first
+ * @param {boolean} ascending When true, returns oldest result first
+ * @param {string} tableName When set, will fetch data from this table instead 
  */
-const getSensorData = async (sensor, count, startDate, endDate, ascending = false) => {
+const getSensorData = async (sensor, count, startDate, endDate, ascending = false, tableName = null) => {
+    if (tableName === null) {
+        tableName = process.env.TABLE_NAME;
+    }
     if (typeof(process.env.TABLE_NAME) === 'undefined') {
         console.error('TABLE_NAME not defined in environment.');
         return [];
     }
 
     return fetch(
-        process.env.TABLE_NAME,
+        tableName,
         'SensorId',
         sensor,
         ['SensorId', 'Coordinates', 'SensorData', 'GatewayMac', 'MeasurementTimestamp', 'RSSI'],
