@@ -4,6 +4,7 @@ const validator = require('../Helpers/validator');
 const userHelper = require('../Helpers/userHelper');
 const emailHelper = require('../Helpers/emailHelper');
 const sqlHelper = require('../Helpers/sqlHelper');
+const dynamoHelper = require('../Helpers/dynamoHelper');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -51,9 +52,12 @@ exports.handler = async (event, context) => {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'No subscription found.');
         }
         const maxShares = parseInt(subscription.max_shares);
+        const maxSharesPerSensor = parseInt(subscription.max_shares_per_sensor);
 
         const currentShares = await mysql.query({
-            sql: `SELECT COUNT(*) AS sensor_count
+            sql: `SELECT
+                    COUNT(*) AS sensor_count,
+                    SUM(IF(sensors.sensor_id = ?, 1, 0)) AS single_sensor_shares
                 FROM sensor_profiles
                 INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
                 INNER JOIN users ON users.id = sensor_profiles.user_id
@@ -61,11 +65,20 @@ exports.handler = async (event, context) => {
                     sensors.owner_id = ?
                     AND sensor_profiles.user_id != ?`,
             timeout: 1000,
-            values: [user.id, user.id]
+            values: [sensor, user.id, user.id]
         });
 
         if (currentShares[0].sensor_count >= maxShares) {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Maximum share count reached.');
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Maximum share count for subscription reached.');
+        }
+
+        if (currentShares[0].single_sensor_shares >= maxSharesPerSensor) {
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, `Maximum share (${maxSharesPerSensor}) count reached for sensor ${sensor}.`);
+        }
+
+        const data = await dynamoHelper.getSensorData(sensor, 1, null, null);
+        if (data.length === 0) {
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Cannot share a sensor without data.');
         }
 
         const targetUserId = targetUser.id;

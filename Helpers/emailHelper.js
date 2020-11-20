@@ -108,7 +108,7 @@ const sendShareNotification = async (email, sensorName, sharerName, from, source
         <body>
             <h1>Ruuvi sensor was shared with you!</h1>
             <p>
-                Ruuvi Network user ${sharerName} shared ${sensorNameString} with you!
+                Ruuvi Network user ${sharerName} shared "${sensorNameString}" with you!
             </p>
             <p>
                 Log in to the mobile application to view it!
@@ -120,8 +120,48 @@ const sendShareNotification = async (email, sensorName, sharerName, from, source
     return sendEmail(email, from, `${sharerName} shared a Ruuvi sensor with you!`, htmlBody);
 };
 
+/**
+ * Sends a notification when a sensor the user shared is removed
+ *
+ * @param {string} email
+ * @param {string} sensorName
+ * @param {string} shareRecipient
+ * @param {string} from
+ * @param {string} sourceDomain
+ */
+const sendShareRemovedNotification = async (email, sensorName, shareRecipient, from, sourceDomain) => {
+    let domain = process.env.BASE_API_URL;
+    if (sourceDomain) {
+        domain = sourceDomain;
+    }
+
+    let sensorNameString = '';
+    if (sensorName) {
+        sensorNameString = `sensor "${sensorName}"`;
+    } else {
+        sensorNameString = `a sensor`;
+    }
+
+    // TODO: This would be nicer to maintain by SES templates
+    const htmlBody = `
+      <!DOCTYPE html>
+      <html>
+        <head></head>
+        <body>
+            <h1>Ruuvi sensor share was removed by user!</h1>
+            <p>
+                Ruuvi Network user ${shareRecipient} removed shared ${sensorNameString}!
+            </p>
+        </body>
+      </html>
+    `;
+
+    return sendEmail(email, from, `${shareRecipient} removed a Ruuvi sensor you had shared!`, htmlBody);
+};
+
 module.exports = {
     sendEmailVerification,
     sendResetEmail,
-    sendShareNotification
+    sendShareNotification,
+    sendShareRemovedNotification
 };
