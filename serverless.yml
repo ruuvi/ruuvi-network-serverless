@@ -22,7 +22,7 @@ custom:
   dynamoAlerts: ${self:custom.stage}-SensorAlerts
   sensorProfileBucket: ${self:custom.stage}-sensor-profile-pictures
   longTermStorageInterval: 960 # seconds
-  rawDataTTL: 3600             # 7776000 = 3 months
+  rawDataTTL: 2592000  # 7776000 = 3 months
 
   sourceEmail: 'otso@ruuvi.com'
   sourceDomain: 'https://network.ruuvi.com'

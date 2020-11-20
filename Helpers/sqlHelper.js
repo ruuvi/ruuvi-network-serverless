@@ -41,10 +41,15 @@ const fetchSingle = async (field, value, table) => {
  * @param {string} table Target table
  * @returns {object} First result or null if none
  */
-const fetchAll = async (field, value, table) => {
+const fetchAll = async (field, value, table, orderByField = null, orderByDirection = 'ASC') => {
+    let orderBy = '';
+    if (orderByField !== null) {
+        orderBy = `ORDER BY ${orderByDirection}`
+    }
+    
     try {
         const results = await mysql.query({
-            sql: `SELECT * FROM ${table} WHERE ${field} = ?`,
+            sql: `SELECT * FROM ${table} WHERE ${field} = ? ${orderBy}`,
             timeout: 1000,
             values: [value]
         });
