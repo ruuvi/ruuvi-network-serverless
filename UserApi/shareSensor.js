@@ -116,12 +116,13 @@ exports.handler = async (event, context) => {
                 INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
                 WHERE
                     sensors.owner_id = sensor_profiles.user_id
+                    AND sensor_profiles.is_active = 1
                     AND sensor_profiles.sensor_id = ?`,
             timeout: 1000,
             values: [sensor]
         });
 
-        if (sensorData.length === 0 || !sensorData[0].name) {
+        if (sensorData.length === 0) {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Share successful, but unable to send e-mail.');
         }
 
