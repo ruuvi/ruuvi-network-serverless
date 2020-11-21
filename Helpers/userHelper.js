@@ -67,7 +67,7 @@ const create = async (email) => {
  * @param {int} userId ID of the user
  * @param {string} token Token to store
  */
-const createToken = async (userId) => {
+const createUserToken = async (userId) => {
     const idInt = parseInt(userId);
     if (!idInt) {
         return null;
@@ -77,22 +77,39 @@ const createToken = async (userId) => {
     const tokenGenerator = require('./tokenGenerator');
     const tokenData = tokenGenerator.create(64, userId);
 
-    // Hash the token
-    const saltRounds = 10;
-    const bcrypt = require('bcrypt');
-    const hash = bcrypt.hashSync(tokenData.token, saltRounds);
-
     try {
         results = await mysql.query({
             sql: `INSERT INTO user_tokens (user_id, access_token) VALUES (?, ?);`,
             timeout: 1000,
-            values: [idInt, hash]
+            values: [idInt, tokenData.hash]
         });
 
         return tokenData.composite;
     } catch (err) {
         console.error(err);
         return null;
+    }
+}
+
+/**
+ * Updates the token ids last accessed flag.
+ *
+ * @param {int} tokenId
+ */
+const updateLastAccessed = async (tokenId) => {
+    const idInt = parseInt(tokenId);
+    if (!idInt) {
+        return;
+    }
+
+    try {
+        results = await mysql.query({
+            sql: `UPDATE user_tokens SET last_accessed = CURRENT_TIMESTAMP WHERE id = ?;`,
+            timeout: 1000,
+            values: [idInt]
+        });
+    } catch (err) {
+        console.error(err);
     }
 }
 
@@ -120,6 +137,7 @@ module.exports = {
     getByEmail,
     getById,
     create,
-    createToken,
-    createSubscription
+    createUserToken,
+    createSubscription,
+    updateLastAccessed
  };

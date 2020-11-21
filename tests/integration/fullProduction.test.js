@@ -17,6 +17,7 @@ const token = stageConfig[stage]['primary'];
 const RI = process.env.IS_INTEGRATION_TEST;
 const primaryEmail = stageConfig[stage]['primaryEmail'];
 const secondaryEmail = stageConfig[stage]['secondaryEmail'];
+const internalKey = stageConfig[stage]['internal'];
 
 /**
  * HTTP Client with Authorization set up
@@ -24,7 +25,10 @@ const secondaryEmail = stageConfig[stage]['secondaryEmail'];
 const instance = axios.create({
 	baseURL: baseURL,
 	timeout: 3000,
-	headers: { Authorization: `Bearer ${token}`}
+	headers: {
+		Authorization: `Bearer ${token}`,
+		//'X-Internal-Secret': internalKey  // TODO: This currently fails CORS using Axios
+	}
 });
 
 /**
@@ -55,9 +59,9 @@ const testData = utils.randomHex(32);
 // Verifiable test e-mail here would be best
 const newEmail = utils.randomHex(8) + '@' + utils.randomHex(8) + '.com';
 
-describe('Full integration tests', () => {
-	//console.log('Running tests for: ' + stage);
+let registrationToken = null;
 
+describe('Full integration tests', () => {
 	// INTERNAL
 	itif(RI)('`whitelist` without internal token fails', async () => {
 
@@ -79,13 +83,15 @@ describe('Full integration tests', () => {
 	});
 
 	// USER
-	itif(RI)('`register` returns 200 OK', async () => {
-		const registerResult = await post('register', {
-			email: newEmail
-		});
-		expect(registerResult.status).toBe(200);
-		expect(registerResult.statusText).toBe('OK');
-	});
+	// itif(RI)('`register` returns 200 OK', async () => {
+	// 	const registerResult = await post('register', {
+	// 		email: newEmail
+	// 	});
+	// 	expect(registerResult.status).toBe(200);
+	// 	expect(registerResult.statusText).toBe('OK');
+	// 	expect(registerResult.token).not.toBeNull();
+	// 	registrationToken = registerResult.token;
+	// });
 
 	itif(RI)('`verify` fails with invalid token', async () => {
 		// toThrow failed for some reason [temporary workaround]
@@ -100,6 +106,22 @@ describe('Full integration tests', () => {
 		}
 		expect(threw).toBe(true);
 	});
+
+	// itif(RI)('`verify` succeeds with valid token', async () => {
+	// 	// DEPENDENCY: This verifies previous test
+	// 	expect(registrationToken).not.toBeNull();
+
+	// 	// toThrow failed for some reason [temporary workaround]
+	// 	let threw = false;
+	// 	const verifyResult = await get('verify', {
+	// 		token: registrationToken
+	// 	});
+
+	// 	expect(verifyResult.status).toBe(200);
+	// 	expect(verifyResult.statusText).toBe('OK');
+
+	// 	// TODO: We could do remainder of the tests with this user
+	// });
 
 	itif(RI)('`record` returns 200 OK', async () => {
 		let tags = {};

@@ -7,8 +7,8 @@ exports.handler = async (event) => {
     // Flatten into an array
     let flattenedData = [];
 
-    const interval = process.env.LONG_TERM_STORAGE_INTERVAL;
-    const rawDataTTL = process.env.RAW_DATA_TTL;
+    const interval = parseInt(process.env.LONG_TERM_STORAGE_INTERVAL);
+    const rawDataTTL = parseInt(process.env.RAW_DATA_TTL);
     const now = validator.now();
 
     function sendBatch(data, tableName = null) {
@@ -24,9 +24,9 @@ exports.handler = async (event) => {
     /**
      * Sends to DynamoDB if no record for the same sensor is found within given time
      * interval.
-     * 
-     * @param {object} data 
-     * @param {int} interval 
+     *
+     * @param {object} data
+     * @param {int} interval
      */
     async function sendIfNotInInterval(data, interval) {
         // TODO: This should be cleaned up
@@ -43,8 +43,7 @@ exports.handler = async (event) => {
             1,
             false,
             'MeasurementTimestamp',
-            now - interval,
-            now
+            now - interval
         );
 
         if (item.length > 0) {
@@ -73,7 +72,7 @@ exports.handler = async (event) => {
             sensors[key].coordinates = coordinates;
             sensors[key].received = timestamp;
             sensors[key].ttl = Math.ceil(now + rawDataTTL);
-            
+
             // TODO: Could use some improved batching here
             uploadBatchPromises.push(sendIfNotInInterval(sensors[key], interval));
 

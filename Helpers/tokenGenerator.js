@@ -20,9 +20,15 @@ const create = (length, userId) => {
     result.token = raw;
 
     if (userId) {
+        // Create the composite key from user id and the raw token
         const buf = Buffer.from('u' + userId.toString(), 'ascii');
         result.userId = userId;
         result.composite = buf.toString('hex') + '/' + raw;
+
+        // Create the hash
+        const saltRounds = 2; // Performance above 4 degrades a lot
+        const bcrypt = require('bcrypt');
+        result.hash = bcrypt.hashSync(raw, saltRounds);
     }
 
    return result;

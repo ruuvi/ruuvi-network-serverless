@@ -14,9 +14,9 @@ const mysql = require('serverless-mysql')({
 
 /**
  * Unclaims a sensor.
- * 
- * @param {object} event 
- * @param {object} context 
+ *
+ * @param {object} event
+ * @param {object} context
  */
 exports.handler = async (event, context) => {
     const user = await auth.authorizedUser(event.headers);
@@ -56,7 +56,7 @@ exports.handler = async (event, context) => {
             values: [sensor, user.id]
         });
 		if (results.affectedRows !== 1) {
-            console.log(`User ${user.id} successfully unclaimed ${sensor_id}`);
+            console.log(`User ${user.id} successfully unclaimed ${sensor}`);
 			return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor does not belong to user.");
 		}
         await mysql.end();
