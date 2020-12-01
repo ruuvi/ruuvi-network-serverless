@@ -35,10 +35,9 @@ exports.handler = async (event, context) => {
         type: isReset ? 'reset' : 'registration'
     };
 
-
     try {
         const jwt = jwtHelper.sign(userInfo, process.env.SIGNING_SECRET, process.env.INVITATION_EXPIRATION_INTERVAL * 60);
-        const tokenData = tokenGenerator.create(6);
+        const tokenData = tokenGenerator.create(process.env.VERIFICATION_SHORT_TOKEN_LENGTH);
         const short = tokenData.token.toUpperCase();
 
         result = await mysql.query({
@@ -49,6 +48,14 @@ exports.handler = async (event, context) => {
 
         if (!result.insertId) {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Unknown error occurred. (13)');
+        }
+
+        // Internal override to skip e-mail verification
+        if (gatewayHelper.getHeader('X-Internal-Secret', event.headers) === process.env.INTERNAL_API_KEY) {
+            return gatewayHelper.successResponse({
+                email: userInfo.email,
+                token: short
+            });
         }
 
         let emailResult = {};

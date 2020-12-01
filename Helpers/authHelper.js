@@ -3,15 +3,6 @@ const generator = require('../Helpers/tokenGenerator');
 const sqlHelper = require('../Helpers/sqlHelper');
 const userHelper = require('../Helpers/userHelper');
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD
-    }
-});
-
 /**
  * Returns the user id for the authenticated user.
  *
@@ -56,6 +47,7 @@ const authorizedUser = async (headers) => {
     for (let i = 0; i < tokenResult.length; i++) {
         const token = tokenResult[i].access_token;
         if (bcrypt.compareSync(parsed.token, token)) {
+            await userHelper.updateLastAccessed(tokenResult[i].id);
             return await userHelper.getById(parsed.userId);
         }
     }

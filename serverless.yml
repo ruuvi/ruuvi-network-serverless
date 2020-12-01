@@ -21,8 +21,9 @@ custom:
   dynamoGatewayWhitelist: ${self:custom.stage}-GatewayWhitelist
   dynamoAlerts: ${self:custom.stage}-SensorAlerts
   sensorProfileBucket: ${self:custom.stage}-sensor-profile-pictures
-  longTermStorageInterval: 960 # seconds
-  rawDataTTL: 3600             # 7776000 = 3 months
+  longTermStorageInterval: 960      # seconds between data points
+  rawDataTTL: 10800                 # 10800 = 2h, 7776000 = 3 months
+  verificationShortTokenLength: 4   # Length of the short verification token sent in the e-mail
 
   sourceEmail: 'otso@ruuvi.com'
   sourceDomain: 'https://network.ruuvi.com'
@@ -175,6 +176,7 @@ functions:
           path: /get
           #payload: '2.0'
     environment:
+      DEBUG: 1
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -218,6 +220,8 @@ functions:
       INVITATION_EXPIRATION_INTERVAL: ${self:custom.invitationExpirationInterval}
       SOURCE_EMAIL: ${self:custom.sourceEmail}
       SOURCE_DOMAIN: ${self:custom.sourceDomain}
+      VERIFICATION_SHORT_TOKEN_LENGTH: ${self:custom.verificationShortTokenLength}
+      INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key~true}
       BASE_API_URL:
         !Join
           - ''
@@ -356,28 +360,47 @@ functions:
             - ${opt:region, self:provider.region}
             - '.'
             - !Ref AWS::URLSuffix
+
   # NOTE: Workaround for CORS preflight requests
-#  corsOptions:
-#    handler: UserApi/corsHelper.handler
-#    events:
-#      - httpApi:
-#          method: OPTIONS
-#          path: /register
-#      - httpApi:
-#          method: OPTIONS
-#          path: /claim
-#      - httpApi:
-#          method: OPTIONS
-#          path: /share
-#      - httpApi:
-#          method: OPTIONS
-#          path: /verify
-#      - httpApi:
-#          method: OPTIONS
-#          path: /get
-#      - httpApi:
-#          method: OPTIONS
-#          path: /user
+  corsOptions:
+    handler: UserApi/corsHelper.handler
+    events:
+      - httpApi:
+          method: OPTIONS
+          path: /register
+      - httpApi:
+          method: OPTIONS
+          path: /claim
+      - httpApi:
+          method: OPTIONS
+          path: /unclaim
+      - httpApi:
+          method: OPTIONS
+          path: /share
+      - httpApi:
+          method: OPTIONS
+          path: /shared
+      - httpApi:
+          method: OPTIONS
+          path: /unshare
+      - httpApi:
+          method: OPTIONS
+          path: /update
+      - httpApi:
+          method: OPTIONS
+          path: /upload
+      - httpApi:
+          method: OPTIONS
+          path: /verify
+      - httpApi:
+          method: OPTIONS
+          path: /whitelist
+      - httpApi:
+          method: OPTIONS
+          path: /get
+      - httpApi:
+          method: OPTIONS
+          path: /user
 
   # INTERNAL API
   whitelist:

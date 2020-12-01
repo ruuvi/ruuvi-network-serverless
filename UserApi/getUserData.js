@@ -20,11 +20,12 @@ exports.handler = async (event, context) => {
         sql: `SELECT
                 sensors.sensor_id AS sensor,
                 COALESCE(sensor_profiles.name, '') AS name,
-                IF(sensors.owner_id = sensor_profiles.user_id, 1, 0) AS owner,
+                owner.email AS owner,
                 COALESCE(sensor_profiles.picture, '') AS picture,
                 sensors.public AS public
             FROM sensor_profiles
             INNER JOIN sensors ON sensor_profiles.sensor_id = sensors.sensor_id
+            INNER JOIN users owner ON owner.id = sensors.owner_id
             WHERE
                 sensor_profiles.user_id = ?
                 AND sensor_profiles.is_active = 1`,
@@ -36,7 +37,6 @@ exports.handler = async (event, context) => {
     let formatted = [];
     sensors.forEach((sensor) => {
         sensor.public = sensor.public ? true : false;
-        sensor.owner = sensor.owner ? true : false;
         formatted.push(sensor);
     });
 

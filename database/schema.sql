@@ -14,6 +14,7 @@ CREATE TABLE user_tokens (
         user_id INT NOT NULL,
         access_token VARCHAR(128) NOT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_accessed DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY(id),
         UNIQUE INDEX user_token_idx (user_id, access_token),
         FOREIGN KEY(user_id) REFERENCES users(id)

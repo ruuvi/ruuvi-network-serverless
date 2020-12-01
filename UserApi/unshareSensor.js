@@ -44,20 +44,53 @@ exports.handler = async (event, context) => {
         }
         const targetUserId = targetUser.id;
 
-        // NOTE: We might want to change this into soft-delete
-        results = await mysql.query({
-            sql: `DELETE sensor_profiles
-                  FROM sensor_profiles
-                  INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
-                  WHERE
-                    sensor_profiles.user_id = ?
-                    AND sensor_profiles.is_active = 1
-                    AND sensors.owner_id = ?
-                    AND sensors.owner_id != ?
-                    AND sensors.sensor_id = ?`,
-            timeout: 1000,
-            values: [targetUserId, user.id, targetUserId, sensor]
-        });
+        if (user.id !== targetUserId) {
+            // NOTE: We might want to change this into soft-delete
+            // Remove sensor share from user to target user
+            results = await mysql.query({
+                sql: `DELETE sensor_profiles
+                    FROM sensor_profiles
+                    INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
+                    WHERE
+                        sensor_profiles.user_id = ?
+                        AND sensor_profiles.is_active = 1
+                        AND sensors.owner_id = ?
+                        AND sensors.owner_id != ?
+                        AND sensors.sensor_id = ?`,
+                timeout: 1000,
+                values: [targetUserId, user.id, targetUserId, sensor]
+            });
+        } else {
+            // NOTE: We might want to change this into soft-delete (see reference implementation below)
+            results = await mysql.query({
+                sql: `DELETE sensor_profiles
+                    FROM sensor_profiles
+                    INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
+                    WHERE
+                        sensor_profiles.user_id = ?
+                        AND sensor_profiles.is_active = 1
+                        AND sensors.owner_id != ?
+                        AND sensors.sensor_id = ?`,
+                timeout: 1000,
+                values: [user.id, user.id, sensor]
+            });
+
+            /* WORKING SOFT-DELETE IMPLEMENTATION
+            // Remove sensor share from any user to you by setting the `is_active` to false
+            results = await mysql.query({
+                sql: `UPDATE sensor_profiles
+                    INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
+                    SET sensor_profiles.is_active = 0
+                    WHERE
+                        sensor_profiles.user_id = ?
+                        AND sensor_profiles.is_active = 1
+                        AND sensors.owner_id != ?
+                        AND sensors.sensor_id = ?`,
+                timeout: 1000,
+                values: [user.id, user.id, sensor]
+            });
+            */
+        }
 
         if (results.affectedRows === 1) {
             // Success

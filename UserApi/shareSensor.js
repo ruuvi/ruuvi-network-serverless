@@ -36,7 +36,7 @@ exports.handler = async (event, context) => {
     if (!validator.validateMacAddress(sensor)) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid sensor ID given.");
     }
-    
+
     let results = null;
 
     try {
@@ -63,7 +63,7 @@ exports.handler = async (event, context) => {
             timeout: 1000,
             values: [user.id, user.id]
         });
-    
+
         if (currentShares[0].sensor_count >= maxShares) {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Maximum share count reached.');
         }
@@ -71,9 +71,7 @@ exports.handler = async (event, context) => {
         const targetUserId = targetUser.id;
 
         // Currently Enforces sharing restrictions on database level
-        console.log(targetUserId);
-        console.log(user.id);
-        console.log(sensor);
+        console.log(user.id + ' shared sensor ' + sensor + ' to ' + targetUserId);
         results = await mysql.query({
             sql: `INSERT INTO sensor_profiles (
                     user_id,
@@ -112,10 +110,27 @@ exports.handler = async (event, context) => {
 
     // Sharing was successful, send notification e-mail
     try {
-        const sensorData = await sqlHelper.fetchSingle('sensor_id', sensor, 'sensors');
-        emailHelper.sendShareNotification(
+        const sensorData = await mysql.query({
+            sql: `SELECT name
+                FROM sensor_profiles
+                INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
+                WHERE
+                    sensors.owner_id = sensor_profiles.user_id
+                    AND sensor_profiles.is_active = 1
+                    AND sensor_profiles.sensor_id = ?`,
+            timeout: 1000,
+            values: [sensor]
+        });
+
+        if (sensorData.length === 0) {
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Share successful, but unable to send e-mail.');
+        }
+
+        const sensorName = sensorData[0].name ? sensorData[0].name : 'unnamed';
+
+        await emailHelper.sendShareNotification(
             targetUserEmail,
-            sensorData.name,
+            sensorName,
             user.email,
             process.env.SOURCE_EMAIL,
             process.env.SOURCE_DOMAIN

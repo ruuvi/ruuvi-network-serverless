@@ -49,7 +49,7 @@ exports.handler = async (event, context) => {
     }
 
     if (userId > 0) {
-        userInfo.accessToken = await userHelper.createToken(userId);
+        userInfo.accessToken = await userHelper.createUserToken(userId);
         if (userInfo.accessToken) {
             console.info("Successfully created token for user: " + userInfo.email);
         }
@@ -60,6 +60,12 @@ exports.handler = async (event, context) => {
     } else {
         console.error("Unable to create user " + userInfo.email);
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unable to register user.");
+    }
+
+    const deleteResult = await sqlHelper.deleteSingle('short_token', short, 'reset_tokens');
+    if (!deleteResult) {
+        console.error("Unable to delete `short_token`: " + short);
+        console.error(userInfo);
     }
 
     return gatewayHelper.successResponse(userInfo);

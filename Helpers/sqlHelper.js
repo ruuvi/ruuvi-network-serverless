@@ -34,6 +34,31 @@ const fetchSingle = async (field, value, table) => {
 }
 
 /**
+ * Deletes a single row by id column
+ *
+ * @param {string} field Field name to use for filtering
+ * @param {string} value Value to filter by
+ * @param {string} table Target table
+ */
+const deleteSingle = async (field, value, table) => {
+    try {
+        const result = await mysql.query({
+            sql: `DELETE FROM ${table} WHERE ${field} = ? LIMIT 1`,
+            timeout: 1000,
+            values: [value]
+        });
+
+        if (result.affectedRows === 1) {
+            return true;
+        }
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
+    return false;
+}
+
+/**
  * Fetches all rows by filtered column
  *
  * @param {string} field Field name to use for filtering
@@ -41,10 +66,15 @@ const fetchSingle = async (field, value, table) => {
  * @param {string} table Target table
  * @returns {object} First result or null if none
  */
-const fetchAll = async (field, value, table) => {
+const fetchAll = async (field, value, table, orderByField = null, orderByDirection = 'ASC') => {
+    let orderBy = '';
+    if (orderByField !== null) {
+        orderBy = `ORDER BY ${orderByDirection}`
+    }
+
     try {
         const results = await mysql.query({
-            sql: `SELECT * FROM ${table} WHERE ${field} = ?`,
+            sql: `SELECT * FROM ${table} WHERE ${field} = ? ${orderBy}`,
             timeout: 1000,
             values: [value]
         });
@@ -89,12 +119,21 @@ const setValue = async (field, value, table, keyField, keyValue) => {
     return false;
 }
 
+/**
+ * Updates a list of values
+ *
+ * @param {string} table
+ * @param {array} fields
+ * @param {array} values
+ * @param {array} whereConditions
+ * @param {array} whereValues
+ */
 const updateValues = async (table, fields, values, whereConditions, whereValues) => {
     // Append where values to the what is being passed
     whereValues.forEach((value) => {
         values.push(value);
     })
-    
+
     const updateString = fields.join(', ');
     const whereString = whereConditions.join(' AND ');
 
@@ -120,7 +159,8 @@ const updateValues = async (table, fields, values, whereConditions, whereValues)
  */
 module.exports = {
 	fetchAll,
-	fetchSingle,
+    fetchSingle,
+    deleteSingle,
 	setValue,
 	updateValues
 };

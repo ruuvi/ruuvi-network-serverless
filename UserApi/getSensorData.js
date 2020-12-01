@@ -23,6 +23,7 @@ exports.handler = async (event, context) => {
     }
 
     const query = event.queryStringParameters;
+    const rawDataTTL = parseInt(process.env.RAW_DATA_TTL);
 
     // Validation
     if (
@@ -49,6 +50,13 @@ exports.handler = async (event, context) => {
     }
     if (query.hasOwnProperty('until') && parseInt(query.until)) {
         untilTime = parseInt(query.until);
+    }
+
+    if (
+        (sinceTime !== null && untilTime !== null && sinceTime > untilTime)
+        || (untilTime === null && sinceTime > validator.now()))
+    {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, '`since` is after `until` or in the future.');
     }
 
     // Format arguments
@@ -95,7 +103,7 @@ exports.handler = async (event, context) => {
 
     // Fetch from long term storage if requested for longer than TTL
     let tableName = process.env.TABLE_NAME;
-    if (sinceTime < validator.now() - process.env.RAW_DATA_TTL) {
+    if (sinceTime < validator.now() - rawDataTTL) {
         tableName = process.env.REDUCED_TABLE_NAME;
     }
 
@@ -114,10 +122,16 @@ exports.handler = async (event, context) => {
         });
     });
 
-    return gatewayHelper.successResponse({
+    let response = {
         sensor: sensor,
         name: name,
         total: data.length,
         measurements: data
-    });
+    };
+
+    if (parseInt(process.env.DEBUG) === 1) {
+        response.table = tableName;
+    }
+
+    return gatewayHelper.successResponse(response);
 };

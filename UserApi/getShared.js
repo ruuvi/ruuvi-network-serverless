@@ -12,9 +12,9 @@ const mysql = require('serverless-mysql')({
 
 /**
  * Fetches list of tags the user has shared.
- * 
- * @param {object} event 
- * @param {object} context 
+ *
+ * @param {object} event
+ * @param {object} context
  */
 exports.handler = async (event, context) => {
     const user = await auth.authorizedUser(event.headers);

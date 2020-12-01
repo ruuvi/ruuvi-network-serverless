@@ -3,6 +3,11 @@ const AWS = require('aws-sdk');
 const dynamo = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 
 exports.handler = async (event, context) => {
+    // TODO: This should no longer be required
+    if (event.httpMethod === 'OPTIONS') {
+        return gatewayHelper.ok();
+    }
+
     const apiKey = process.env.INTERNAL_API_KEY;
     if (apiKey === null || apiKey === '' || gatewayHelper.getHeader('X-Internal-Secret', event.headers) !== apiKey) {
         return gatewayHelper.invalid();
