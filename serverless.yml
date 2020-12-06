@@ -22,7 +22,7 @@ custom:
   dynamoAlerts: ${self:custom.stage}-SensorAlerts
   sensorProfileBucket: ${self:custom.stage}-sensor-profile-pictures
   longTermStorageInterval: 960      # seconds between data points
-  rawDataTTL: 10800                 # 10800 = 2h, 7776000 = 3 months
+  rawDataTTL: 360000                # 10800 = 2h, 7776000 = 3 months
   verificationShortTokenLength: 4   # Length of the short verification token sent in the e-mail
 
   sourceEmail: 'otso@ruuvi.com'
@@ -293,6 +293,7 @@ functions:
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       SOURCE_EMAIL: ${self:custom.sourceEmail}
       SOURCE_DOMAIN: ${self:custom.sourceDomain}
+      TABLE_NAME: ${self:custom.dynamoSensorData}
 
   unshareSensor:
     handler: UserApi/unshareSensor.handler
@@ -308,6 +309,8 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SOURCE_EMAIL: ${self:custom.sourceEmail}
+      SOURCE_DOMAIN: ${self:custom.sourceDomain}
 
   getSharedSensors:
     handler: UserApi/getShared.handler
@@ -401,6 +404,9 @@ functions:
       - httpApi:
           method: OPTIONS
           path: /user
+      - httpApi:
+          method: OPTIONS
+          path: /apple-app-site-association
 
   # INTERNAL API
   whitelist:
@@ -412,6 +418,29 @@ functions:
     environment:
       INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key~true}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
+  appleVerification:
+    handler: InternalApi/appleVerification.handler
+    events:
+      - httpApi:
+          method: GET
+          path: /apple-app-site-association
+    environment:
+      APP_ID: ${ssm:apple-app-site-association-id}
+
+  # SERVICES AND MAINTENANCE
+  tokenInvalidator:
+    handler: services/tokenInvalidator.handler
+    events:
+      - schedule:
+          name: ${self:custom.stage}-Access-Token-Clean-Up-Timer
+          description: 'Triggers access token clean up periodically.'
+          rate: rate(1 hour)
+    environment:
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      MAX_TOKEN_AGE: 180 # Days
 
 # Resources (queues, databases, etc.)
 resources:

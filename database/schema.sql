@@ -67,6 +67,7 @@ CREATE TABLE sensor_profiles (
 CREATE TABLE subscriptions (
         user_id INT NOT NULL,
         max_shares INT NOT NULL DEFAULT 40,
+        max_shares_per_sensor INT NOT NULL DEFAULT 10,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY user_idx (user_id),

@@ -1,7 +1,9 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
-const userHelper = require('../Helpers/userHelper')
+const userHelper = require('../Helpers/userHelper');
+const emailHelper = require('../Helpers/emailHelper');
+const sqlHelper = require('../Helpers/sqlHelper');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -27,7 +29,7 @@ exports.handler = async (event, context) => {
     const sensor = eventBody.sensor;
     const targetUserEmail = eventBody.user;
 
-    if (!validator.validateEmail(targetUserEmail)) {
+    if (!targetUserEmail || !validator.validateEmail(targetUserEmail)) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid E-mail given.");
     }
 
@@ -38,15 +40,29 @@ exports.handler = async (event, context) => {
     let results = null;
 
     try {
-        const targetUser = await userHelper.getByEmail(targetUserEmail);
-        if (!targetUser) {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "User not found.");
-        }
-        const targetUserId = targetUser.id;
+        let targetUser = null;
+        let targetUserId = null;
 
-        if (user.id !== targetUserId) {
-            // NOTE: We might want to change this into soft-delete
-            // Remove sensor share from user to target user
+        if (targetUserEmail) {
+            targetUser = await userHelper.getByEmail(targetUserEmail);
+            if (!targetUser) {
+                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "User not found.");
+            }
+            targetUserId = targetUser.id;
+        }
+
+        // Fetch sensor for owner information
+        const ownerInfo = await sqlHelper.fetchSingle('sensor_id', sensor, 'sensors');
+        if (ownerInfo === null) {
+            console.log("Error fetching sensor: " + sensor);
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not found.");
+        }
+
+        const owner = ownerInfo.owner_id;
+        let wasRemoved = false;
+
+        if (targetUser !== null && user.id === owner) {
+            // Remove sensor you shared
             results = await mysql.query({
                 sql: `DELETE sensor_profiles
                     FROM sensor_profiles
@@ -60,8 +76,22 @@ exports.handler = async (event, context) => {
                 timeout: 1000,
                 values: [targetUserId, user.id, targetUserId, sensor]
             });
+
+            wasRemoved = results.affectedRows >= 1;
+
+            if (wasRemoved) {
+                // Success
+                console.log(`User ${user.id} unshared sensor ${sensor} from ${targetUserId}`);
+                await emailHelper.sendShareRemovedNotification(
+                    targetUserEmail,
+                    sensor, // We probably want to fetch the localized sensor name for this
+                    user.email,
+                    process.env.SOURCE_EMAIL,
+                    process.env.SOURCE_DOMAIN
+                );
+            }
         } else {
-            // NOTE: We might want to change this into soft-delete (see reference implementation below)
+            // Remove sensor shared to you
             results = await mysql.query({
                 sql: `DELETE sensor_profiles
                     FROM sensor_profiles
@@ -69,34 +99,30 @@ exports.handler = async (event, context) => {
                     WHERE
                         sensor_profiles.user_id = ?
                         AND sensor_profiles.is_active = 1
+                        AND sensors.owner_id = ?
                         AND sensors.owner_id != ?
                         AND sensors.sensor_id = ?`,
                 timeout: 1000,
-                values: [user.id, user.id, sensor]
+                values: [user.id, owner.id, user.id, sensor]
             });
 
-            /* WORKING SOFT-DELETE IMPLEMENTATION
-            // Remove sensor share from any user to you by setting the `is_active` to false
-            results = await mysql.query({
-                sql: `UPDATE sensor_profiles
-                    INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
-                    SET sensor_profiles.is_active = 0
-                    WHERE
-                        sensor_profiles.user_id = ?
-                        AND sensor_profiles.is_active = 1
-                        AND sensors.owner_id != ?
-                        AND sensors.sensor_id = ?`,
-                timeout: 1000,
-                values: [user.id, user.id, sensor]
-            });
-            */
+            wasRemoved = results.affectedRows >= 1;
+
+            if (wasRemoved) {
+                // Success
+                console.log(`User ${user.id} unshared sensor ${sensor} from ${targetUserId}`);
+                await emailHelper.sendShareRemovedNotification(
+                    owner.email,
+                    sensor, // We probably want to fetch the localized sensor name for this
+                    user.email,
+                    process.env.SOURCE_EMAIL,
+                    process.env.SOURCE_DOMAIN
+                );
+            }
         }
 
-        if (results.affectedRows === 1) {
-            // Success
-            console.log(`User ${user.id} unshared sensor ${sensor} from ${targetUserId}`);
-        } else {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Unable to unshare sensor.");
+        if (!wasRemoved) {
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No access to sensor or sensor not shared.");
         }
 
         // Run clean up function

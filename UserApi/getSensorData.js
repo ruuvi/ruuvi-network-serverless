@@ -42,6 +42,14 @@ exports.handler = async (event, context) => {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid sort argument.');
     }
 
+    if (
+        query.hasOwnProperty('mode')
+        && !(['dense', 'sparse', 'mixed'].includes(query.mode))
+    ) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid mode argument.');
+    }
+
+
     let sinceTime = null;
     let untilTime = null;
 
@@ -61,6 +69,7 @@ exports.handler = async (event, context) => {
 
     // Format arguments
     const ascending = query.hasOwnProperty('sort') && query.sort === 'asc';
+    let mode = query.hasOwnProperty('mode') ? query.mode : 'mixed';
     const sensor = query.sensor;
     const resultLimit = query.hasOwnProperty('limit')
         ? Math.min(parseInt(query.limit), process.env.MAX_RESULTS)
@@ -102,13 +111,33 @@ exports.handler = async (event, context) => {
     }
 
     // Fetch from long term storage if requested for longer than TTL
-    let tableName = process.env.TABLE_NAME;
-    if (sinceTime < validator.now() - rawDataTTL) {
-        tableName = process.env.REDUCED_TABLE_NAME;
+    let dataPoints = [];
+    let tableName = null;
+
+    // If data type is 'mixed' but we're fetching for a range exclusively within either - switch mode
+    const splitPoint = validator.now() - rawDataTTL;
+    if (mode == 'mixed') {
+        if (splitPoint < sinceTime) {
+            mode = 'dense';
+        } else if (splitPoint > untilTime) {
+            mode = 'sparse';
+        }
     }
 
-    console.log('Fetching from ' + tableName);
-    const dataPoints = await dynamoHelper.getSensorData(sensor, resultLimit, sinceTime, untilTime, ascending, tableName);
+    if (mode !== 'mixed') {
+        if (mode === 'sparse') {
+            tableName = process.env.REDUCED_TABLE_NAME;
+        } else if (mode === 'dense') {
+            tableName = process.env.TABLE_NAME;
+        }
+        dataPoints = await dynamoHelper.getSensorData(sensor, resultLimit, sinceTime, untilTime, ascending, tableName);
+    } else {
+        const sparse = await dynamoHelper.getSensorData(sensor, resultLimit, sinceTime, splitPoint, ascending, process.env.REDUCED_TABLE_NAME);
+        const dense = await dynamoHelper.getSensorData(sensor, resultLimit, splitPoint, untilTime, ascending, process.env.TABLE_NAME);
+
+        // Combine results
+        dataPoints = sparse.concat(dense);
+    }
 
     // Format data for the API
     let data = [];
@@ -131,6 +160,7 @@ exports.handler = async (event, context) => {
 
     if (parseInt(process.env.DEBUG) === 1) {
         response.table = tableName;
+        response.resolvedMode = mode;
     }
 
     return gatewayHelper.successResponse(response);
