@@ -34,17 +34,22 @@ exports.handler = async (event, context) => {
 
 	try {
         // Remove profiles
-        await mysql.query({
+        const profileResult = await mysql.query({
             sql: `DELETE sensor_profiles
                   FROM sensor_profiles
                   INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
                   WHERE
                     sensor_profiles.sensor_id = ?
-                    AND sensors.owner_id = ?
-                    AND sensors.sensor_id = ?`,
+                    AND sensors.owner_id = ?`,
             timeout: 1000,
-            values: [sensor, user.id, user.id, sensor]
+            values: [sensor, user.id]
         });
+
+        if (profileResult.affectedRows === 0) {
+            console.error(`Error removing sensor profile for sensor ${sensor} for user ${user.id}`);
+        } else {
+            console.log(`Removed ${profileResult.affectedRows} sensor profiles for sensor ${sensor} by user ${user.id}`);
+        }
 
         // NOTE: We might want to soft-delete this instead
         results = await mysql.query({
