@@ -2,6 +2,7 @@ const gatewayHelper = require('../Helpers/gatewayHelper');
 const { HTTPCodes } = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
+const errorCodes = require('../Helpers/errorCodes');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -22,7 +23,7 @@ exports.handler = async (event, context) => {
 
     if (!eventBody || !validator.hasKeys(eventBody, ['sensor']) || !validator.validateMacAddress(eventBody.sensor)) {
         console.log("Invalid Sensor: " + eventBody.sensor);
-        return gatewayHelper.errorResponse(HTTPCodes.INVALID, "Missing or invalid sensor given");
+        return gatewayHelper.errorResponse(HTTPCodes.INVALID, "Missing or invalid sensor given", errorCodes.ER_MISSING_ARGUMENT);
     }
 
     const sensor = eventBody.sensor;
@@ -71,10 +72,10 @@ exports.handler = async (event, context) => {
         await mysql.end();
     } catch (e) {
         if (e.code === 'ER_DUP_ENTRY') {
-            return gatewayHelper.errorResponse(HTTPCodes.CONFLICT, "Sensor already claimed.");
+            return gatewayHelper.errorResponse(HTTPCodes.CONFLICT, "Sensor already claimed.", errorCodes.ER_SENSOR_ALREADY_CLAIMED);
         }
         console.error(e);
-        return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.");
+        return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
     }
 
     return gatewayHelper.successResponse({

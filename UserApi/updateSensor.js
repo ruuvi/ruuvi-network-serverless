@@ -3,6 +3,7 @@ const { HTTPCodes } = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const sqlHelper = require('../Helpers/sqlHelper');
+const errorCodes = require('../Helpers/errorCodes');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -28,7 +29,7 @@ exports.handler = async (event, context) => {
     const eventBody = JSON.parse(event.body);
 
     if (!eventBody || !validator.hasKeys(eventBody, ['sensor'])) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing sensor");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing sensor", errorCodes.ER_MISSING_ARGUMENT);
     }
 
     const sensor = eventBody.sensor;
@@ -54,7 +55,7 @@ exports.handler = async (event, context) => {
         ret.public = eventBody.public;
     }
     if (sensorUpdates.length === 0 && profileUpdates.length === 0) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No values provided for update.");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No values provided for update.", errorCodes.ER_MISSING_ARGUMENT);
     }
 
 	try {
@@ -68,7 +69,7 @@ exports.handler = async (event, context) => {
             );
 
             if (profileResult !== 1) {
-                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not claimed or found. Data not updated.");
+                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not claimed or found. Data not updated.", errorCodes.ER_SENSOR_NOT_FOUND);
             }    
         }
 
@@ -82,13 +83,13 @@ exports.handler = async (event, context) => {
             );
 
             if (sensorResult !== 1) {
-                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not claimed or found. Data not updated.");
+                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not claimed or found. Data not updated.", errorCodes.ER_SENSOR_NOT_FOUND);
             }    
         }
 
         await mysql.end();
     } catch (e) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
     }
 
     return gatewayHelper.successResponse(ret);

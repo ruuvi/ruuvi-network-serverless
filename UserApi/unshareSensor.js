@@ -4,6 +4,7 @@ const validator = require('../Helpers/validator');
 const userHelper = require('../Helpers/userHelper');
 const emailHelper = require('../Helpers/emailHelper');
 const sqlHelper = require('../Helpers/sqlHelper');
+const errorCodes = require('../Helpers/errorCodes');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -23,7 +24,7 @@ exports.handler = async (event, context) => {
     const eventBody = JSON.parse(event.body);
 
     if (!eventBody || !validator.hasKeys(eventBody, ['sensor', 'user'])) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing sensor or e-mail.");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing sensor or e-mail.", errorCodes.ER_MISSING_ARGUMENT);
     }
 
     const sensor = eventBody.sensor;
@@ -31,11 +32,11 @@ exports.handler = async (event, context) => {
 
     // Required when owner of the sensor
     if (targetUserEmail && !validator.validateEmail(targetUserEmail)) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid E-mail given.");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid E-mail given.", errorCodes.ER_INVALID_EMAIL_ADDRESS);
     }
 
     if (!validator.validateMacAddress(sensor)) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid sensor ID given.");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid sensor ID given.", errorCodes.ER_INVALID_MAC_ADDRESS);
     }
 
     let results = null;
@@ -47,7 +48,7 @@ exports.handler = async (event, context) => {
         if (targetUserEmail) {
             targetUser = await userHelper.getByEmail(targetUserEmail);
             if (!targetUser) {
-                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "User not found.");
+                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "User not found.", errorCodes.ER_USER_NOT_FOUND);
             }
             targetUserId = targetUser.id;
         }
@@ -56,7 +57,7 @@ exports.handler = async (event, context) => {
         const ownerInfo = await sqlHelper.fetchSingle('sensor_id', sensor, 'sensors');
         if (ownerInfo === null) {
             console.log("Error fetching sensor: " + sensor);
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not found.");
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not found.", errorCodes.ER_SENSOR_NOT_FOUND);
         }
 
         const owner = ownerInfo.owner_id;
@@ -113,7 +114,7 @@ exports.handler = async (event, context) => {
                 // Success
                 const ownerUser = await sqlHelper.fetchSingle('id', owner, 'users');
                 if (ownerUser === null) {
-                    return gatewayHelper.errorResponse(gatew.HTTPCodes.INVALID, "Error sending notification to owner.");
+                    return gatewayHelper.errorResponse(gatew.HTTPCodes.INVALID, "Error sending notification to owner.", errorCodes.ER_UNABLE_TO_SEND_EMAIL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
                 }
 
                 console.log(`User ${user.email} (${user.id}) unshared sensor ${sensor} from ${ownerUser.email} (${owner})`);
@@ -128,14 +129,14 @@ exports.handler = async (event, context) => {
         }
 
         if (!wasRemoved) {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No access to sensor or sensor not shared.");
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No access to sensor or sensor not shared.", errorCodes.ER_FORBIDDEN);
         }
 
         // Run clean up function
         await mysql.end();
     } catch (e) {
         console.error(e);
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL);
     }
 
     return gatewayHelper.successResponse();

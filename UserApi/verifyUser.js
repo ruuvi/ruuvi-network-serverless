@@ -3,6 +3,7 @@ const validator = require('../Helpers/validator');
 const jwtHelper = require('../Helpers/JWTHelper');
 const userHelper = require('../Helpers/userHelper');
 const sqlHelper = require('../Helpers/sqlHelper');
+const errorCodes = require('../Helpers/errorCodes');
 
 const dateFormat = require( 'dateformat' );
 
@@ -17,7 +18,7 @@ exports.handler = async (event, context) => {
     const short = event.queryStringParameters.token;
     const row = await sqlHelper.fetchSingle('short_token', short, 'reset_tokens');
     if (row === null || row.used_at !== null) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.FORBIDDEN, "Code used or expired.");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.FORBIDDEN, "Code used or expired.", errorCodes.ER_TOKEN_EXPIRED);
     }
 
     // Set the code as used
@@ -59,7 +60,7 @@ exports.handler = async (event, context) => {
         }
     } else {
         console.error("Unable to create user " + userInfo.email);
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unable to register user.");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unable to register user.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_NO_USER);
     }
 
     const deleteResult = await sqlHelper.deleteSingle('short_token', short, 'reset_tokens');

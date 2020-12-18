@@ -1,3 +1,5 @@
+const errorCodes = require('../Helpers/errorCodes.js');
+
 /**
  * Amazon API Gateway formatted response
  */
@@ -7,6 +9,13 @@ const response = (code, body, headers, internalCode, internalSubCode) => {
         body = JSON.stringify(body, null, 4); // 4 = pretty-print depth (TODO: Change to 0 eventually)
     } else if (body === null) {
         body = "";
+    }
+
+    const errorCodes = require('../Helpers/errorCodes.js');
+
+    if ((internalCode === null || typeof errorCodes[internalCode] === 'undefined') && code !== HTTPCodes.OK) {
+        // Currently not fail-worthy, but needs to be logged to screen new end-points
+        console.warn(`Invalid internal error code: '${internalCode}' (with HTTP code: ${code})`);
     }
 
     // NOTE! This is probably too permissive unless we want to allow web-apps to embed the API.
@@ -46,6 +55,7 @@ const response = (code, body, headers, internalCode, internalSubCode) => {
 const HTTPCodes = {
     OK: 200,
     INVALID: 400,
+    UNAUTHORIZED: 401,
     FORBIDDEN: 403,
     NOT_FOUND: 404,
     CONFLICT: 409,
@@ -62,6 +72,7 @@ const ok = (body, headers) => response(HTTPCodes.OK, body, headers);
 
 const invalid = (headers, body, internalCode, internalSubCode) => response(HTTPCodes.INVALID, body, headers, internalCode, internalSubCode);
 const forbidden = (headers, body, internalCode, internalSubCode) => response(HTTPCodes.FORBIDDEN, body, headers, internalCode, internalSubCode);
+const unauthorized = (headers, body, internalCode, internalSubCode) => response(HTTPCodes.UNAUTHORIZED, body, headers, internalCode, internalSubCode);
 const notFound = (headers, body, internalCode, internalSubCode) => response(HTTPCodes.NOT_FOUND, body, headers, internalCode, internalSubCode);
 const expired = (headers, body, internalCode, internalSubCode) => response(HTTPCodes.EXPIRED, body, headers, internalCode, internalSubCode);
 
@@ -74,9 +85,11 @@ const internal = (headers, body, internalCode, internalSubCode) => response(HTTP
  * @param {string} errorMessage
  * @param {object} errorData
  */
-const logAPIError = (code, errorMessage, errorData) => {
+const logAPIError = (code, errorMessage, errorData, internalCode, internalSubCode) => {
+    internalCode = internalCode ? internalCode : '';
+    internalSubCode = internalSubCode ? internalSubCode : '';
     console.error(
-        `API Error (${code}): ${errorMessage}` + (errorData !== null ? "\n" + JSON.stringify(errorData, null, 4) : "")
+        `API Error (${internalCode} ${internalSubCode} [${code}]): ${errorMessage}` + (errorData !== null ? "\n" + JSON.stringify(errorData, null, 4) : "")
     );
 };
 
@@ -88,8 +101,8 @@ const logAPIError = (code, errorMessage, errorData) => {
  * @param {object} errorData
  * @param {object} headers
  */
-const errorResponse = (code, errorMessage, errorData, headers, internalCode, internalSubCode) => {
-    logAPIError(code, errorMessage, errorData);
+const errorResponse = (code, errorMessage, internalCode, internalSubCode, errorData, headers) => {
+    logAPIError(code, errorMessage, errorData, internalCode, internalSubCode);
 
     if (code === HTTPCodes.OK) {
         throw new Error("Invalid error state: " + HTTPCodes.OK);
@@ -107,12 +120,12 @@ const errorResponse = (code, errorMessage, errorData, headers, internalCode, int
 /**
  * Standardized forbidden response with message.
  */
-const forbiddenResponse = () => errorResponse(HTTPCodes.FORBIDDEN, "Forbidden.");
+const forbiddenResponse = () => errorResponse(HTTPCodes.FORBIDDEN, "Forbidden.", errorCodes.ER_FORBIDDEN);
 
 /**
  * Standardized forbidden response with message.
  */
-const unauthorizedResponse = () => errorResponse(HTTPCodes.FORBIDDEN, "Unauthorized request.");
+const unauthorizedResponse = () => errorResponse(HTTPCodes.FORBIDDEN, "Unauthorized request.", errorCodes.ER_UNAUTHORIZED);
 
 /**
  * Helper method for returning unified successes.
@@ -152,6 +165,7 @@ module.exports = {
     response,
 
     ok,
+    unauthorized,
     forbidden,
     notFound,
     invalid,
