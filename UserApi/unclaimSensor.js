@@ -2,6 +2,7 @@ const gatewayHelper = require('../Helpers/gatewayHelper');
 const { HTTPCodes } = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
+const errorCodes = require('../Helpers/errorCodes');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -27,7 +28,7 @@ exports.handler = async (event, context) => {
     const eventBody = JSON.parse(event.body);
 
     if (!eventBody || !validator.hasKeys(eventBody, ['sensor'])) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing sensor id.");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing sensor id.", errorCodes.ER_MISSING_ARGUMENT);
     }
 
     const sensor = eventBody.sensor;
@@ -62,12 +63,12 @@ exports.handler = async (event, context) => {
         });
 		if (results.affectedRows !== 1) {
             console.log(`User ${user.id} successfully unclaimed ${sensor}`);
-			return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor does not belong to user.");
+			return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.FORBIDDEN, "Sensor does not belong to user.", errorCodes.ER_FORBIDDEN);
 		}
         await mysql.end();
     } catch (e) {
         console.error(e);
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
     }
 
     return gatewayHelper.successResponse();

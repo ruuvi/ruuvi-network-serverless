@@ -3,6 +3,8 @@ const gatewayHelper = require('../Helpers/gatewayHelper');
 const { HTTPCodes } = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
+const errorCodes = require('../Helpers/errorCodes');
+
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
 
@@ -29,7 +31,7 @@ exports.handler = async (event, context) => {
 
     const eventBody = JSON.parse(event.body);
     if (!eventBody || !validator.hasKeys(eventBody, ['type', 'sensor'])) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing type or sensor");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing type or sensor", errorCodes.ER_MISSING_ARGUMENT);
     }
 
     const fileType = eventBody.type;
@@ -69,6 +71,8 @@ exports.handler = async (event, context) => {
     // URL as it will be after upload
     const finalURL = process.env.BUCKET_URL + '/' + name;
 
+    let results = null;
+
     try {
         results = await mysql.query({
             sql: `UPDATE sensor_profiles
@@ -83,14 +87,16 @@ exports.handler = async (event, context) => {
             values: [finalURL, sensor, user.id]
         });
 		if (results.affectedRows !== 1) {
-            return gatewayHelper.errorResponse(HTTPCodes.NOT_FOUND, 'Sensor not owned or found.');
+            return gatewayHelper.errorResponse(HTTPCodes.NOT_FOUND, 'Sensor not owned or found.', errorCodes.ER_SENSOR_NOT_FOUND);
 		}
         await mysql.end();
     } catch (e) {
-		if (results.affectedRows === 1) {
-            return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error storing sensor metadata.');
-		}
+		if (results.affectedRows && results.affectedRows === 1) {
+            return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error closing connection.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
+        }
+        return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error storing sensor metadata.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
     }
+
     return gatewayHelper.successResponse({
         'uploadURL': uploadURL
     });

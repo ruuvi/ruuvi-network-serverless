@@ -44,7 +44,7 @@ exports.handler = async (event, context) => {
 
         if (!validationResult) {
             console.error("Invalid signature: " + signature);
-            return gatewayHelper.forbidden();
+            return gatewayHelper.unauthorizedResponse();
         }
     }
 

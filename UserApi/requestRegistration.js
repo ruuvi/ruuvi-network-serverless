@@ -4,6 +4,7 @@ const emailHelper = require('../Helpers/emailHelper');
 const validator = require('../Helpers/validator');
 const jwtHelper = require('../Helpers/JWTHelper');
 const userHelper = require('../Helpers/userHelper');
+const errorCodes = require('../Helpers/errorCodes');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -24,7 +25,7 @@ exports.handler = async (event, context) => {
     const valid = validator.hasKeys(eventBody, ['email']) && validator.validateEmail(eventBody.email);
 
     if (!valid) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid e-mail address.');
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid e-mail address.', errorCodes.ER_INVALID_EMAIL_ADDRESS);
     }
 
     const existingUser = await userHelper.getByEmail(eventBody.email);
@@ -47,7 +48,7 @@ exports.handler = async (event, context) => {
         });
 
         if (!result.insertId) {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Unknown error occurred. (13)');
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Unknown error occurred.', errorCodes.INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
         }
 
         // Internal override to skip e-mail verification
@@ -70,7 +71,7 @@ exports.handler = async (event, context) => {
         console.log(emailResult);
     } catch (e) {
         console.log(e);
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.");
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL);
     }
 
     return gatewayHelper.successResponse({

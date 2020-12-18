@@ -2,6 +2,7 @@ const gatewayHelper = require('../Helpers/gatewayHelper');
 const dynamoHelper = require('../Helpers/dynamoHelper');
 const validator = require('../Helpers/validator');
 const auth = require('../Helpers/authHelper');
+const errorCodes = require('../Helpers/errorCodes');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -32,21 +33,21 @@ exports.handler = async (event, context) => {
         || !validator.validateMacAddress(query.sensor)) {
 
         // Invalid request
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid request format.');
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid request format.', errorCodes.ER_INVALID_FORMAT);
     }
 
     if (
         query.hasOwnProperty('sort')
         && !(['asc', 'desc'].includes(query.sort))
     ) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid sort argument.');
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid sort argument.', errorCodes.ER_INVALID_SORT_MODE);
     }
 
     if (
         query.hasOwnProperty('mode')
         && !(['dense', 'sparse', 'mixed'].includes(query.mode))
     ) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid mode argument.');
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid mode argument.', errorCodes.ER_INVALID_DENSITY_MODE);
     }
 
 
@@ -64,7 +65,7 @@ exports.handler = async (event, context) => {
         (sinceTime !== null && untilTime !== null && sinceTime > untilTime)
         || (untilTime === null && sinceTime > validator.now()))
     {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, '`since` is after `until` or in the future.');
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, '`since` is after `until` or in the future.', errorCodes.ER_INVALID_TIME_RANGE);
     }
 
     // Format arguments
@@ -107,7 +108,7 @@ exports.handler = async (event, context) => {
         name = hasClaim[0].name;
     } catch (e) {
         console.error(e);
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Internal server error.');
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Internal server error.', errorCodes.ER_INTERNAL);
     }
 
     // Fetch from long term storage if requested for longer than TTL
