@@ -23,7 +23,7 @@ exports.handler = async (event, context) => {
 
     const eventBody = JSON.parse(event.body);
 
-    if (!eventBody || !validator.hasKeys(eventBody, ['sensor', 'user'])) {
+    if (!eventBody || !validator.hasKeys(eventBody, ['sensor'])) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing sensor or e-mail.", errorCodes.ER_MISSING_ARGUMENT);
     }
 
