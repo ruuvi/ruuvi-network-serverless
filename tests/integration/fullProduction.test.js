@@ -13,7 +13,8 @@ const stage = process.env.STAGE ? process.env.STAGE : 'dev';
 const stageConfig = require('./integrationCredentials');
 
 const baseURL = stageConfig[stage]['url'];
-const token = stageConfig[stage]['primary'];
+const primaryToken = stageConfig[stage]['primary'];
+const secondaryToken = stageConfig[stage]['secondary'];
 const RI = process.env.IS_INTEGRATION_TEST;
 const primaryEmail = stageConfig[stage]['primaryEmail'];
 const secondaryEmail = stageConfig[stage]['secondaryEmail'];
@@ -26,7 +27,19 @@ const instance = axios.create({
 	baseURL: baseURL,
 	timeout: 3000,
 	headers: {
-		Authorization: `Bearer ${token}`,
+		Authorization: `Bearer ${primaryToken}`,
+		//'X-Internal-Secret': internalKey  // TODO: This currently fails CORS using Axios
+	}
+});
+
+/**
+ * HTTP Client with Authorization set up
+ */
+const secondaryHttp = axios.create({
+	baseURL: baseURL,
+	timeout: 3000,
+	headers: {
+		Authorization: `Bearer ${secondaryToken}`,
 		//'X-Internal-Secret': internalKey  // TODO: This currently fails CORS using Axios
 	}
 });
@@ -37,8 +50,9 @@ const instance = axios.create({
  * @param {string} endpoint
  * @param {object} queryParams
  */
-const get = async (endpoint, queryParams) => {
-	return await instance.get('/' + endpoint + '?' + querystring.stringify(queryParams))
+const get = async (endpoint, queryParams, client = null) => {
+	client = client ? client : instance;
+	return await client.get('/' + endpoint + '?' + querystring.stringify(queryParams))
 }
 
 /**
@@ -47,8 +61,9 @@ const get = async (endpoint, queryParams) => {
  * @param {string} endpoint
  * @param {object} body
  */
-const post = async (endpoint, body) => {
-	return await instance.post('/' + endpoint, body)
+const post = async (endpoint, body, client = null) => {
+	client = client ? client : instance;
+	return await client.post('/' + endpoint, body)
 }
 
 // Set up some defaults
@@ -222,6 +237,26 @@ describe('Full integration tests', () => {
 			sensor: newSensorMac,
 			user: secondaryEmail
 		});
+
+		expect(unshareResult.status).toBe(200);
+		expect(unshareResult.statusText).toBe('OK');
+		expect(unshareResult.data.result).toBe('success');
+
+		const userShareData = await get('shared');
+		expect(userShareData.data.data.sensors.length).toBe(0);
+	});
+
+	itif(RI)('`unshare` by sharee is successful', async () => {
+		const shareResult = await post('share', {
+			sensor: newSensorMac,
+			user: secondaryEmail
+		});
+
+		expect(shareResult.status).toBe(200, 'Share step');
+
+		const unshareResult = await post('unshare', {
+			sensor: newSensorMac
+		}, secondaryHttp);
 
 		expect(unshareResult.status).toBe(200);
 		expect(unshareResult.statusText).toBe('OK');

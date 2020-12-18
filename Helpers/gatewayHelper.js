@@ -89,7 +89,7 @@ const logAPIError = (code, errorMessage, errorData, internalCode, internalSubCod
     internalCode = internalCode ? internalCode : '';
     internalSubCode = internalSubCode ? internalSubCode : '';
     console.error(
-        `API Error (${internalCode} ${internalSubCode} [${code}]): ${errorMessage}` + (errorData !== null ? "\n" + JSON.stringify(errorData, null, 4) : "")
+        `API Error (${internalCode} ${internalSubCode} [${code}]): ${errorMessage}` + ((typeof errorData !== "undefined" && errorData !== null) ? "\n" + JSON.stringify(errorData, null, 4) : "")
     );
 };
 
