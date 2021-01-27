@@ -4,18 +4,33 @@ const errorCodes = require('../Helpers/errorCodes.js');
  * Amazon API Gateway formatted response
  */
 const response = (code, body, headers, internalCode, internalSubCode) => {
-    // Resolve body to a string
-    if (body !== null && typeof(body) !== "string") {
-        body = JSON.stringify(body, null, 4); // 4 = pretty-print depth (TODO: Change to 0 eventually)
-    } else if (body === null) {
-        body = "";
-    }
-
     const errorCodes = require('../Helpers/errorCodes.js');
 
-    if ((internalCode === null || typeof errorCodes[internalCode] === 'undefined') && code !== HTTPCodes.OK) {
+    if (
+        code !== HTTPCodes.OK
+        && (
+            internalCode === null
+            || typeof errorCodes[internalCode] === 'undefined'
+        )
+    ) {
         // Currently not fail-worthy, but needs to be logged to screen new end-points
         console.warn(`Invalid internal error code: '${internalCode}' (with HTTP code: ${code})`);
+    }
+
+    if (code !== HTTPCodes.OK) {
+        if (internalCode) {
+            body.code = internalCode;
+        }
+        if (internalSubCode) {
+            body.sub_code = internalSubCode;
+        }
+    }
+
+    // Resolve body to a string
+    let bodyString = "";
+    if (body !== null) {
+        // 4 = pretty-print depth (TODO: Change to 0 eventually)
+        bodyString = typeof(body) === "string" ? body : JSON.stringify(body, null, 4);
     }
 
     // NOTE! This is probably too permissive unless we want to allow web-apps to embed the API.
@@ -36,15 +51,8 @@ const response = (code, body, headers, internalCode, internalSubCode) => {
     let val = {
         'statusCode': code !== null ? code : 200,
         'headers': completeHeaders,
-        'body': body
+        'body': bodyString
     };
-
-    if (internalCode) {
-        val.code = internalCode;
-    }
-    if (internalSubCode) {
-        val.sub_code = internalSubCode;
-    }
 
     return val;
 };
