@@ -30,6 +30,15 @@ CREATE TABLE reset_tokens (
         UNIQUE KEY(id)
 ) ENGINE=INNODB CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
+CREATE TABLE user_settings (
+        user_id INT NOT NULL,
+        `key` VARCHAR(320) NOT NULL,
+        `value` TEXT NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY(user_id, `key`)
+) ENGINE=INNODB CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+
 -- Sensors
 CREATE TABLE sensors (
         id BIGINT NOT NULL AUTO_INCREMENT,

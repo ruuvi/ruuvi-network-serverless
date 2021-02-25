@@ -46,6 +46,16 @@ const validateAlphaNumeric = (str) => {
 };
 
 /**
+ * Validates that string is compatible with settings name - alphanumeric with set of special characters
+ *
+ * @param {string} str String to validate
+ */
+const validateSettingName = (str) => {
+    const reg = /^[a-zA-Z0-9_\-.]+$/;
+    return reg.test(str);
+};
+
+/**
  * Validates that string is a MAC address
  *
  * @param {string} str String to validate
@@ -68,5 +78,6 @@ module.exports = {
     validateToken,
     validateAlphaNumeric,
     validateMacAddress,
+    validateSettingName,
     now
 };
