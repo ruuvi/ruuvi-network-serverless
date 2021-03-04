@@ -55,8 +55,8 @@ exports.handler = async (event, context) => {
                 "Unsupported type: " + fileType
             );
     }
-
-    const name = v4() + ext;
+    const pictureGuid = v4();
+    const name = pictureGuid + ext;
 
     var s3Params = {
       Bucket: process.env.BUCKET_NAME,
@@ -98,6 +98,7 @@ exports.handler = async (event, context) => {
     }
 
     return gatewayHelper.successResponse({
-        'uploadURL': uploadURL
+        'uploadURL': uploadURL,
+        'guid': pictureGuid
     });
 }
