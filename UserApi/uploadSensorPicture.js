@@ -30,12 +30,51 @@ exports.handler = async (event, context) => {
     }
 
     const eventBody = JSON.parse(event.body);
-    if (!eventBody || !validator.hasKeys(eventBody, ['type', 'sensor'])) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing type or sensor", errorCodes.ER_MISSING_ARGUMENT);
+    if (!eventBody) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing type, action or sensor", errorCodes.ER_MISSING_ARGUMENT);
+    }
+    
+    if (!validator.hasKeys(eventBody, ['sensor'])) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing sensor", errorCodes.ER_MISSING_ARGUMENT);
+    }
+    const sensor = eventBody.sensor;
+
+    // Default to upload
+    const action = validator.hasKeys(eventBody, ['action']) ? eventBody.action : 'upload';
+    if (action === 'reset') {
+        try {
+            results = await mysql.query({
+                sql: `UPDATE sensor_profiles
+                        SET
+                        picture = '',
+                        updated_at = CURRENT_TIMESTAMP
+                        WHERE
+                        sensor_id = ?
+                        AND user_id = ?
+                        AND is_active = 1`,
+                timeout: 1000,
+                values: [sensor, user.id]
+            });
+            if (results.affectedRows !== 1) {
+                return gatewayHelper.errorResponse(HTTPCodes.NOT_FOUND, 'Sensor not owned or found.', errorCodes.ER_SENSOR_NOT_FOUND);
+            }
+            await mysql.end();
+        } catch (e) {
+            if (results.affectedRows && results.affectedRows === 1) {
+                return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error closing connection.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
+            }
+            return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error storing sensor metadata.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
+        } finally {
+            return gatewayHelper.successResponse({
+                'uploadURL': '',
+                'guid': ''
+            });
+        }
+    } else if (!validator.hasKeys(eventBody, ['type'])) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing type", errorCodes.ER_MISSING_ARGUMENT);
     }
 
     const fileType = eventBody.type;
-    const sensor = eventBody.sensor;
 
     // Generate filename
     let ext = '';
