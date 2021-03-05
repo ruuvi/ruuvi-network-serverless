@@ -204,6 +204,18 @@ describe('Full integration tests', () => {
 		expect(uploadLinkResult.data.data.uploadURL).toContain('Content-Type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=');
 	});
 
+	itif(RI)('`upload` reset gets an empty image URL and guid', async () => {
+		const uploadLinkResult = await post('upload', {
+			sensor: newSensorMac,
+			type: 'image/png',
+			action: 'reset'
+		});
+		expect(uploadLinkResult.status).toBe(200);
+		expect(uploadLinkResult.statusText).toBe('OK');
+		expect(uploadLinkResult.data.data.uploadURL).toBe('');
+		expect(uploadLinkResult.data.data.uploadURL).toBe('');
+	});
+
 	itif(RI)('`shared` returns an empty array of sensors', async () => {
 		const sensorData = await get('shared');
 		expect(sensorData.data.data.sensors.length).toBe(0);
