@@ -191,7 +191,7 @@ const getAlerts = async (sensorId) => {
         process.env.ALERT_TABLE_NAME,
         'SensorId',
         sensorId,
-        ['Type', 'Enabled', 'MinValue', 'MaxValue']
+        ['AlertType', 'Enabled', 'MinValue', 'MaxValue']
     );
 }
 
@@ -216,7 +216,7 @@ const getAlerts = async (sensorId) => {
         TableName: process.env.ALERT_TABLE_NAME,
         Item: {
             "SensorId": sensorId,
-            "Type": type,
+            "AlertType": type,
             "MinValue": min,
             "MaxValue": max,
             "Enabled": enabled

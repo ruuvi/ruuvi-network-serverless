@@ -18,7 +18,17 @@ exports.handler = async (event, context) => {
     const sensor = event.queryStringParameters.sensor;
     const alerts = await dynamoHelper.getAlerts(sensor);
 
+    let formatted = [];
+    alerts.forEach((alert) => {
+        formatted.push({
+            'type': alert.AlertType,
+            'min': alert.MinValue,
+            'max': alert.MaxValue,
+            'enabled': alert.Enabled
+        });
+    });
+
     return gatewayHelper.successResponse({
-        alerts: alerts
+        alerts: formatted
     });
 }

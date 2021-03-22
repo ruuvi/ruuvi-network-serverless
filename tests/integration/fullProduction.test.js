@@ -297,10 +297,10 @@ describe('Full integration tests', () => {
 		expect(readResult.data.data.alerts.length).toBe(1);
 
 		const alerts = readResult.data.data.alerts;
-		expect(alerts[0].MaxValue).toBe(100);
-		expect(alerts[0].MinValue).toBe(30);
-		expect(alerts[0].Enabled).toBe(true);
-		expect(alerts[0].Type).toBe('humidity');
+		expect(alerts[0].max).toBe(100);
+		expect(alerts[0].min).toBe(30);
+		expect(alerts[0].enabled).toBe(true);
+		expect(alerts[0].type).toBe('humidity');
 	});
 
 	itif(RI)('`unclaim` returns 200 OK', async () => {
