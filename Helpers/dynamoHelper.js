@@ -176,6 +176,57 @@ const getGatewayData = async (gatewayId) => {
 }
 
 /**
+ * Gets the alerts for a given sensor.
+ * 
+ * @param {string} sensorId ID of the sensor to get the alert for
+ * @returns 
+ */
+const getAlerts = async (sensorId) => {
+    if (typeof process.env.ALERT_TABLE_NAME === 'undefined') {
+        console.error('ALERT_TABLE_NAME not defined in environment.');
+        return [];
+    }
+
+    return fetch(
+        process.env.ALERT_TABLE_NAME,
+        'SensorId',
+        sensorId,
+        ['Type', 'Enabled', 'MinValue', 'MaxValue']
+    );
+}
+
+/**
+ * Gets the alert of a type for a given sensor.
+ * 
+ * @param {string} sensorId ID of the sensor to get the alert for
+ * @param {enum} type Type in: ['temperature', 'humidity', 'pressure', 'signal', 'movement']
+ * @returns 
+ */
+ const putAlert = async (sensorId, type, enabled = true, min = Number.MIN_VALUE, max = Number.MAX_VALUE) => {
+    if (typeof process.env.ALERT_TABLE_NAME === 'undefined') {
+        console.error('ALERT_TABLE_NAME not defined in environment.');
+        return [];
+    }
+    if (!validator.validateEnum(type, ['temperature', 'humidity', 'pressure', 'signal', 'movement'])) {
+        console.error('Invalid type given: ' + type);
+        return [];
+    }
+
+    const alert = {
+        TableName: process.env.ALERT_TABLE_NAME,
+        Item: {
+            "SensorId": sensorId,
+            "Type": type,
+            "MinValue": min,
+            "MaxValue": max,
+            "Enabled": enabled
+        }
+    }
+
+    return await ddb.put(alert).promise();
+}
+
+/**
  * Exports
  */
 module.exports = {
@@ -184,5 +235,7 @@ module.exports = {
     validateSensorData,
     getSensorData,
     getGatewayData,
+    getAlerts,
+    putAlert,
     fetch
 };

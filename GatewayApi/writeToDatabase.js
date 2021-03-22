@@ -55,8 +55,17 @@ exports.handler = async (event) => {
     let uploadBatchPromises = [];
     let batchedIds = []; // For deduplication
 
+    let loggedGateways = [];
+
     for (const { messageId, body, messageAttributes } of event.Records) {
         const gwmac = messageAttributes.gwmac.stringValue;
+
+        // -- INSTRUMENT PLACEHOLDER --
+        if (!loggedGateways.includes(gwmac)) {
+            console.info("GW: " + gwmac);
+            loggedGateways.push(gwmac);
+        }
+
         const coordinates = messageAttributes.coordinates.stringValue;
         const timestamp = messageAttributes.timestamp.stringValue;
 

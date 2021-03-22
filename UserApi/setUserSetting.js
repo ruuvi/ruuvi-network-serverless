@@ -1,6 +1,7 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
+const errorCodes = require('../Helpers/errorCodes.js');
 
 const mysql = require('serverless-mysql')({
     config: {

@@ -278,6 +278,31 @@ describe('Full integration tests', () => {
 		expect(userShareData.data.data.sensors.length).toBe(0);
 	});
 
+	itif(RI)('creating alert is successful', async () => {
+		const createResult = await post('alerts', {
+			sensor: newSensorMac,
+			type: 'humidity',
+			min: 30,
+			max: 100,
+			enabled: true
+		});
+		expect(createResult.status).toBe(200, 'Create');
+
+		// Validate existence
+		const readResult = await get('alerts', {
+			sensor: newSensorMac
+		});
+
+		expect(readResult.status).toBe(200, 'Read');
+		expect(readResult.data.data.alerts.length).toBe(1);
+
+		const alerts = readResult.data.data.alerts;
+		expect(alerts[0].MaxValue).toBe(100);
+		expect(alerts[0].MinValue).toBe(30);
+		expect(alerts[0].Enabled).toBe(true);
+		expect(alerts[0].Type).toBe('humidity');
+	});
+
 	itif(RI)('`unclaim` returns 200 OK', async () => {
 		const claimResult = await post('unclaim', {
 			sensor: newSensorMac

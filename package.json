@@ -14,11 +14,11 @@
     "loadtest": "^5.0.4",
     "serverless-dynamodb-autoscaling": "^0.6.2",
     "serverless-mysql": "^1.5.4",
-    "uuid": "^8.3.1",
+    "uuid": "^8.3.2",
     "yargs": "^15.4.1"
   },
   "devDependencies": {
-    "jest": "^26.5.3",
+    "jest": "^26.6.3",
     "serverless-mocha-plugin": "^1.12.0",
     "serverless-offline": "^6.8.0"
   },

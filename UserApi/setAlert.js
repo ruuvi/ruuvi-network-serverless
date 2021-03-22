@@ -1,0 +1,42 @@
+const gatewayHelper = require('../Helpers/gatewayHelper');
+const auth = require('../Helpers/authHelper');
+const validator = require('../Helpers/validator');
+const dynamoHelper = require('../Helpers/dynamoHelper');
+const errorCodes = require('../Helpers/errorCodes.js');
+
+exports.handler = async (event, context) => {
+    const user = await auth.authorizedUser(event.headers);
+    if (!user) {
+        return gatewayHelper.unauthorizedResponse();
+    }
+
+    const eventBody = JSON.parse(event.body);
+
+    if (!eventBody || !validator.hasKeys(eventBody, ['sensor', 'type', 'min', 'max', 'enabled'])) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing setting type, enabled, min or max.", errorCodes.ER_MISSING_ARGUMENT);
+    }
+
+    if (!validator.validateEnum(eventBody.type, ['temperature', 'humidity', 'pressure', 'signal', 'movement'])) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid type: " + eventBody.type, errorCodes.ER_INVALID_ENUM_VALUE);
+    }
+
+    const sensor = eventBody.sensor;
+    const type = eventBody.type;
+    const enabled = eventBody.enabled;
+    const min = eventBody.min;
+    const max = eventBody.max;
+
+    let res = 'success'; 
+    let putResult = null;
+    try {
+        putResult = await dynamoHelper.putAlert(sensor, type, enabled, min, max);
+    } catch (e) {
+        console.error(e);
+        res = failed;
+    }
+
+    return gatewayHelper.successResponse({
+        action: res,
+        tempResponse: putResult
+    });
+}

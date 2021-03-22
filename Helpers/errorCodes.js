@@ -24,6 +24,7 @@ const errorCodes = {
     ER_INVALID_TIME_RANGE: 'ER_INVALID_TIME_RANGE', // Invalid time range given - most often since timestamp after until timestamp
     ER_INVALID_EMAIL_ADDRESS: 'ER_INVALID_EMAIL_ADDRESS', // Invalid e-mail format in given argument
     ER_INVALID_MAC_ADDRESS: 'ER_INVALID_MAC_ADDRESS', // Invalid MAC addrss format in given argument
+    ER_INVALID_ENUM_VALUE: 'ER_INVALID_ENUM_VALUE', // Invalid ENUM value given
 
     // Sub-codes
     ER_SUB_DATA_STORAGE_ERROR: 'ER_SUB_DATA_STORAGE_ERROR', // Internal sub-code when database write / read failed unexpectedly.

@@ -72,7 +72,6 @@ custom:
         maximum: 10     # Maximum write capacity
         usage: 0.2        # Targeted usage percentage
 
-
 provider:
   name: aws
   runtime: nodejs12.x
@@ -393,6 +392,36 @@ functions:
             - ${opt:region, self:provider.region}
             - '.'
             - !Ref AWS::URLSuffix
+
+  # Alerts
+  setAlert:
+    handler: UserApi/setAlert.handler
+    events:
+      - httpApi:
+          method: POST
+          path: /alerts
+    environment:
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      ALERT_TABLE_NAME: ${self:custom.dynamoAlerts}
+
+  getAlert:
+    handler: UserApi/getAlerts.handler
+    events:
+      - httpApi:
+          method: GET
+          path: /alerts
+    environment:
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      ALERT_TABLE_NAME: ${self:custom.dynamoAlerts}
+
 
   # NOTE: Workaround for CORS preflight requests
   corsOptions:
