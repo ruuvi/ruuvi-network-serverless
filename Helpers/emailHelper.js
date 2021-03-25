@@ -106,9 +106,9 @@ const sendShareNotification = async (email, sensorName, sharerName, from, source
       <html>
         <head></head>
         <body>
-            <h1>Ruuvi sensor was shared with you!</h1>
+            <h1>Ruuvi sensor was shared with you</h1>
             <p>
-                Ruuvi Network user ${sharerName} shared "${sensorNameString}" with you!
+                Ruuvi Network user ${sharerName} shared "${sensorNameString}" with you.
             </p>
             <p>
                 Log in to the mobile application to view it!
@@ -117,7 +117,7 @@ const sendShareNotification = async (email, sensorName, sharerName, from, source
       </html>
     `;
 
-    return sendEmail(email, from, `${sharerName} shared a Ruuvi sensor with you!`, htmlBody);
+    return sendEmail(email, from, `${sharerName} shared a Ruuvi sensor with you`, htmlBody);
 };
 
 /**
@@ -148,15 +148,15 @@ const sendShareRemovedNotification = async (email, sensorName, shareRecipient, f
       <html>
         <head></head>
         <body>
-            <h1>Ruuvi sensor share was removed by user!</h1>
+            <h1>Ruuvi sensor share was removed by user</h1>
             <p>
-                Ruuvi Network user ${shareRecipient} removed shared ${sensorNameString}!
+                Ruuvi Network user ${shareRecipient} removed shared ${sensorNameString}.
             </p>
         </body>
       </html>
     `;
 
-    return sendEmail(email, from, `${shareRecipient} removed a Ruuvi sensor you had shared!`, htmlBody);
+    return sendEmail(email, from, `${shareRecipient} removed a Ruuvi sensor you had shared`, htmlBody);
 };
 
 module.exports = {
