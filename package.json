@@ -7,7 +7,7 @@
     "doc": "doc"
   },
   "dependencies": {
-    "axios": "^0.20.0",
+    "axios": "^0.21.1",
     "bcrypt": "^5.0.0",
     "dateformat": "^3.0.3",
     "jsonwebtoken": "^8.5.1",
