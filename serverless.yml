@@ -149,7 +149,7 @@ functions:
       ENFORCE_SIGNATURE: ${self:custom.gatewayEnforceSignature}
       GATEWAY_REQUEST_TTL: ${self:custom.gatewayRequestTTL}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
-
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
   writeToDatabase:
     handler: GatewayApi/writeToDatabase.handler
@@ -165,6 +165,7 @@ functions:
       REDUCED_TABLE_NAME: ${self:custom.dynamoSensorDataReduced}
       LONG_TERM_STORAGE_INTERVAL: ${self:custom.longTermStorageInterval}
       RAW_DATA_TTL: ${self:custom.rawDataTTL}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
   # User Facing API
   getSensorData:
@@ -422,6 +423,15 @@ functions:
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       ALERT_TABLE_NAME: ${self:custom.dynamoAlerts}
 
+  # Sensor profile + picture updates
+  testRedis:
+    handler: TestApi/testRedis.handler
+    events:
+      - httpApi:
+          method: POST
+          path: /testRedis
+    environment:
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
   # NOTE: Workaround for CORS preflight requests
   corsOptions:

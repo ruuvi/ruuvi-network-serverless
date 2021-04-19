@@ -2,6 +2,7 @@ const AWS = require('aws-sdk');
 const validator = require('../Helpers/validator')
 const dynamo = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 const dynamoHelper = require('../Helpers/dynamoHelper');
+const redisHelper = require('../Helpers/redisHelper');
 
 exports.handler = async (event) => {
     // Flatten into an array
@@ -56,6 +57,8 @@ exports.handler = async (event) => {
     let batchedIds = []; // For deduplication
 
     let loggedGateways = [];
+    let uploadedBatches = 0;
+    let uploadedRecords = 0;
 
     for (const { messageId, body, messageAttributes } of event.Records) {
         const gwmac = messageAttributes.gwmac.stringValue;
@@ -91,11 +94,15 @@ exports.handler = async (event) => {
             if (flattenedData.length >= 25) {
                uploadBatchPromises.push(sendBatch(flattenedData));
                flattenedData = [];
+               uploadedBatches ++;
+               uploadedRecords += flattenedData.length;
             }
         });
     }
     if (flattenedData.length > 0) {
         uploadBatchPromises.push(sendBatch(flattenedData));
+        uploadedBatches ++;
+        uploadedRecords += flattenedData.length;
     }
 
     // Note: async's in Lambdas should always be awaited as exiting the function
@@ -103,5 +110,11 @@ exports.handler = async (event) => {
     // will be resumed in the future.
     await Promise.all(uploadBatchPromises);
 
-    return `Successfully processed ${event.Records.length} messages.`;
+    console.log(JSON.stringify({
+        queueRecords: event.Records.length,
+        batches: uploadedBatches,
+        records: uploadedRecords
+    }));
+
+    return `queueRecords: ${event.Records.length}, batches: ${uploadedBatches}, records: ${uploadedRecords}`
 };
