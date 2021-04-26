@@ -133,6 +133,8 @@ const forbiddenResponse = () => errorResponse(HTTPCodes.FORBIDDEN, "Forbidden.",
  */
 const unauthorizedResponse = () => errorResponse(HTTPCodes.FORBIDDEN, "Unauthorized request.", errorCodes.ER_UNAUTHORIZED);
 
+const throttledResponse = () => errorResponse(HTTPCodes.THROTTLED, "Throttled.", errorCodes.ER_THROTTLED);
+
 /**
  * Helper method for returning unified successes.
  *
@@ -188,6 +190,7 @@ module.exports = {
 
     forbiddenResponse,
     unauthorizedResponse,
+    throttledResponse,
 
     // Other
     getHeader

@@ -12,6 +12,7 @@ custom:
   stage: ${opt:stage, self:provider.stage}
 
   writerQueueName: ${self:custom.stage}-ruuvi_network
+  emailQueueName: ${self:custom.stage}-email-queue
   gatewayReceiverLambdaConcurrency: 100 # Separate due to higher requirements
   lambdaConcurrency: 10
 
@@ -38,44 +39,54 @@ custom:
     - table: DynamoSensorData  # Resource
       read:
         minimum: 25       # Minimum read capacity
-        maximum: 1000     # Maximum read capacity
-        usage: 0.2        # Targeted usage percentage
+        maximum: 100     # Maximum read capacity
+        usage: 0.8        # Targeted usage percentage
       write:
         minimum: 15       # Minimum write capacity
-        maximum: 1000     # Maximum write capacity
-        usage: 0.2        # Targeted usage percentage
+        maximum: 200     # Maximum write capacity
+        usage: 0.8        # Targeted usage percentage
     - table: DynamoSensorDataReduced  # Resource
       read:
         minimum: 15       # Minimum read capacity
-        maximum: 100     # Maximum read capacity
-        usage: 0.2        # Targeted usage percentage
+        maximum: 50     # Maximum read capacity
+        usage: 0.8        # Targeted usage percentage
       write:
         minimum: 15       # Minimum write capacity
-        maximum: 200      # Maximum write capacity
-        usage: 0.2        # Targeted usage percentage
+        maximum: 50      # Maximum write capacity
+        usage: 0.8        # Targeted usage percentage
     - table: DynamoAlerts
       read:
         minimum: 25       # Minimum read capacity
-        maximum: 1000     # Maximum read capacity
-        usage: 0.2        # Targeted usage percentage
+        maximum: 100     # Maximum read capacity
+        usage: 0.8        # Targeted usage percentage
       write:
         minimum: 1        # Minimum write capacity
         maximum: 10       # Maximum write capacity
-        usage: 0.2        # Targeted usage percentage
+        usage: 0.8        # Targeted usage percentage
     - table: DynamoGatewayWhitelist
       read:
         minimum: 25       # Minimum read capacity
-        maximum: 1000     # Maximum read capacity
-        usage: 0.2        # Targeted usage percentage
+        maximum: 100     # Maximum read capacity
+        usage: 0.8        # Targeted usage percentage
       write:
         minimum: 1       # Minimum write capacity
         maximum: 10     # Maximum write capacity
-        usage: 0.2        # Targeted usage percentage
+        usage: 0.8        # Targeted usage percentage
+
+  vpc:
+    securityGroupIds:
+      - ${ssm:${self:custom.stage}-ruuvi-redis-security-group-id}
+    subnetIds:
+      - ${ssm:${self:custom.stage}-ruuvi-redis-subnet-1}
+      - ${ssm:${self:custom.stage}-ruuvi-redis-subnet-2}
+      - ${ssm:${self:custom.stage}-ruuvi-redis-subnet-3}
+
 
 provider:
   name: aws
   runtime: nodejs12.x
   profile: ruuvi
+  vpc: ${self:custom.vpc}
 
   # Defaults
   stage: ${opt:stage, 'dev'}
@@ -166,6 +177,7 @@ functions:
       LONG_TERM_STORAGE_INTERVAL: ${self:custom.longTermStorageInterval}
       RAW_DATA_TTL: ${self:custom.rawDataTTL}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+      EMAIL_QUEUE: { Ref: EmailQueue }
 
   # User Facing API
   getSensorData:
@@ -248,7 +260,7 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       INVITATION_EXPIRATION_INTERVAL: ${self:custom.invitationExpirationInterval}
-      SOURCE_EMAIL: ${self:custom.sourceEmail}
+      EMAIL_QUEUE: { Ref: EmailQueue }
       SOURCE_DOMAIN: ${self:custom.sourceDomain}
       VERIFICATION_SHORT_TOKEN_LENGTH: ${self:custom.verificationShortTokenLength}
       INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key~true}
@@ -321,8 +333,7 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
-      SOURCE_EMAIL: ${self:custom.sourceEmail}
-      SOURCE_DOMAIN: ${self:custom.sourceDomain}
+      EMAIL_QUEUE: { Ref: EmailQueue }
       TABLE_NAME: ${self:custom.dynamoSensorData}
 
   unshareSensor:
@@ -339,8 +350,7 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
-      SOURCE_EMAIL: ${self:custom.sourceEmail}
-      SOURCE_DOMAIN: ${self:custom.sourceDomain}
+      EMAIL_QUEUE: { Ref: EmailQueue }
 
   getSharedSensors:
     handler: UserApi/getShared.handler
@@ -423,15 +433,33 @@ functions:
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       ALERT_TABLE_NAME: ${self:custom.dynamoAlerts}
 
+  emailSender:
+    handler: services/emailSender.handler
+    vpc:
+      securityGroupIds: []
+      subnetIds: []
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - EmailQueue
+              - Arn
+          batchSize: 1
+    environment:
+      SOURCE_EMAIL: ${self:custom.sourceEmail}
+      SOURCE_DOMAIN: ${self:custom.sourceDomain}
+
   # Sensor profile + picture updates
   testRedis:
     handler: TestApi/testRedis.handler
+    vpc: ${self:custom.vpc}
     events:
       - httpApi:
           method: POST
           path: /testRedis
     environment:
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+      REDIS_PORT: ${ssm:${self:custom.stage}-ruuvi-redis-port,6379}
 
   # NOTE: Workaround for CORS preflight requests
   corsOptions:
@@ -672,3 +700,7 @@ resources:
             - "*"
             AllowedHeaders:
             - "*"
+    EmailQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:custom.emailQueueName}

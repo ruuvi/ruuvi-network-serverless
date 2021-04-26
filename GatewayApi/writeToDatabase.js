@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 const validator = require('../Helpers/validator')
 const dynamo = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 const dynamoHelper = require('../Helpers/dynamoHelper');
-const redisHelper = require('../Helpers/redisHelper');
+const redis = require('../Helpers/redisHelper').getClient();
 
 exports.handler = async (event) => {
     // Flatten into an array
@@ -36,20 +36,12 @@ exports.handler = async (event) => {
             delete clonedData.ttl;
         }
 
-        const item = await dynamoHelper.fetch(
-            process.env.REDUCED_TABLE_NAME,
-            'SensorId',
-            clonedData.id,
-            ['SensorId', 'MeasurementTimestamp'],
-            1,
-            false,
-            'MeasurementTimestamp',
-            now - interval
-        );
-
-        if (item.length > 0) {
+        const itemTimestamp = parseInt(await redis.get('throttle_sparse_' + clonedData.id));
+        if (itemTimestamp > 0 && itemTimestamp > now - interval) {
             return false;
         }
+        await redis.set('throttle_sparse_' + clonedData.id, now);
+
         return sendBatch([clonedData], process.env.REDUCED_TABLE_NAME);
     }
 

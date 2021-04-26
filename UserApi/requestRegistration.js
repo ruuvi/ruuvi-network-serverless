@@ -61,9 +61,9 @@ exports.handler = async (event, context) => {
 
         let emailResult = {};
         if (userInfo.type === 'registration') {
-            emailResult = await emailHelper.sendEmailVerification(userInfo.email, short, process.env.SOURCE_EMAIL, process.env.SOURCE_DOMAIN);
+            emailResult = await emailHelper.sendEmailVerification(userInfo.email, short);
         } else if (userInfo.type === 'reset') {
-            emailResult = await emailHelper.sendResetEmail(userInfo.email, short, process.env.SOURCE_EMAIL, process.env.SOURCE_DOMAIN);
+            emailResult = await emailHelper.sendResetEmail(userInfo.email, short);
         }
         if (!emailResult.hasOwnProperty("MessageId")) {
             throw new Error("Error sending e-mail: " + emailResult);

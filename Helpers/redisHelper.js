@@ -1,28 +1,21 @@
-const redis = require("redis");
+const asyncRedis = require("async-redis");
 
 /**
  * Fetches a key from redis
  * 
  * @param string key
  */
- const fetch = async (key) => {
+ const getClient = () => {
     const redisOptions = {
         host: process.env.REDIS_HOST,
-        port: 6379
+        port: process.env.REDIS_PORT
     }
-    
-    let client = redis.createClient(redisOptions);
-    
-    client.set('colors',JSON.stringify({red: 'rojo'}))
-    const value = await client.get('colors')
-
-    return value;
+    return client = asyncRedis.createClient(redisOptions);
 }
-
 
 /**
  * Exports
  */
 module.exports = {
-    fetch
+    getClient
 };

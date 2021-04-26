@@ -1,11 +1,12 @@
 const AWS = require('aws-sdk');
 const gatewayHelper = require('../Helpers/gatewayHelper.js');
 const auth = require('../Helpers/authHelper')
+const validator = require('../Helpers/validator');
 
 AWS.config.update({region: 'eu-central-1'});
 
 const sns = new AWS.SNS();
-const sqs = new AWS.SQS({apiVersion: '2012-11-05'});
+const redis = require('../Helpers/redisHelper').getClient();
 
 /**
  * Sends received data to SQS queue for processing
@@ -46,6 +47,17 @@ exports.handler = async (event, context) => {
             console.error("Invalid signature: " + signature);
             return gatewayHelper.unauthorizedResponse();
         }
+    }
+
+    const throttleTimestamp = parseInt(await redis.get('throttle_gw_' + data.gw_mac));
+    const now = validator.now();
+    
+    // Accept one message per 15 seconds
+    if (throttleTimestamp > now - 15) {
+        console.error("Throttled: " + data.gw_mac);
+        return gatewayHelper.throttledResponse();
+    } else {
+        await redis.set('throttle_gw_' + data.gwmac, now);
     }
 
     // Parse Tags from data
