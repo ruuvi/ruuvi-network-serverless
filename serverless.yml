@@ -12,6 +12,7 @@ custom:
   stage: ${opt:stage, self:provider.stage}
 
   writerQueueName: ${self:custom.stage}-ruuvi_network
+  sparseQueueName: ${self:custom.stage}-sparse-queue
   emailQueueName: ${self:custom.stage}-email-queue
   gatewayReceiverLambdaConcurrency: 100 # Separate due to higher requirements
   lambdaConcurrency: 10
@@ -22,7 +23,8 @@ custom:
   dynamoGatewayWhitelist: ${self:custom.stage}-GatewayWhitelist
   dynamoAlerts: ${self:custom.stage}-SensorAlerts
   sensorProfileBucket: ${self:custom.stage}-sensor-profile-pictures
-  longTermStorageInterval: 900      # seconds between data points
+  denseDataInterval: 60      # seconds between data points
+  sparseDataInterval: 900      # seconds between data points
   rawDataTTL: 10800                 # 10800 = 3h, 7776000 = 3 months
   verificationShortTokenLength: 4   # Length of the short verification token sent in the e-mail
 
@@ -173,9 +175,24 @@ functions:
           batchSize: 10
     environment:
       TABLE_NAME: ${self:custom.dynamoSensorData}
-      REDUCED_TABLE_NAME: ${self:custom.dynamoSensorDataReduced}
-      LONG_TERM_STORAGE_INTERVAL: ${self:custom.longTermStorageInterval}
-      RAW_DATA_TTL: ${self:custom.rawDataTTL}
+      MAXIMUM_STORAGE_INTERVAL: ${self:custom.denseDataInterval}
+      DATA_TTL: ${self:custom.rawDataTTL}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+      EMAIL_QUEUE: { Ref: EmailQueue }
+
+  writeToSparseDatabase:
+    handler: GatewayApi/writeToDatabase.handler
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - SparseGatewayQueue
+              - Arn
+          batchSize: 10
+    environment:
+      TABLE_NAME: ${self:custom.dynamoSensorDataReduced}
+      MAXIMUM_STORAGE_INTERVAL: ${self:custom.sparseDataInterval}
+      DATA_TTL: 0
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
       EMAIL_QUEUE: { Ref: EmailQueue }
 
@@ -449,18 +466,6 @@ functions:
       SOURCE_EMAIL: ${self:custom.sourceEmail}
       SOURCE_DOMAIN: ${self:custom.sourceDomain}
 
-  # Sensor profile + picture updates
-  testRedis:
-    handler: TestApi/testRedis.handler
-    vpc: ${self:custom.vpc}
-    events:
-      - httpApi:
-          method: POST
-          path: /testRedis
-    environment:
-      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
-      REDIS_PORT: ${ssm:${self:custom.stage}-ruuvi-redis-port,6379}
-
   # NOTE: Workaround for CORS preflight requests
   corsOptions:
     handler: UserApi/corsHelper.handler
@@ -546,6 +551,10 @@ resources:
       Type: AWS::SQS::Queue
       Properties:
         QueueName: ${self:custom.writerQueueName}
+    SparseGatewayQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:custom.sparseQueueName}
     DynamoSensorData:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -605,14 +614,34 @@ resources:
               Condition:
                 ArnEquals:
                   "aws:SourceArn": !Ref GatewayEventTopic
+            - Sid: "allow-sns-messages-sparse"
+              Effect: Allow
+              Principal: "*"
+              Resource: !GetAtt
+                - SparseGatewayQueue
+                - Arn
+              Action: "SQS:SendMessage"
+              Condition:
+                ArnEquals:
+                  "aws:SourceArn": !Ref GatewayEventTopic
         Queues:
           - Ref: GatewayQueue
+          - Ref: SparseGatewayQueue
     DatabaseWriterSubscription:
       Type: 'AWS::SNS::Subscription'
       Properties:
         TopicArn: !Ref GatewayEventTopic
         Endpoint: !GetAtt
           - GatewayQueue
+          - Arn
+        Protocol: sqs
+        RawMessageDelivery: 'true'
+    SparseDatabaseWriterSubscription:
+      Type: 'AWS::SNS::Subscription'
+      Properties:
+        TopicArn: !Ref GatewayEventTopic
+        Endpoint: !GetAtt
+          - SparseGatewayQueue
           - Arn
         Protocol: sqs
         RawMessageDelivery: 'true'

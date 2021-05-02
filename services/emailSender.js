@@ -10,6 +10,8 @@ exports.handler = async (event) => {
     const from = process.env.SOURCE_EMAIL;
 
     for (const { messageId, body, messageAttributes } of event.Records) {
+        console.log(messageAttributes);
+        console.log(body);
         if (!validator.hasKeys(messageAttributes, ['TargetEmail', 'Title'])) {
             console.error("One of necessary arguments missing: TargetEmail, Title");
             console.info(messageAttributes);
@@ -28,6 +30,12 @@ exports.handler = async (event) => {
         const fromBase64 = Buffer.from(from).toString('base64');
         const noReplyAddress = 'noreply@' + from.substring(from.indexOf('@') + 1);
     
+        console.log(title);
+        console.log(email);
+        console.log(fromBase64);
+        console.log(noReplyAddress);
+        console.log(body);
+
         const emailParams = {
             Destination: {
                 ToAddresses: [email]

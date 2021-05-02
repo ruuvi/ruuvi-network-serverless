@@ -7,6 +7,7 @@ const errorCodes = {
     ER_USER_NOT_FOUND: 'ER_USER_NOT_FOUND', // Target user not found (f.ex. when sharing)
     ER_SENSOR_NOT_FOUND: 'ER_SENSOR_NOT_FOUND', // Sensor not found (or no access)
     ER_TOKEN_EXPIRED: 'ER_TOKEN_EXPIRED', // Access token expired (f.ex. User verification tokens)
+    ER_THROTTLED: 'ER_THROTTLED', // Throttled request due to too high call frequency
 
     // Subscriptions and Sharing
     ER_SUBSCRIPTION_NOT_FOUND: 'ER_SUBSCRIPTION_NOT_FOUND', // Thrown when action requires a subscription but it is not found
