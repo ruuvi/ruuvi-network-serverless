@@ -25,6 +25,7 @@ custom:
   sensorProfileBucket: ${self:custom.stage}-sensor-profile-pictures
   denseDataInterval: 60      # seconds between data points
   sparseDataInterval: 900      # seconds between data points
+  gatewayThrottleInterval: 15  # seconds between gateway updates  
   rawDataTTL: 10800                 # 10800 = 3h, 7776000 = 3 months
   verificationShortTokenLength: 4   # Length of the short verification token sent in the e-mail
 
@@ -163,6 +164,8 @@ functions:
       GATEWAY_REQUEST_TTL: ${self:custom.gatewayRequestTTL}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+      GATEWAY_THROTTLE_INTERVAL: ${self:custom.gatewayThrottleInterval}
+      MINIMUM_SENSOR_THROTTLE_INTERVAL: ${self:custom.denseDataInterval}
 
   writeToDatabase:
     handler: GatewayApi/writeToDatabase.handler
@@ -435,6 +438,7 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       ALERT_TABLE_NAME: ${self:custom.dynamoAlerts}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
   getAlert:
     handler: UserApi/getAlerts.handler
@@ -449,6 +453,7 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       ALERT_TABLE_NAME: ${self:custom.dynamoAlerts}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
   emailSender:
     handler: services/emailSender.handler

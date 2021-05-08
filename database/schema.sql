@@ -45,6 +45,9 @@ CREATE TABLE sensors (
         owner_id INT NOT NULL,
         sensor_id VARCHAR(64) NOT NULL,
         -- offsets
+        offset_temperature DECIMAL(10,2) NOT NULL DEFAULT 0,
+        offset_humidity DECIMAL(10,2) NOT NULL DEFAULT 0,
+        offset_pressure DECIMAL(10,2) NOT NULL DEFAULT 0,
         public TINYINT(1) NOT NULL DEFAULT 0,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

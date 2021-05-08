@@ -2,11 +2,12 @@ const AWS = require('aws-sdk');
 const gatewayHelper = require('../Helpers/gatewayHelper.js');
 const auth = require('../Helpers/authHelper')
 const validator = require('../Helpers/validator');
+const throttleHelper = require('../Helpers/throttleHelper');
+const alertHelper = require('../Helpers/alertHelper');
 
+// TODO: Replace with Kinesis
 AWS.config.update({region: 'eu-central-1'});
-
 const sns = new AWS.SNS();
-const redis = require('../Helpers/redisHelper').getClient();
 
 /**
  * Sends received data to SQS queue for processing
@@ -49,56 +50,56 @@ exports.handler = async (event, context) => {
         }
     }
 
-    const throttleTimestamp = parseInt(await redis.get('throttle_gw_' + data.gw_mac));
-    const now = validator.now();
-    
-    // Accept one message per 15 seconds
-    if (throttleTimestamp > now - 15) {
-        console.error("Throttled: " + data.gw_mac);
+    const throttleGW = await throttleHelper.throttle('gw_' + data.gw_mac, process.env.GATEWAY_THROTTLE_INTERVAL);
+
+    if (throttleGW) {
         return gatewayHelper.throttledResponse();
-    } else {
-        await redis.set('throttle_gw_' + data.gwmac, now);
     }
 
-    // Parse Tags from data
+    // Process per Tag Throttling + Parse Tags from data
+    let unthrottledTags = {};
     let tagIds = [];
     for (var key in data.tags) {
+        // Process alerts first to alert if necessary, even if throttled
+        if (alertHelper.getAlerts(key, true)) {
+
+        }
+
+        // Process throttling
+        const throttleSensor = await throttleHelper.throttle(key, process.env.MINIMUM_SENSOR_THROTTLE_INTERVAL);
+        if (throttleSensor) {
+            continue;
+        }
+
+        unthrottledTags[key] = data.tags[key];
         if (data.tags.hasOwnProperty(key)) {
             tagIds.push(key);
         }
     }
 
-    // Prepare message
-    let params = {
-        DelaySeconds: 0,
-        MessageAttributes: {
-            "gwmac": {
-                DataType: "String",
-                StringValue: data.gw_mac
-            },
-            "timestamp": {
-                DataType: "Number",
-                StringValue: "" + data.timestamp
-            },
-            "coordinates": {
-                DataType: "String",
-                StringValue: data.coordinates === "" ? "N/A" : data.coordinates
-            },
-            "tags": {
-                DataType: "String.Array",
-                StringValue: JSON.stringify(tagIds)
-            }
-        },
-        MessageBody: JSON.stringify(data.tags),
-        QueueUrl: process.env.TARGET_QUEUE
-    };
-
     try {
         const snsParams = {
-            Message: params.MessageBody,
+            Message: JSON.stringify(unthrottledTags),
             Subject: "GWUPD",
             TopicArn: process.env.TARGET_TOPIC,
-            MessageAttributes: params.MessageAttributes
+            MessageAttributes: {
+                "gwmac": {
+                    DataType: "String",
+                    StringValue: data.gw_mac
+                },
+                "timestamp": {
+                    DataType: "Number",
+                    StringValue: "" + data.timestamp
+                },
+                "coordinates": {
+                    DataType: "String",
+                    StringValue: data.coordinates === "" ? "N/A" : data.coordinates
+                },
+                "tags": {
+                    DataType: "String.Array",
+                    StringValue: JSON.stringify(tagIds)
+                }
+            }
         };
         const res = await sns.publish(snsParams).promise();
         if (!res.MessageId) {

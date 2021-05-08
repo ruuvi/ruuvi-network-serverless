@@ -1,8 +1,8 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
-const dynamoHelper = require('../Helpers/dynamoHelper');
 const errorCodes = require('../Helpers/errorCodes.js');
+const alertHelper = require('../Helpers/alertHelper');
 
 exports.handler = async (event, context) => {
     const user = await auth.authorizedUser(event.headers);
@@ -16,19 +16,10 @@ exports.handler = async (event, context) => {
     }
 
     const sensor = event.queryStringParameters.sensor;
-    const alerts = await dynamoHelper.getAlerts(sensor);
-
-    let formatted = [];
-    alerts.forEach((alert) => {
-        formatted.push({
-            'type': alert.AlertType,
-            'min': alert.MinValue,
-            'max': alert.MaxValue,
-            'enabled': alert.Enabled
-        });
-    });
-
+    const alertData = await alertHelper.getAlerts(sensor);
+    console.log(sensor);
+    console.log(alertData);
     return gatewayHelper.successResponse({
-        alerts: formatted
+        alerts: alertData
     });
 }

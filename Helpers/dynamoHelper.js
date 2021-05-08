@@ -181,7 +181,7 @@ const getGatewayData = async (gatewayId) => {
  * @param {string} sensorId ID of the sensor to get the alert for
  * @returns 
  */
-const getAlerts = async (sensorId) => {
+const fetchAlerts = async (sensorId) => {
     if (typeof process.env.ALERT_TABLE_NAME === 'undefined') {
         console.error('ALERT_TABLE_NAME not defined in environment.');
         return [];
@@ -202,7 +202,7 @@ const getAlerts = async (sensorId) => {
  * @param {enum} type Type in: ['temperature', 'humidity', 'pressure', 'signal', 'movement']
  * @returns 
  */
- const putAlert = async (sensorId, type, enabled = true, min = Number.MIN_VALUE, max = Number.MAX_VALUE) => {
+ const saveAlert = async (sensorId, type, enabled = true, min = Number.MIN_VALUE, max = Number.MAX_VALUE) => {
     if (typeof process.env.ALERT_TABLE_NAME === 'undefined') {
         console.error('ALERT_TABLE_NAME not defined in environment.');
         return [];
@@ -212,6 +212,8 @@ const getAlerts = async (sensorId) => {
         return [];
     }
 
+    const ts = validator.now();
+
     const alert = {
         TableName: process.env.ALERT_TABLE_NAME,
         Item: {
@@ -219,7 +221,8 @@ const getAlerts = async (sensorId) => {
             "AlertType": type,
             "MinValue": min,
             "MaxValue": max,
-            "Enabled": enabled
+            "Enabled": enabled,
+            "CreatedAt": ts
         }
     }
 
@@ -235,7 +238,7 @@ module.exports = {
     validateSensorData,
     getSensorData,
     getGatewayData,
-    getAlerts,
-    putAlert,
+    fetchAlerts,
+    saveAlert,
     fetch
 };

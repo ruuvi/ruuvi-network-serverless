@@ -172,11 +172,27 @@ describe('Full integration tests', () => {
 	});
 
 	// This might fail if SQS processing above is slow
-	itif(RI)('`get` returns sensor data', async () => {
-		const sensorData = await get('get', { sensor: newSensorMac })
+	itif(RI)('`get` returns dense sensor data', async () => {
+		const sensorData = await get('get', { sensor: newSensorMac, mode: 'dense' })
 		expect(sensorData.data.data.measurements.length).toBeGreaterThan(0);
 		expect(sensorData.data.data.measurements[0].data).toBe(testData);
 	});
+
+	// This might fail if SQS processing above is slow
+	itif(RI)('`get` returns sparse sensor data', async () => {
+		const sensorData = await get('get', { sensor: newSensorMac, mode: 'sparse' })
+		expect(sensorData.data.data.measurements.length).toBeGreaterThan(0);
+		expect(sensorData.data.data.measurements[0].data).toBe(testData);
+	});
+
+	// This might fail if SQS processing above is slow
+	itif(RI)('`get` returns mixed sensor data (only validates argument)', async () => {
+		const sensorData = await get('get', { sensor: newSensorMac, mode: 'mixed' })
+		expect(sensorData.data.data.measurements.length).toBeGreaterThan(0);
+		expect(sensorData.data.data.measurements[0].data).toBe(testData);
+	});
+	
+
 
 	itif(RI)('`update` updates sensor data', async () => {
 		const testName = 'awesome test sensor';

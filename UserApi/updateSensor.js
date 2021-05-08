@@ -44,16 +44,35 @@ exports.handler = async (event, context) => {
         sensor: sensor
     };
 
+    // Sensor Profile updates
 	if (validator.hasKeys(eventBody, ['name']) && eventBody.name) {
         profileUpdates.push('name = ?');
         profileValues.push(eventBody.name);
         ret.name = eventBody.name;
     }
+
+    // Sensor updates
 	if (validator.hasKeys(eventBody, ['public']) && (parseInt(eventBody.public) === 0 || parseInt(eventBody.public) === 1)) {
         sensorUpdates.push('public = ?');
         sensorValues.push(parseInt(eventBody.public));
         ret.public = eventBody.public;
     }
+	if (validator.hasKeys(eventBody, ['offset_temperature']) && (parseInt(eventBody.offset_temperature) === 0 || parseInt(eventBody.offset_temperature) === 1)) {
+        sensorUpdates.push('offset_temperature = ?');
+        sensorValues.push(parseInt(eventBody.offset_temperature));
+        ret.offset_temperature = eventBody.offset_temperature;
+    }
+	if (validator.hasKeys(eventBody, ['offset_humidity']) && (parseInt(eventBody.offset_humidity) === 0 || parseInt(eventBody.offset_humidity) === 1)) {
+        sensorUpdates.push('offset_humidity = ?');
+        sensorValues.push(parseInt(eventBody.offset_humidity));
+        ret.offset_humidity = eventBody.offset_humidity;
+    }
+    if (validator.hasKeys(eventBody, ['offset_pressure']) && (parseInt(eventBody.offset_pressure) === 0 || parseInt(eventBody.offset_pressure) === 1)) {
+        sensorUpdates.push('offset_pressure = ?');
+        sensorValues.push(parseInt(eventBody.offset_pressure));
+        ret.offset_pressure = eventBody.offset_pressure;
+    }
+
     if (sensorUpdates.length === 0 && profileUpdates.length === 0) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No values provided for update.", errorCodes.ER_MISSING_ARGUMENT);
     }

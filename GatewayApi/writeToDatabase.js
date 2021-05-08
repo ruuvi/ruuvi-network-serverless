@@ -2,7 +2,6 @@ const AWS = require('aws-sdk');
 const validator = require('../Helpers/validator');
 const dynamo = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 const dynamoHelper = require('../Helpers/dynamoHelper');
-const redis = require('../Helpers/redisHelper').getClient();
 //const dataHelper = require('../Helpers/sensorDataHelper');
 
 exports.handler = async (event) => {
@@ -58,16 +57,6 @@ exports.handler = async (event) => {
                 return;
             }
 
-            // Throttling
-            if (interval > 0) {
-                const throttleVar = await redis.get("throttle_" + key);
-                const itemTimestamp = parseInt(throttleVar);
-                if (itemTimestamp > 0 && itemTimestamp > now - interval) {
-                    console.info("Throttled " + key);
-                    return;
-                }
-            }
-    
             sensors[key].id = key;
             sensors[key].gwmac = gwmac;
             sensors[key].coordinates = coordinates;
