@@ -79,7 +79,7 @@ const putAlert = async (sensor, type, min, max, enabled) => {
 
 const processAlerts = async (email, alerts, data) => {
     ['temperature', 'humidity', 'pressure'].forEach((alertType) => {
-        alerts.forEach((alert) => {
+        alerts.forEach(async (alert) => {
             if (alert.type === alertType) {
                 if (
                     data[alertType] > alert.MaxValue

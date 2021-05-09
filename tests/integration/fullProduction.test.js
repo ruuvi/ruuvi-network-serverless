@@ -204,7 +204,7 @@ describe('Full integration tests', () => {
 			offsetHumidity: 3,
 			offsetPressure: 4,
 		});
-		console.log(updateResult);
+
 		expect(updateResult.status).toBe(200);
 		expect(updateResult.statusText).toBe('OK');
 		expect(updateResult.data.data.name).toBe(testName);
