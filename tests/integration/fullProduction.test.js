@@ -237,11 +237,11 @@ describe('Full integration tests', () => {
 
 		const resetPublicFlagResult = await post('update', {
 			sensor: newSensorMac,
-			public: 1
+			public: 0
 		});
 		expect(resetPublicFlagResult.status).toBe(200);
 		expect(resetPublicFlagResult.statusText).toBe('OK');
-		expect(resetPublicFlagResult.data.data.public).toBe(1);
+		expect(resetPublicFlagResult.data.data.public).toBe(0);
 	});
 
 	itif(RI)('`upload` gets an image URL to upload to', async () => {
