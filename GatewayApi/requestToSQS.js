@@ -64,7 +64,7 @@ exports.handler = async (event, context) => {
         const alerts = alertHelper.getAlerts(key, true);
         if (alerts.length > 0) {
             const data = sensorDataHelper.parseData(data.tags[key]);
-            alertHelper.processAlerts(alerts, data);
+            await alertHelper.processAlerts('sami@muhwu.com', alerts, data);
         }
 
         // Process throttling

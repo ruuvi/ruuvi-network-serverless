@@ -1,5 +1,6 @@
 const redis = require('../Helpers/redisHelper').getClient();
 const dynamoHelper = require('../Helpers/dynamoHelper');
+const emailHelper = require('../Helpers/emailHelper');
 
 /**
  * Fetches alerts for individual sensor
@@ -76,7 +77,7 @@ const putAlert = async (sensor, type, min, max, enabled) => {
     return res;
 }
 
-const processAlerts = (alerts, data) => {
+const processAlerts = async (email, alerts, data) => {
     ['temperature', 'humidity', 'pressure'].forEach((alertType) => {
         alerts.forEach((alert) => {
             if (alert.type === alertType) {
@@ -85,6 +86,7 @@ const processAlerts = (alerts, data) => {
                     || data[alertType] < alert.MinValue
                 ) {
                     console.log('Alert condition hit');
+                    await emailHelper.sendAlertEmail(email, 'kek', alertType);
                 }
             }
         });

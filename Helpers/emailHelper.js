@@ -98,6 +98,24 @@ const sendResetEmail = async (email, token, sourceDomain) => {
     return sendEmail(email, "Ruuvi Account Reset Confirmation", htmlBody);
 };
 
+const sendAlertEmail = async (email, sensorName, sensor, alertType) => {
+    // TODO: This would be nicer to maintain by SES templates
+    const htmlBody = `
+      <!DOCTYPE html>
+      <html>
+        <head></head>
+        <body>
+            <h1>Sensor '${sensorName}' triggered an alert!</h1>
+            <p>
+                An alert of type ${alertType} was triggered by ${sensorName} (${sensor})!
+            </p>
+        </body>
+      </html>
+    `;
+
+    return sendEmail(email, `Sensor '${sensorName}' triggered an alert!`, htmlBody);
+};
+
 const sendShareNotification = async (email, sensorName, sharerName) => {
     let sensorNameString = '';
     if (sensorName) {
@@ -164,5 +182,6 @@ module.exports = {
     sendEmailVerification,
     sendResetEmail,
     sendShareNotification,
-    sendShareRemovedNotification
+    sendShareRemovedNotification,
+    sendAlertEmail
 };
