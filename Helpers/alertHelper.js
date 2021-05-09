@@ -5,7 +5,11 @@ const dynamoHelper = require('../Helpers/dynamoHelper');
  * Fetches alerts for individual sensor
  */
  const getCachedAlerts = async (sensor) => {
-    return await redis.get("alerts_" + sensor);
+    const alerts = await redis.get("alerts_" + sensor);
+    if (alerts === null) {
+        return [];
+    }
+    return JSON.parse(alerts);
 }
 
 /**
@@ -72,11 +76,27 @@ const putAlert = async (sensor, type, min, max, enabled) => {
     return res;
 }
 
+const processAlerts = (alerts, data) => {
+    ['temperature', 'humidity', 'pressure'].forEach((alertType) => {
+        alerts.forEach((alert) => {
+            if (alert.type === alertType) {
+                if (
+                    data[alertType] > alert.MaxValue
+                    || data[alertType] < alert.MinValue
+                ) {
+                    console.log('Alert condition hit');
+                }
+            }
+        });
+    });
+}
+
 /**
  * Exports
  */
 module.exports = {
     getAlerts,
     refreshAlertCache,
-    putAlert
+    putAlert,
+    processAlerts
 };

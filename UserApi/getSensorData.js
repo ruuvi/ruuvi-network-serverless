@@ -76,12 +76,25 @@ exports.handler = async (event, context) => {
         ? Math.min(parseInt(query.limit), process.env.MAX_RESULTS)
         : process.env.DEFAULT_RESULTS;
 
-    let name = '';
+    let response = {
+        sensor: sensor,
+        name: '',
+        offsetTemperature: null,
+        offsetHumidity: null,
+        offsetPressure: null,
+        measurements: [],
+        total: 0
+    };
+    
     try {
         const hasClaim = await mysql.query({
             sql: `SELECT
                     sensors.id,
-                    sensor_profiles.name AS name
+                    sensor_profiles.name AS name,
+                    sensors.public AS public,
+                    sensors.offset_temperature as offsetTemperature,
+                    sensors.offset_humidity as offsetHumidity,
+                    sensors.offset_pressure as offsetPressure
                 FROM sensors
                 LEFT JOIN sensor_profiles ON
                     sensor_profiles.sensor_id = sensors.sensor_id
@@ -105,7 +118,11 @@ exports.handler = async (event, context) => {
         if (hasClaim.length === 0) {
             return gatewayHelper.forbiddenResponse();
         }
-        name = hasClaim[0].name;
+        response.name = hasClaim[0].name;
+        response.public = hasClaim[0].public;
+        response.offsetTemperature = hasClaim[0].offsetTemperature;
+        response.offsetHumidity = hasClaim[0].offsetHumidity;
+        response.offsetPressure = hasClaim[0].offsetPressure;
     } catch (e) {
         console.error(e);
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Internal server error.', errorCodes.ER_INTERNAL);
@@ -152,12 +169,8 @@ exports.handler = async (event, context) => {
         });
     });
 
-    let response = {
-        sensor: sensor,
-        name: name,
-        total: data.length,
-        measurements: data
-    };
+    response.total = data.length;
+    response.measurements = data;
 
     if (parseInt(process.env.DEBUG) === 1) {
         response.table = tableName;

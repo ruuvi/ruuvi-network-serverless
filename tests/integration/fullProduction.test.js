@@ -198,15 +198,50 @@ describe('Full integration tests', () => {
 		const testName = 'awesome test sensor';
 		const updateResult = await post('update', {
 			sensor: newSensorMac,
-			name: testName
+			name: testName,
+			public: 0,
+			offsetTemperature: 2,
+			offsetHumidity: 3,
+			offsetPressure: 4,
 		});
+		console.log(updateResult);
 		expect(updateResult.status).toBe(200);
 		expect(updateResult.statusText).toBe('OK');
 		expect(updateResult.data.data.name).toBe(testName);
+		expect(updateResult.data.data.public).toBe(0);
+		expect(updateResult.data.data.offsetTemperature).toBe(2);
+		expect(updateResult.data.data.offsetHumidity).toBe(3);
+		expect(updateResult.data.data.offsetPressure).toBe(4);
 
 		// Test successful update
-		const updatedSensorData = await get('get', { sensor: newSensorMac })
+		const updatedSensorData = await get('get', { sensor: newSensorMac });
 		expect(updatedSensorData.data.data.name).toBe(testName);
+		expect(updatedSensorData.data.data.public).toBe(0);
+		expect(updatedSensorData.data.data.offsetTemperature).toBe(2);
+		expect(updatedSensorData.data.data.offsetHumidity).toBe(3);
+		expect(updatedSensorData.data.data.offsetPressure).toBe(4);
+	});
+
+	itif(RI)('`update` updating sensor public flag', async () => {
+		const updateResult = await post('update', {
+			sensor: newSensorMac,
+			public: 1
+		});
+		expect(updateResult.status).toBe(200);
+		expect(updateResult.statusText).toBe('OK');
+		expect(updateResult.data.data.public).toBe(1);
+
+		// Verify
+		const updatedSensorData = await get('get', { sensor: newSensorMac });
+		expect(updatedSensorData.data.data.public).toBe(1);
+
+		const resetPublicFlagResult = await post('update', {
+			sensor: newSensorMac,
+			public: 1
+		});
+		expect(resetPublicFlagResult.status).toBe(200);
+		expect(resetPublicFlagResult.statusText).toBe('OK');
+		expect(resetPublicFlagResult.data.data.public).toBe(1);
 	});
 
 	itif(RI)('`upload` gets an image URL to upload to', async () => {

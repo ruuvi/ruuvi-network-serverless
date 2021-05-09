@@ -1,9 +1,9 @@
 const AWS = require('aws-sdk');
 const gatewayHelper = require('../Helpers/gatewayHelper.js');
 const auth = require('../Helpers/authHelper')
-const validator = require('../Helpers/validator');
 const throttleHelper = require('../Helpers/throttleHelper');
 const alertHelper = require('../Helpers/alertHelper');
+const sensorDataHelper = require('../Helpers/sensorDataHelper');
 
 // TODO: Replace with Kinesis
 AWS.config.update({region: 'eu-central-1'});
@@ -61,8 +61,10 @@ exports.handler = async (event, context) => {
     let tagIds = [];
     for (var key in data.tags) {
         // Process alerts first to alert if necessary, even if throttled
-        if (alertHelper.getAlerts(key, true)) {
-
+        const alerts = alertHelper.getAlerts(key, true);
+        if (alerts.length > 0) {
+            const data = sensorDataHelper.parseData(data.tags[key]);
+            alertHelper.processAlerts(alerts, data);
         }
 
         // Process throttling
