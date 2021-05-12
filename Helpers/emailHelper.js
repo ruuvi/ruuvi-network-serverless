@@ -7,7 +7,6 @@ var sqs = new AWS.SQS({apiVersion: '2012-11-05'});
  * Queues the email for the service.
  * 
  * @param {string} email target email
- * @param {string} from from email
  * @param {string} title email title
  * @param {string} body email body
  * @returns 
@@ -65,7 +64,7 @@ const sendEmailVerification = async (email, token, sourceDomain) => {
       </html>
     `;
 
-    return sendEmail(email, from, "Ruuvi Account E-mail Confirmation", htmlBody);
+    return sendEmail(email, "Ruuvi Account E-mail Confirmation", htmlBody);
 };
 
 const sendResetEmail = async (email, token, sourceDomain) => {
@@ -150,7 +149,6 @@ const sendShareNotification = async (email, sensorName, sharerName) => {
  * @param {string} email
  * @param {string} sensorName
  * @param {string} shareRecipient
- * @param {string} from
  * @param {string} sourceDomain
  */
 const sendShareRemovedNotification = async (email, sensorName, shareRecipient) => {
