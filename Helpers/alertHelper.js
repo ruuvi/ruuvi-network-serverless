@@ -1,5 +1,5 @@
 const redis = require('../Helpers/redisHelper').getClient();
-const dynamoHelper = require('../Helpers/dynamoHelper');
+const sqlHelper = require('../Helpers/sqlHelper');
 const emailHelper = require('../Helpers/emailHelper');
 
 /**
@@ -28,25 +28,36 @@ const refreshAlertCache = async (sensor, data = null) => {
 
 /**
  * Fetches alerts for individual sensor
+ * 
+ * @param {string} sensor Sensor ID
+ * @param {userId} mixed int or null, if null, will fetch for all users
+ * @param {useCache} bool If true, will only access cache 
  */
-const getAlerts = async (sensor, useCache = false) => {
+const getAlerts = async (sensor, userId = null, useCache = false) => {
     if (useCache) {
         return await getCachedAlerts(sensor);
     }
 
-    let raw = await dynamoHelper.fetchAlerts(sensor);
+    let raw = await sqlHelper.fetchAlerts(sensor, userId);
     
     let formatted = [];
     raw.forEach((alert) => {
         formatted.push({
-            'type': alert.AlertType,
-            'min': alert.MinValue,
-            'max': alert.MaxValue,
-            'enabled': alert.Enabled
+            userId: alert.user_id,
+            sensorId: alert.sensor_id,
+            type: alert.alert_type,
+            min: alert.min_value,
+            max: alert.max_value,
+            enabled: alert.enabled ? true : false,
+            triggered: alert.triggered ? true : false,
+            triggeredAt: alert.triggered_at
         });
     });
 
-    refreshAlertCache(sensor, formatted);
+    // Cache holds all alerts for a sensor; only refresh when all alerts are fetched from database
+    if (userId === null) {
+        refreshAlertCache(sensor, raw);
+    }
 
     return formatted;
 }
@@ -54,6 +65,7 @@ const getAlerts = async (sensor, useCache = false) => {
 /**
  * Stores an alert
  * 
+ * @param {*} userId
  * @param {*} sensor 
  * @param {*} type 
  * @param {*} min 
@@ -61,23 +73,28 @@ const getAlerts = async (sensor, useCache = false) => {
  * @param {*} enabled 
  * @returns 
  */
-const putAlert = async (sensor, type, min, max, enabled) => {
-    // Store to Dynamo
+const putAlert = async (userId, sensor, type, min, max, enabled) => {
     let res = true;
     try {
-        putResult = await dynamoHelper.saveAlert(sensor, type, enabled, min, max);
+        putResult = await sqlHelper.saveAlert(userId, sensor, type, enabled, min, max);
     } catch (e) {
         console.error(e);
         res = false;
     }
 
-    // Put the alerts JSON to Redis cache for faster look up
+    // Put the alerts JSON to cache for faster look up
     refreshAlertCache(sensor);
 
     return res;
 }
 
-const processAlerts = async (email, alerts, data) => {
+/**
+ * Processes the alerts for a sensor
+ * 
+ * @param {array} alerts Array of alerts
+ * @param {string} data 
+ */
+const processAlerts = async (alerts, sensorData) => {
     ['temperature', 'humidity', 'pressure'].forEach((alertType) => {
         alerts.forEach(async (alert) => {
             if (alert.type === alertType) {

@@ -1,7 +1,7 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
-const dynamoHelper = require('../Helpers/dynamoHelper');
+const alertHelper = require('../Helpers/alertHelper');
 const errorCodes = require('../Helpers/errorCodes.js');
 const redis = require('../Helpers/redisHelper').getClient();
 
@@ -30,7 +30,7 @@ exports.handler = async (event, context) => {
     let res = 'success'; 
     let putResult = null;
     try {
-        putResult = await dynamoHelper.saveAlert(sensor, type, enabled, min, max);
+        putResult = await alertHelper.putAlert(user.id, sensor, type, min, max, enabled);
     } catch (e) {
         console.error(e);
         res = 'failed';

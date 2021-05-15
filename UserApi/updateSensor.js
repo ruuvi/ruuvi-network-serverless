@@ -60,17 +60,17 @@ exports.handler = async (event, context) => {
     // TODO: Tidy up duplication
 	if (validator.hasKeys(eventBody, ['offsetTemperature']) && !isNaN(parseInt(eventBody.offsetTemperature))) {
         sensorUpdates.push('offset_temperature = ?');
-        sensorValues.push(parseInt(eventBody.offsetTemperature));
+        sensorValues.push(parseFloat(eventBody.offsetTemperature));
         ret.offsetTemperature = eventBody.offsetTemperature;
     }
 	if (validator.hasKeys(eventBody, ['offsetHumidity']) && !isNaN(parseInt(eventBody.offsetHumidity))) {
         sensorUpdates.push('offset_humidity = ?');
-        sensorValues.push(parseInt(eventBody.offsetHumidity));
+        sensorValues.push(parseFloat(eventBody.offsetHumidity));
         ret.offsetHumidity = eventBody.offsetHumidity;
     }
     if (validator.hasKeys(eventBody, ['offsetPressure']) && !isNaN(parseInt(eventBody.offsetPressure))) {
         sensorUpdates.push('offset_pressure = ?');
-        sensorValues.push(parseInt(eventBody.offsetPressure));
+        sensorValues.push(parseFloat(eventBody.offsetPressure));
         ret.offsetPressure = eventBody.offsetPressure;
     }
 

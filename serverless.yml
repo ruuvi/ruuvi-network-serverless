@@ -21,7 +21,6 @@ custom:
   dynamoSensorData: ${self:custom.stage}-SensorData # Main Sensor data
   dynamoSensorDataReduced: ${self:custom.stage}-SensorDataReduced
   dynamoGatewayWhitelist: ${self:custom.stage}-GatewayWhitelist
-  dynamoAlerts: ${self:custom.stage}-SensorAlerts
   sensorProfileBucket: ${self:custom.stage}-sensor-profile-pictures
   denseDataInterval: 60      # seconds between data points
   sparseDataInterval: 900      # seconds between data points
@@ -35,7 +34,7 @@ custom:
   requireLoginForData: 1           # 1 for ENABLED
   gatewaySendRate: 60              # every X seconds
   gatewayEnforceSignature: 0       # 1 for ENABLED
-  gatewayRequestTTL: 10000         # ms
+  gatewayRequestTTL: 10000         # ms - how long is the request valid?
 
   # Dynamo Auto-Scaling Configuration
   capacities:
@@ -56,15 +55,6 @@ custom:
       write:
         minimum: 15       # Minimum write capacity
         maximum: 50      # Maximum write capacity
-        usage: 0.8        # Targeted usage percentage
-    - table: DynamoAlerts
-      read:
-        minimum: 25       # Minimum read capacity
-        maximum: 100     # Maximum read capacity
-        usage: 0.8        # Targeted usage percentage
-      write:
-        minimum: 1        # Minimum write capacity
-        maximum: 10       # Maximum write capacity
         usage: 0.8        # Targeted usage percentage
     - table: DynamoGatewayWhitelist
       read:
@@ -438,7 +428,6 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
-      ALERT_TABLE_NAME: ${self:custom.dynamoAlerts}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
   getAlert:
@@ -453,7 +442,6 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
-      ALERT_TABLE_NAME: ${self:custom.dynamoAlerts}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
   emailSender:
@@ -698,23 +686,6 @@ resources:
 #            AttributeType: S
         KeySchema:
           - AttributeName: GatewayId
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 5 # Defaults, using auto-scaling by default
-          WriteCapacityUnits: 5
-    DynamoAlerts:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:custom.dynamoAlerts}
-        AttributeDefinitions:
-          - AttributeName: SensorId
-            AttributeType: S
-#          - AttributeName: MetricName
-#            AttributeType: S
-#          - AttributeName: Limit
-#            AttributeType: N
-        KeySchema:
-          - AttributeName: SensorId
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: 5 # Defaults, using auto-scaling by default

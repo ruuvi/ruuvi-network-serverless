@@ -11,6 +11,7 @@ const itif = (condition) => condition ? it : it.skip;
 // Load configuration
 const stage = process.env.STAGE ? process.env.STAGE : 'dev';
 const stageConfig = require('./integrationCredentials');
+const { debug } = require('console');
 
 const baseURL = stageConfig[stage]['url'];
 const primaryToken = stageConfig[stage]['primary'];
@@ -329,7 +330,7 @@ describe('Full integration tests', () => {
 		expect(userShareData.data.data.sensors.length).toBe(0);
 	});
 
-	itif(RI)('creating alert is successful', async () => {
+	itif(RI)('creating an alert is successful', async () => {
 		const createResult = await post('alerts', {
 			sensor: newSensorMac,
 			type: 'humidity',
@@ -345,13 +346,58 @@ describe('Full integration tests', () => {
 		});
 
 		expect(readResult.status).toBe(200, 'Read');
+		console.log(readResult.data.data);
 		expect(readResult.data.data.alerts.length).toBe(1);
 
 		const alerts = readResult.data.data.alerts;
 		expect(alerts[0].max).toBe(100);
 		expect(alerts[0].min).toBe(30);
+		expect(alerts[0].triggered).toBe(false);
 		expect(alerts[0].enabled).toBe(true);
 		expect(alerts[0].type).toBe('humidity');
+	});
+
+	itif(RI)('triggering an alert is successful', async () => {
+		/*const createResult = await post('alerts', {
+			sensor: newSensorMac,
+			type: 'humidity',
+			min: 30,
+			max: 100,
+			enabled: true
+		});
+		expect(createResult.status).toBe(200, 'Create');
+
+		let tags = {};
+		tags[newSensorMac] = {
+			"rssi":	-76,
+			"timestamp":	Date.now() - 50,
+			"data":	testData
+		};
+
+		const recordResult = await post('record', {
+			"data":	{
+				"coordinates":	"",
+				"timestamp":	Date.now(),
+				"gw_mac":	newGatewayMac,
+				"tags":	tags
+			}
+		});
+
+		// Wait?
+
+		// Validate existence
+		const readResult = await get('alerts', {
+			sensor: newSensorMac
+		});
+
+		expect(readResult.status).toBe(200, 'Read');
+		console.log(readResult.data.data);
+		expect(readResult.data.data.alerts.length).toBe(1);
+
+		const alerts = readResult.data.data.alerts;
+		expect(alerts[0].triggered).toBe(1);
+		//expect(alerts[0].triggeredAt).toBe(1);
+		*/
 	});
 
 	itif(RI)('`unclaim` returns 200 OK', async () => {

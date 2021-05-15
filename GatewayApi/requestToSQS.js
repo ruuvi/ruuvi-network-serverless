@@ -61,10 +61,10 @@ exports.handler = async (event, context) => {
     let tagIds = [];
     for (var key in data.tags) {
         // Process alerts first to alert if necessary, even if throttled
-        const alerts = await alertHelper.getAlerts(key, true);
+        const alerts = await alertHelper.getAlerts(key, null, true);
         if (alerts.length > 0) {
             const data = sensorDataHelper.parseData(data.tags[key]);
-            await alertHelper.processAlerts('sami@muhwu.com', alerts, data);
+            await alertHelper.processAlerts(alerts, data);
         }
 
         // Process throttling
