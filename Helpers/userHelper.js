@@ -130,6 +130,15 @@ const createSubscription = async (userId) => {
     }
 }
 
+const sendInvitation = async (toEmail, fromEmail, sensor) => {
+    const jwtHelper = require('../Helpers/JWTHelper');
+    const day = 1440;
+    const short = await jwtHelper.createRegistrationJWT(toEmail, 'register', day, [sensor]);
+
+    const emailHelper = require('../Helpers/emailHelper');
+    return await emailHelper.sendEmailInvitation(toEmail, fromEmail, sensor, short);
+}
+
 /**
  * Exports
  */
@@ -139,5 +148,6 @@ module.exports = {
     create,
     createUserToken,
     createSubscription,
-    updateLastAccessed
+    updateLastAccessed,
+    sendInvitation
  };

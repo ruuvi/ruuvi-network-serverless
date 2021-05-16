@@ -7,6 +7,7 @@ const errorCodes = {
     ER_USER_NOT_FOUND: 'ER_USER_NOT_FOUND', // Target user not found (f.ex. when sharing)
     ER_SENSOR_NOT_FOUND: 'ER_SENSOR_NOT_FOUND', // Sensor not found (or no access)
     ER_TOKEN_EXPIRED: 'ER_TOKEN_EXPIRED', // Access token expired (f.ex. User verification tokens)
+    ER_THROTTLED: 'ER_THROTTLED', // Throttled request due to too high call frequency
 
     // Subscriptions and Sharing
     ER_SUBSCRIPTION_NOT_FOUND: 'ER_SUBSCRIPTION_NOT_FOUND', // Thrown when action requires a subscription but it is not found
@@ -24,6 +25,7 @@ const errorCodes = {
     ER_INVALID_TIME_RANGE: 'ER_INVALID_TIME_RANGE', // Invalid time range given - most often since timestamp after until timestamp
     ER_INVALID_EMAIL_ADDRESS: 'ER_INVALID_EMAIL_ADDRESS', // Invalid e-mail format in given argument
     ER_INVALID_MAC_ADDRESS: 'ER_INVALID_MAC_ADDRESS', // Invalid MAC addrss format in given argument
+    ER_INVALID_ENUM_VALUE: 'ER_INVALID_ENUM_VALUE', // Invalid ENUM value given
 
     // Sub-codes
     ER_SUB_DATA_STORAGE_ERROR: 'ER_SUB_DATA_STORAGE_ERROR', // Internal sub-code when database write / read failed unexpectedly.

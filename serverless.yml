@@ -12,6 +12,8 @@ custom:
   stage: ${opt:stage, self:provider.stage}
 
   writerQueueName: ${self:custom.stage}-ruuvi_network
+  sparseQueueName: ${self:custom.stage}-sparse-queue
+  emailQueueName: ${self:custom.stage}-email-queue
   gatewayReceiverLambdaConcurrency: 100 # Separate due to higher requirements
   lambdaConcurrency: 10
 
@@ -19,9 +21,10 @@ custom:
   dynamoSensorData: ${self:custom.stage}-SensorData # Main Sensor data
   dynamoSensorDataReduced: ${self:custom.stage}-SensorDataReduced
   dynamoGatewayWhitelist: ${self:custom.stage}-GatewayWhitelist
-  dynamoAlerts: ${self:custom.stage}-SensorAlerts
   sensorProfileBucket: ${self:custom.stage}-sensor-profile-pictures
-  longTermStorageInterval: 900      # seconds between data points
+  denseDataInterval: 60      # seconds between data points
+  sparseDataInterval: 900      # seconds between data points
+  gatewayThrottleInterval: 15  # seconds between gateway updates  
   rawDataTTL: 10800                 # 10800 = 3h, 7776000 = 3 months
   verificationShortTokenLength: 4   # Length of the short verification token sent in the e-mail
 
@@ -31,52 +34,52 @@ custom:
   requireLoginForData: 1           # 1 for ENABLED
   gatewaySendRate: 60              # every X seconds
   gatewayEnforceSignature: 0       # 1 for ENABLED
-  gatewayRequestTTL: 10000         # ms
+  gatewayRequestTTL: 10000         # ms - how long is the request valid?
 
   # Dynamo Auto-Scaling Configuration
   capacities:
     - table: DynamoSensorData  # Resource
       read:
         minimum: 25       # Minimum read capacity
-        maximum: 1000     # Maximum read capacity
-        usage: 0.2        # Targeted usage percentage
+        maximum: 100     # Maximum read capacity
+        usage: 0.8        # Targeted usage percentage
       write:
         minimum: 15       # Minimum write capacity
-        maximum: 1000     # Maximum write capacity
-        usage: 0.2        # Targeted usage percentage
+        maximum: 200     # Maximum write capacity
+        usage: 0.8        # Targeted usage percentage
     - table: DynamoSensorDataReduced  # Resource
       read:
         minimum: 15       # Minimum read capacity
-        maximum: 100     # Maximum read capacity
-        usage: 0.2        # Targeted usage percentage
+        maximum: 50     # Maximum read capacity
+        usage: 0.8        # Targeted usage percentage
       write:
         minimum: 15       # Minimum write capacity
-        maximum: 200      # Maximum write capacity
-        usage: 0.2        # Targeted usage percentage
-    - table: DynamoAlerts
-      read:
-        minimum: 25       # Minimum read capacity
-        maximum: 1000     # Maximum read capacity
-        usage: 0.2        # Targeted usage percentage
-      write:
-        minimum: 1        # Minimum write capacity
-        maximum: 10       # Maximum write capacity
-        usage: 0.2        # Targeted usage percentage
+        maximum: 50      # Maximum write capacity
+        usage: 0.8        # Targeted usage percentage
     - table: DynamoGatewayWhitelist
       read:
         minimum: 25       # Minimum read capacity
-        maximum: 1000     # Maximum read capacity
-        usage: 0.2        # Targeted usage percentage
+        maximum: 100     # Maximum read capacity
+        usage: 0.8        # Targeted usage percentage
       write:
         minimum: 1       # Minimum write capacity
         maximum: 10     # Maximum write capacity
-        usage: 0.2        # Targeted usage percentage
+        usage: 0.8        # Targeted usage percentage
+
+  vpc:
+    securityGroupIds:
+      - ${ssm:${self:custom.stage}-ruuvi-redis-security-group-id}
+    subnetIds:
+      - ${ssm:${self:custom.stage}-ruuvi-redis-subnet-1}
+      - ${ssm:${self:custom.stage}-ruuvi-redis-subnet-2}
+      - ${ssm:${self:custom.stage}-ruuvi-redis-subnet-3}
 
 
 provider:
   name: aws
   runtime: nodejs12.x
   profile: ruuvi
+  vpc: ${self:custom.vpc}
 
   # Defaults
   stage: ${opt:stage, 'dev'}
@@ -150,7 +153,14 @@ functions:
       ENFORCE_SIGNATURE: ${self:custom.gatewayEnforceSignature}
       GATEWAY_REQUEST_TTL: ${self:custom.gatewayRequestTTL}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
-
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+      GATEWAY_THROTTLE_INTERVAL: ${self:custom.gatewayThrottleInterval}
+      MINIMUM_SENSOR_THROTTLE_INTERVAL: ${self:custom.denseDataInterval}
+      EMAIL_QUEUE: { Ref: EmailQueue }
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
 
   writeToDatabase:
     handler: GatewayApi/writeToDatabase.handler
@@ -163,9 +173,26 @@ functions:
           batchSize: 10
     environment:
       TABLE_NAME: ${self:custom.dynamoSensorData}
-      REDUCED_TABLE_NAME: ${self:custom.dynamoSensorDataReduced}
-      LONG_TERM_STORAGE_INTERVAL: ${self:custom.longTermStorageInterval}
-      RAW_DATA_TTL: ${self:custom.rawDataTTL}
+      MAXIMUM_STORAGE_INTERVAL: ${self:custom.denseDataInterval}
+      DATA_TTL: ${self:custom.rawDataTTL}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+      EMAIL_QUEUE: { Ref: EmailQueue }
+
+  writeToSparseDatabase:
+    handler: GatewayApi/writeToDatabase.handler
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - SparseGatewayQueue
+              - Arn
+          batchSize: 10
+    environment:
+      TABLE_NAME: ${self:custom.dynamoSensorDataReduced}
+      MAXIMUM_STORAGE_INTERVAL: ${self:custom.sparseDataInterval}
+      DATA_TTL: 0
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+      EMAIL_QUEUE: { Ref: EmailQueue }
 
   # User Facing API
   getSensorData:
@@ -248,7 +275,7 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       INVITATION_EXPIRATION_INTERVAL: ${self:custom.invitationExpirationInterval}
-      SOURCE_EMAIL: ${self:custom.sourceEmail}
+      EMAIL_QUEUE: { Ref: EmailQueue }
       SOURCE_DOMAIN: ${self:custom.sourceDomain}
       VERIFICATION_SHORT_TOKEN_LENGTH: ${self:custom.verificationShortTokenLength}
       INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key~true}
@@ -321,9 +348,17 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
-      SOURCE_EMAIL: ${self:custom.sourceEmail}
-      SOURCE_DOMAIN: ${self:custom.sourceDomain}
+      EMAIL_QUEUE: { Ref: EmailQueue }
       TABLE_NAME: ${self:custom.dynamoSensorData}
+      BASE_API_URL:
+        !Join
+          - ''
+          - - 'https://'
+            - !Ref HttpApi
+            - '.execute-api.'
+            - ${opt:region, self:provider.region}
+            - '.'
+            - !Ref AWS::URLSuffix
 
   unshareSensor:
     handler: UserApi/unshareSensor.handler
@@ -339,8 +374,7 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
-      SOURCE_EMAIL: ${self:custom.sourceEmail}
-      SOURCE_DOMAIN: ${self:custom.sourceDomain}
+      EMAIL_QUEUE: { Ref: EmailQueue }
 
   getSharedSensors:
     handler: UserApi/getShared.handler
@@ -393,6 +427,51 @@ functions:
             - ${opt:region, self:provider.region}
             - '.'
             - !Ref AWS::URLSuffix
+
+  # Alerts
+  setAlert:
+    handler: UserApi/setAlert.handler
+    events:
+      - httpApi:
+          method: POST
+          path: /alerts
+    environment:
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+
+  getAlert:
+    handler: UserApi/getAlerts.handler
+    events:
+      - httpApi:
+          method: GET
+          path: /alerts
+    environment:
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+
+  emailSender:
+    handler: services/emailSender.handler
+    vpc:
+      securityGroupIds: []
+      subnetIds: []
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - EmailQueue
+              - Arn
+          batchSize: 1
+    environment:
+      SOURCE_EMAIL: ${self:custom.sourceEmail}
+      SOURCE_DOMAIN: ${self:custom.sourceDomain}
 
   # NOTE: Workaround for CORS preflight requests
   corsOptions:
@@ -479,6 +558,10 @@ resources:
       Type: AWS::SQS::Queue
       Properties:
         QueueName: ${self:custom.writerQueueName}
+    SparseGatewayQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:custom.sparseQueueName}
     DynamoSensorData:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -538,14 +621,34 @@ resources:
               Condition:
                 ArnEquals:
                   "aws:SourceArn": !Ref GatewayEventTopic
+            - Sid: "allow-sns-messages-sparse"
+              Effect: Allow
+              Principal: "*"
+              Resource: !GetAtt
+                - SparseGatewayQueue
+                - Arn
+              Action: "SQS:SendMessage"
+              Condition:
+                ArnEquals:
+                  "aws:SourceArn": !Ref GatewayEventTopic
         Queues:
           - Ref: GatewayQueue
+          - Ref: SparseGatewayQueue
     DatabaseWriterSubscription:
       Type: 'AWS::SNS::Subscription'
       Properties:
         TopicArn: !Ref GatewayEventTopic
         Endpoint: !GetAtt
           - GatewayQueue
+          - Arn
+        Protocol: sqs
+        RawMessageDelivery: 'true'
+    SparseDatabaseWriterSubscription:
+      Type: 'AWS::SNS::Subscription'
+      Properties:
+        TopicArn: !Ref GatewayEventTopic
+        Endpoint: !GetAtt
+          - SparseGatewayQueue
           - Arn
         Protocol: sqs
         RawMessageDelivery: 'true'
@@ -600,23 +703,6 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 5 # Defaults, using auto-scaling by default
           WriteCapacityUnits: 5
-    DynamoAlerts:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:custom.dynamoAlerts}
-        AttributeDefinitions:
-          - AttributeName: SensorId
-            AttributeType: S
-#          - AttributeName: MetricName
-#            AttributeType: S
-#          - AttributeName: Limit
-#            AttributeType: N
-        KeySchema:
-          - AttributeName: SensorId
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 5 # Defaults, using auto-scaling by default
-          WriteCapacityUnits: 5
     UploadBucket:
       Type: AWS::S3::Bucket
       Properties:
@@ -633,3 +719,7 @@ resources:
             - "*"
             AllowedHeaders:
             - "*"
+    EmailQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:custom.emailQueueName}

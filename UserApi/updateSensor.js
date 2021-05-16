@@ -44,16 +44,36 @@ exports.handler = async (event, context) => {
         sensor: sensor
     };
 
+    // Sensor Profile updates
 	if (validator.hasKeys(eventBody, ['name']) && eventBody.name) {
         profileUpdates.push('name = ?');
         profileValues.push(eventBody.name);
         ret.name = eventBody.name;
     }
+
+    // Sensor updates
 	if (validator.hasKeys(eventBody, ['public']) && (parseInt(eventBody.public) === 0 || parseInt(eventBody.public) === 1)) {
         sensorUpdates.push('public = ?');
         sensorValues.push(parseInt(eventBody.public));
         ret.public = eventBody.public;
     }
+    // TODO: Tidy up duplication
+	if (validator.hasKeys(eventBody, ['offsetTemperature']) && !isNaN(parseInt(eventBody.offsetTemperature))) {
+        sensorUpdates.push('offset_temperature = ?');
+        sensorValues.push(parseFloat(eventBody.offsetTemperature));
+        ret.offsetTemperature = eventBody.offsetTemperature;
+    }
+	if (validator.hasKeys(eventBody, ['offsetHumidity']) && !isNaN(parseInt(eventBody.offsetHumidity))) {
+        sensorUpdates.push('offset_humidity = ?');
+        sensorValues.push(parseFloat(eventBody.offsetHumidity));
+        ret.offsetHumidity = eventBody.offsetHumidity;
+    }
+    if (validator.hasKeys(eventBody, ['offsetPressure']) && !isNaN(parseInt(eventBody.offsetPressure))) {
+        sensorUpdates.push('offset_pressure = ?');
+        sensorValues.push(parseFloat(eventBody.offsetPressure));
+        ret.offsetPressure = eventBody.offsetPressure;
+    }
+
     if (sensorUpdates.length === 0 && profileUpdates.length === 0) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No values provided for update.", errorCodes.ER_MISSING_ARGUMENT);
     }

@@ -4,8 +4,6 @@ const errorCodes = require('../Helpers/errorCodes.js');
  * Amazon API Gateway formatted response
  */
 const response = (code, body, headers, internalCode, internalSubCode) => {
-    const errorCodes = require('../Helpers/errorCodes.js');
-
     if (
         code !== HTTPCodes.OK
         && (
@@ -135,6 +133,8 @@ const forbiddenResponse = () => errorResponse(HTTPCodes.FORBIDDEN, "Forbidden.",
  */
 const unauthorizedResponse = () => errorResponse(HTTPCodes.FORBIDDEN, "Unauthorized request.", errorCodes.ER_UNAUTHORIZED);
 
+const throttledResponse = () => errorResponse(HTTPCodes.THROTTLED, "Throttled.", errorCodes.ER_THROTTLED);
+
 /**
  * Helper method for returning unified successes.
  *
@@ -190,6 +190,7 @@ module.exports = {
 
     forbiddenResponse,
     unauthorizedResponse,
+    throttledResponse,
 
     // Other
     getHeader

@@ -1,3 +1,14 @@
+const tokenGenerator = require('../Helpers/tokenGenerator');
+
+const mysql = require('serverless-mysql')({
+    config: {
+        host     : process.env.DATABASE_ENDPOINT,
+        database : process.env.DATABASE_NAME,
+        user     : process.env.DATABASE_USERNAME,
+        password : process.env.DATABASE_PASSWORD
+    }
+});
+
 /**
  * Creates a symmetric JWT for the given data.
  *
@@ -51,9 +62,45 @@ const verify = (token, secret) => {
 }
 
 /**
+ * Creates a registration token with given metadata including possibly granting access to some sensors on sign up.
+ * 
+ * @param {string} targetEmail 
+ * @param {string} registrationType reset|registration
+ * @param {array} inviteToSensors array of sensor ids to invite to
+ */
+const createRegistrationJWT = async (targetEmail, registrationType, expirationTime = null, inviteToSensors = null) => {
+    let userInfo = {
+        email: targetEmail,
+        type: registrationType
+    };
+    if (inviteToSensors !== null) {
+        userInfo.sensors = inviteToSensors;
+    }
+
+    const expireMinutes = expirationTime === null ? process.env.INVITATION_EXPIRATION_INTERVAL * 60 : expirationTime * 60;
+    const jwt = jwtHelper.sign(userInfo, process.env.SIGNING_SECRET, expireMinutes);
+    
+    const tokenData = tokenGenerator.create(process.env.VERIFICATION_SHORT_TOKEN_LENGTH);
+    const short = tokenData.token.toUpperCase();
+
+    result = await mysql.query({
+        sql: `INSERT INTO reset_tokens (short_token, long_token) VALUES (?, ?)`,
+        timeout: 1000,
+        values: [short, jwt]
+    });
+
+    if (!result.insertId) {
+        return null;
+    }
+
+    return short;
+}
+
+/**
  * Exports
  */
 module.exports = {
    sign,
-   verify
+   verify,
+   createRegistrationJWT
 };

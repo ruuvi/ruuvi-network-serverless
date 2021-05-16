@@ -45,6 +45,9 @@ CREATE TABLE sensors (
         owner_id INT NOT NULL,
         sensor_id VARCHAR(64) NOT NULL,
         -- offsets
+        offset_temperature FLOAT NOT NULL DEFAULT 0,
+        offset_humidity FLOAT NOT NULL DEFAULT 0,
+        offset_pressure FLOAT NOT NULL DEFAULT 0,
         public TINYINT(1) NOT NULL DEFAULT 0,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -70,6 +73,24 @@ CREATE TABLE sensor_profiles (
         -- Only one user can own a sensor profile
         UNIQUE INDEX sensor_user_idx (user_id, sensor_id),
         FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+
+-- Alerts
+CREATE TABLE sensor_alerts (
+        alert_id INT NOT NULL AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        sensor_id VARCHAR(64) NOT NULL,
+        alert_type VARCHAR(32) NOT NULL,
+        min_value DOUBLE PRECISION NOT NULL DEFAULT 0,
+        max_value DOUBLE PRECISION NOT NULL DEFAULT 0,
+        enabled TINYINT NOT NULL DEFAULT 0,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        triggered TINYINT NOT NULL DEFAULT 0,
+        triggered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (alert_id),
+        UNIQUE KEY (user_id, sensor_id, alert_type),
+        INDEX sensor_idx (sensor_id)
 ) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
 -- Ruuvi Subscriptions

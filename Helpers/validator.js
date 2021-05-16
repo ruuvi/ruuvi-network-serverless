@@ -65,6 +65,18 @@ const validateMacAddress = (str) => {
     return reg.test(str);
 };
 
+/**
+ * Validates that string a string is a value in an array
+ *
+ * @param {string} str String to validate
+ */
+ const validateEnum = (str, values) => {
+    if (!Array.isArray(values)) {
+        return false;
+    }
+    return values.includes(str);
+};
+
 const now = () => {
     return Date.now() / 1000;
 }
@@ -79,5 +91,6 @@ module.exports = {
     validateAlphaNumeric,
     validateMacAddress,
     validateSettingName,
+    validateEnum,
     now
 };

@@ -87,9 +87,7 @@ exports.handler = async (event, context) => {
                 await emailHelper.sendShareRemovedNotification(
                     targetUserEmail,
                     sensor, // We probably want to fetch the localized sensor name for this
-                    user.email,
-                    process.env.SOURCE_EMAIL,
-                    process.env.SOURCE_DOMAIN
+                    user.email
                 );
             }
         } else {
@@ -118,12 +116,10 @@ exports.handler = async (event, context) => {
                 }
 
                 console.log(`User ${user.email} (${user.id}) unshared sensor ${sensor} from ${ownerUser.email} (${owner})`);
-                let emailResult = await emailHelper.sendShareRemovedNotification(
+                await emailHelper.sendShareRemovedNotification(
                     ownerUser.email,
                     sensor, // We probably want to fetch the localized sensor name for this
-                    user.email,
-                    process.env.SOURCE_EMAIL,
-                    process.env.SOURCE_DOMAIN
+                    user.email
                 );
             }
         }

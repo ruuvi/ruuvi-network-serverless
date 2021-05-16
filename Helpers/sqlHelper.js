@@ -1,3 +1,5 @@
+const validator = require('../Helpers/validator');
+
 const mysql = require('serverless-mysql')({
     config: {
         host     : process.env.DATABASE_ENDPOINT,
@@ -154,6 +156,68 @@ const updateValues = async (table, fields, values, whereConditions, whereValues)
     return results.affectedRows;
 }
 
+const fetchAlerts = async (sensorId) => {
+    return await mysql.query({
+        sql: 
+            `SELECT
+                sensor_alerts.*,
+                sensors.offset_humidity AS offset_humidity,
+                sensors.offset_temperature AS offset_temperature,
+                sensors.offset_pressure AS offset_pressure
+            FROM sensor_alerts
+            INNER JOIN sensors ON sensors.sensor_id = sensor_alerts.sensor_id
+            WHERE sensors.sensor_id = ?`,
+        timeout: 1000,
+        values: [sensorId]
+    });
+}
+
+/**
+ * Gets the alert of a type for a given sensor.
+ * 
+ * @param {int} userId ID of the user to add the alert
+ * @param {string} sensorId ID of the sensor to get the alert for
+ * @param {enum} type Type in: ['temperature', 'humidity', 'pressure', 'signal', 'movement']
+ * @returns 
+ */
+ const saveAlert = async (userId, sensorId, type, enabled = true, min = Number.MIN_VALUE, max = Number.MAX_VALUE) => {
+    if (!validator.validateEnum(type, ['temperature', 'humidity', 'pressure', 'signal', 'movement'])) {
+        console.error('Invalid type given: ' + type);
+        return [];
+    }
+
+    let res = null;
+    try {
+        res = await mysql.query({
+            sql: `INSERT INTO sensor_alerts (
+                    user_id,
+                    sensor_id,
+                    alert_type,
+                    min_value,
+                    max_value,
+                    enabled
+                ) VALUES (
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    1
+                ) ON DUPLICATE KEY UPDATE
+                    min_value = VALUES(min_value),
+                    max_value = VALUES(max_value),
+                    enabled = VALUES(enabled),
+                    triggered = 0;`,
+            timeout: 1000,
+            values: [userId, sensorId, type, min, max, enabled]
+        });
+    } catch (e) {
+        console.error(e);
+        return false;
+    }
+    return res;
+}
+
 /**
  * Exports
  */
@@ -162,5 +226,7 @@ module.exports = {
     fetchSingle,
     deleteSingle,
 	setValue,
-	updateValues
+	updateValues,
+    fetchAlerts,
+    saveAlert
 };

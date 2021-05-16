@@ -41,12 +41,10 @@ exports.handler = async (event, context) => {
 
     let results = null;
 
-    try {
-        const targetUser = await userHelper.getByEmail(targetUserEmail);
-        if (!targetUser) {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "User not found.", errorCodes.ER_USER_NOT_FOUND);
-        }
+    let targetUser = null;
+    let targetUserId = null;
 
+    try {
         // Get Subscription
         const subscription = await sqlHelper.fetchSingle('user_id', user.id, 'subscriptions');
         if (!subscription) {
@@ -82,10 +80,19 @@ exports.handler = async (event, context) => {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Cannot share a sensor without data.', errorCodes.ER_NO_DATA_TO_SHARE);
         }
 
-        const targetUserId = targetUser.id;
+        // Validated that sharing is possible, check if user needs to be invited.
+        targetUser = await userHelper.getByEmail(targetUserEmail);
+        if (!targetUser) {
+            await userHelper.sendInvitation(targetUserEmail, user.email, sensor);
+            return gatewayHelper.successResponse({
+                sensor: sensor,
+                invited: true
+            });
+        }
+
+        targetUserId = targetUser.id;
 
         // Currently Enforces sharing restrictions on database level
-        console.log(user.id + ' shared sensor ' + sensor + ' to ' + targetUserId);
         results = await mysql.query({
             sql: `INSERT INTO sensor_profiles (
                     user_id,
@@ -108,13 +115,13 @@ exports.handler = async (event, context) => {
 
         if (results.insertId) {
             // Success
+            console.log(user.id + ' shared sensor ' + sensor + ' to ' + targetUserId);
         } else {
+            console.log(user.id + ' failed to share sensor ' + sensor + ' to ' + targetUserId);
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Unable to share sensor.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
         }
-
-        // Run clean up function
-        await mysql.end();
     } catch (e) {
+        console.error('Error creating sensor_profile: ', e);
         if (e.code === 'ER_DUP_ENTRY') {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, "Sensor already shared to user.", errorCodes.ER_SENSOR_ALREADY_SHARED);
         }
@@ -124,6 +131,7 @@ exports.handler = async (event, context) => {
 
     // Sharing was successful, send notification e-mail
     try {
+        console.log(user.id + ' creating e-mail notification for sensor ' + sensor + ' to ' + targetUserId);
         const sensorData = await mysql.query({
             sql: `SELECT name
                 FROM sensor_profiles
@@ -142,17 +150,20 @@ exports.handler = async (event, context) => {
 
         const sensorName = sensorData[0].name ? sensorData[0].name : 'unnamed';
 
+        console.log(user.id + ' sending e-mail notification for sensor ' + sensor + ' to ' + targetUserId);
         await emailHelper.sendShareNotification(
             targetUserEmail,
             sensorName,
-            user.email,
-            process.env.SOURCE_EMAIL,
-            process.env.SOURCE_DOMAIN
+            user.email
         );
     } catch (e) {
-        console.error(e.message);
+        console.error("Failed to send e-mail", e.message);
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Share successful. Failed to send notification.", errorCodes.ER_UNABLE_TO_SEND_EMAIL);
     }
+
+    // Run clean up function
+    console.log(user.id + ' shared sensor ' + sensor + ' successfully to ' + targetUserId);
+    await mysql.end();
 
     return gatewayHelper.successResponse({
         sensor: sensor
