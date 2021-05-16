@@ -97,22 +97,25 @@ const sendResetEmail = async (email, token, sourceDomain) => {
     return sendEmail(email, "Ruuvi Account Reset Confirmation", htmlBody);
 };
 
-const sendAlertEmail = async (email, sensorName, sensor, alertType) => {
+const sendAlertEmail = async (email, sensorName, sensor, alertType, overUnder, value, threshold) => {
     // TODO: This would be nicer to maintain by SES templates
+    if (!sensorName) {
+        sensorName = 'Unnamed sensor';
+    }
     const htmlBody = `
       <!DOCTYPE html>
       <html>
         <head></head>
         <body>
-            <h1>Sensor '${sensorName}' triggered an alert!</h1>
+            <h1>Sensor '${sensorName}' triggered an alert for ${alertType}!</h1>
             <p>
-                An alert of type ${alertType} was triggered by ${sensorName} (${sensor})!
+                ${sensorName} (${sensor}) reported a value of ${value} for ${alertType} which is ${overUnder} the threshold of ${threshold}!
             </p>
         </body>
       </html>
     `;
 
-    return sendEmail(email, `Sensor '${sensorName}' triggered an alert!`, htmlBody);
+    return sendEmail(email, `Sensor '${sensorName}' triggered an alert for ${alertType}!`, htmlBody);
 };
 
 const sendShareNotification = async (email, sensorName, sharerName) => {

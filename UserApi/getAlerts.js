@@ -17,8 +17,7 @@ exports.handler = async (event, context) => {
 
     const sensor = event.queryStringParameters.sensor;
     const alertData = await alertHelper.getAlerts(sensor, user.id);
-    console.log(sensor);
-    console.log(alertData);
+
     return gatewayHelper.successResponse({
         alerts: alertData
     });

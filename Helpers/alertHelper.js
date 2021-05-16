@@ -10,7 +10,9 @@ const emailHelper = require('../Helpers/emailHelper');
     if (alerts === null) {
         return [];
     }
-    return JSON.parse(alerts);
+    const parsed = JSON.parse(alerts);
+    const formatted = formatAlerts(parsed);
+    return formatted;
 }
 
 /**
@@ -20,10 +22,21 @@ const emailHelper = require('../Helpers/emailHelper');
  */
 const refreshAlertCache = async (sensor, data = null) => {
     if (data === null) {
-        data = await getAlerts(sensor);
+        data = await getAlerts(sensor, null, false, true);
+        console.log('cached data', data);
+    } else {
+        console.log(data);
     }
     
-    await redis.set("alerts_" + sensor, JSON.stringify(data));
+    let active = [];
+    data.forEach((alert) => {
+        console.log(alert);
+        if (!alert.triggered) {
+            active.push(alert);
+        }
+    });
+    console.log('refreshed active cache', active);
+    await redis.set("alerts_" + sensor, JSON.stringify(active));
 }
 
 /**
@@ -33,13 +46,32 @@ const refreshAlertCache = async (sensor, data = null) => {
  * @param {userId} mixed int or null, if null, will fetch for all users
  * @param {useCache} bool If true, will only access cache 
  */
-const getAlerts = async (sensor, userId = null, useCache = false) => {
+const getAlerts = async (sensor, userId = null, useCache = false, returnRaw = false) => {
     if (useCache) {
-        return await getCachedAlerts(sensor);
+        const cachedAlerts = await getCachedAlerts(sensor);
+        return cachedAlerts;
     }
 
     let raw = await sqlHelper.fetchAlerts(sensor, userId);
-    
+    if (raw === null) {
+        return [];
+    }
+
+    // Cache holds all alerts for a sensor; only refresh when all alerts are fetched from database
+    if (userId === null) {
+        refreshAlertCache(sensor, raw);
+    }
+
+
+    return returnRaw ? raw : formatAlerts(raw);
+}
+
+/**
+ * Formats the alerts to the outputtable format.
+ * 
+ * @param {array} raw Raw alerts from database
+ */
+const formatAlerts = (raw) => {
     let formatted = [];
     raw.forEach((alert) => {
         formatted.push({
@@ -53,12 +85,6 @@ const getAlerts = async (sensor, userId = null, useCache = false) => {
             triggeredAt: alert.triggered_at
         });
     });
-
-    // Cache holds all alerts for a sensor; only refresh when all alerts are fetched from database
-    if (userId === null) {
-        refreshAlertCache(sensor, raw);
-    }
-
     return formatted;
 }
 
@@ -76,16 +102,47 @@ const getAlerts = async (sensor, userId = null, useCache = false) => {
 const putAlert = async (userId, sensor, type, min, max, enabled) => {
     let res = true;
     try {
-        putResult = await sqlHelper.saveAlert(userId, sensor, type, enabled, min, max);
+        const putResult = await sqlHelper.saveAlert(userId, sensor, type, enabled, min, max);
     } catch (e) {
         console.error(e);
         res = false;
     }
 
     // Put the alerts JSON to cache for faster look up
-    refreshAlertCache(sensor);
+    await refreshAlertCache(sensor);
 
     return res;
+}
+
+/**
+ * Will set the alert triggered and proceed with any alerting actions such
+ * as sending e-mails.
+ * 
+ * @param {object} alertData Array data of the alert to be triggered
+ * @param {object} sensorData Sensor info
+ * @param {string} triggerType over / under
+ */
+const triggerAlert = async (alertData, sensorData, triggerType) => {
+    const nowDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    var updateResult = await sqlHelper.updateValues('sensor_alerts', ['triggered = ?', 'triggered_at = ?'], [1, nowDate], ['sensor_id = ?', 'user_id = ?', 'triggered = ?'], [alertData.sensorId, alertData.userId, 0]);
+    
+    if (updateResult === 1) {
+        console.log('Sending Alert Email to user: ' + alertData.userId);
+        const userHelper = require('../Helpers/userHelper');
+
+        const user = userHelper.getById(alertData.userId);
+        console.log(alertData);
+        console.log(sensorData);
+        await emailHelper.sendAlertEmail(
+            user.email,
+            sensorData.sensor_id, // TODO: Fetch profile
+            sensorData.sensor_id,
+            alertData.type,
+            triggerType,
+            sensorData[alertData.type],
+            triggerType == 'over' ? alertData.max : alertData.min
+        );
+    }
 }
 
 /**
@@ -95,18 +152,13 @@ const putAlert = async (userId, sensor, type, min, max, enabled) => {
  * @param {string} data 
  */
 const processAlerts = async (alerts, sensorData) => {
-    ['temperature', 'humidity', 'pressure'].forEach((alertType) => {
-        alerts.forEach(async (alert) => {
-            if (alert.type === alertType) {
-                if (
-                    data[alertType] > alert.MaxValue
-                    || data[alertType] < alert.MinValue
-                ) {
-                    console.log('Alert condition hit');
-                    await emailHelper.sendAlertEmail(email, 'kek', alertType);
-                }
-            }
-        });
+    alerts.forEach(async (alert) => {
+        if (sensorData[alert.type] > alert.max) {
+            await triggerAlert(alert, sensorData, 'over');
+        }
+        if (sensorData[alert.type] < alert.min) {
+            await triggerAlert(alert, sensorData, sensorData[alert.type], 'under');
+        }
     });
 }
 
@@ -117,5 +169,6 @@ module.exports = {
     getAlerts,
     refreshAlertCache,
     putAlert,
+    triggerAlert,
     processAlerts
 };

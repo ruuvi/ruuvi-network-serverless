@@ -157,6 +157,10 @@ functions:
       GATEWAY_THROTTLE_INTERVAL: ${self:custom.gatewayThrottleInterval}
       MINIMUM_SENSOR_THROTTLE_INTERVAL: ${self:custom.denseDataInterval}
       EMAIL_QUEUE: { Ref: EmailQueue }
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
 
   writeToDatabase:
     handler: GatewayApi/writeToDatabase.handler

@@ -87,6 +87,7 @@ CREATE TABLE sensor_alerts (
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         triggered TINYINT NOT NULL DEFAULT 0,
         triggered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (alert_id),
         UNIQUE KEY (user_id, sensor_id, alert_type),
         INDEX sensor_idx (sensor_id)

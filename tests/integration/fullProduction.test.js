@@ -159,6 +159,38 @@ describe('Full integration tests', () => {
 		expect(recordResult.statusText).toBe('OK');
 	});
 
+	itif(RI)('`record` triggers a throttle when updated with same gateway', async () => {
+		let tags = {};
+		tags[newSensorMac] = {
+			"rssi":	-76,
+			"timestamp":	Date.now() - 50,
+			"data": '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E'
+		};
+
+		try {
+			await post('record', {
+				"data":	{
+					"coordinates":	"",
+					"timestamp": Date.now(),
+					"gw_mac": newGatewayMac,
+					"tags":	tags
+				}
+			});
+
+			const recordResult = await post('record', {
+				"data":	{
+					"coordinates":	"",
+					"timestamp": Date.now(),
+					"gw_mac": newGatewayMac,
+					"tags":	tags
+				}
+			});
+		} catch (e) {
+			expect(e.response.status).toBe(429); // Throttled
+			expect(e.response.data.code).toBe('ER_THROTTLED');
+		}
+	});
+
 	itif(RI)('`user` returns email', async () => {
 		const userData = await get('user');
 		expect(userData.data.data.email).toBe(primaryEmail);
@@ -346,7 +378,6 @@ describe('Full integration tests', () => {
 		});
 
 		expect(readResult.status).toBe(200, 'Read');
-		console.log(readResult.data.data);
 		expect(readResult.data.data.alerts.length).toBe(1);
 
 		const alerts = readResult.data.data.alerts;
@@ -357,47 +388,63 @@ describe('Full integration tests', () => {
 		expect(alerts[0].type).toBe('humidity');
 	});
 
-	itif(RI)('triggering an alert is successful', async () => {
-		/*const createResult = await post('alerts', {
-			sensor: newSensorMac,
-			type: 'humidity',
-			min: 30,
-			max: 100,
-			enabled: true
-		});
-		expect(createResult.status).toBe(200, 'Create');
+	itif(RI)('triggering a min limit alert is successful', async () => {
+		// Setup
+		const alertSensorMac = utils.randomMac();
+		const alertGatewayMac = utils.randomMac();
 
+		try {
+			await post('claim', {
+				sensor: alertSensorMac
+			});
+
+			await post('alerts', {
+				sensor: alertSensorMac,
+				type: 'temperature',
+				min: 25,
+				max: 30,
+				enabled: true
+			});
+		} catch (e) {
+			expect(true).toBe(false, 'Failed to create alert');
+		}
+
+		// Create request
 		let tags = {};
-		tags[newSensorMac] = {
+		tags[alertSensorMac] = {
 			"rssi":	-76,
 			"timestamp":	Date.now() - 50,
-			"data":	testData
+			// Has temperature of 20.505 degrees
+			"data": '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E'
 		};
 
-		const recordResult = await post('record', {
-			"data":	{
-				"coordinates":	"",
-				"timestamp":	Date.now(),
-				"gw_mac":	newGatewayMac,
-				"tags":	tags
-			}
-		});
+		try {
+			await post('record', {
+				"data":	{
+					"coordinates":	"",
+					"timestamp": Date.now(),
+					"gw_mac": alertGatewayMac,
+					"tags":	tags
+				}
+			});
+		} catch (e) {
+			console.log(e);
+			console.log(alertGatewayMac);
+			console.log(newGatewayMac);
+			expect(true).toBe(false, 'Failed to post data for triggering alert');
+		}
 
-		// Wait?
-
-		// Validate existence
+		// Validate alert
 		const readResult = await get('alerts', {
-			sensor: newSensorMac
+			sensor: alertSensorMac
 		});
 
 		expect(readResult.status).toBe(200, 'Read');
-		console.log(readResult.data.data);
 		expect(readResult.data.data.alerts.length).toBe(1);
 
 		const alerts = readResult.data.data.alerts;
-		expect(alerts[0].triggered).toBe(1);
-		//expect(alerts[0].triggeredAt).toBe(1);
-		*/
+		expect(alerts[0].triggered).toBe(true);
+		expect(alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
 	});
 
 	itif(RI)('`unclaim` returns 200 OK', async () => {
