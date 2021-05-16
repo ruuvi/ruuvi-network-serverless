@@ -77,9 +77,9 @@ const formatAlerts = (raw) => {
             min: alert.min_value,
             max: alert.max_value,
             enabled: alert.enabled ? true : false,
-            offset_humidity: alert.offset_humidity,
-            offset_temperature: alert.offset_temperature,
-            offset_pressure: alert.offset_temperature,
+            offsetHumidity: alert.offset_humidity,
+            offsetTemperature: alert.offset_temperature,
+            offsetPressure: alert.offset_temperature,
             triggered: alert.triggered ? true : false,
             triggeredAt: alert.triggered_at
         });
@@ -145,6 +145,11 @@ const triggerAlert = async (alertData, sensorData, triggerType) => {
     }
 }
 
+const capitalize = (s) => {
+    if (typeof s !== 'string') return ''
+    return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
 /**
  * Processes the alerts for a sensor
  * 
@@ -153,8 +158,7 @@ const triggerAlert = async (alertData, sensorData, triggerType) => {
  */
 const processAlerts = async (alerts, sensorData) => {
     alerts.forEach(async (alert) => {
-        const offsetKey = 'offset_' + alert.type;
-        console.log(alert);
+        const offsetKey = 'offset' + capitalize(alert.type);
         if (sensorData[alert.type] > alert.max + alert[offsetKey]) {
             await triggerAlert(alert, sensorData, 'over');
         }
