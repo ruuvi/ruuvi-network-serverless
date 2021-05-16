@@ -62,12 +62,9 @@ exports.handler = async (event, context) => {
     for (var key in data.tags) {
         // Process alerts first to alert if necessary, even if throttled
         const alerts = await alertHelper.getAlerts(key, null, true);
-        console.log(key);
-        console.log(alerts);
         if (alerts.length > 0) {
-            console.log('Alerts: ', alerts.length);
-            const alertData = sensorDataHelper.parseData(data.tags[key].data);
-            console.log(alertData);
+            let alertData = sensorDataHelper.parseData(data.tags[key].data);
+            alertData.sensor_id = key;
             await alertHelper.processAlerts(alerts, alertData);
         }
 

@@ -5,8 +5,6 @@ const dynamoHelper = require('../Helpers/dynamoHelper');
 //const dataHelper = require('../Helpers/sensorDataHelper');
 
 exports.handler = async (event) => {
-    console.log(event);
-
     const interval = parseInt(process.env.MAXIMUM_STORAGE_INTERVAL);
     const dataTTL = parseInt(process.env.DATA_TTL);
     const now = validator.now();

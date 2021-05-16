@@ -23,19 +23,15 @@ const emailHelper = require('../Helpers/emailHelper');
 const refreshAlertCache = async (sensor, data = null) => {
     if (data === null) {
         data = await getAlerts(sensor, null, false, true);
-        console.log('cached data', data);
-    } else {
-        console.log(data);
     }
     
     let active = [];
     data.forEach((alert) => {
-        console.log(alert);
         if (!alert.triggered) {
             active.push(alert);
         }
     });
-    console.log('refreshed active cache', active);
+
     await redis.set("alerts_" + sensor, JSON.stringify(active));
 }
 
@@ -125,23 +121,24 @@ const putAlert = async (userId, sensor, type, min, max, enabled) => {
 const triggerAlert = async (alertData, sensorData, triggerType) => {
     const nowDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
     var updateResult = await sqlHelper.updateValues('sensor_alerts', ['triggered = ?', 'triggered_at = ?'], [1, nowDate], ['sensor_id = ?', 'user_id = ?', 'triggered = ?'], [alertData.sensorId, alertData.userId, 0]);
-    
     if (updateResult === 1) {
         console.log('Sending Alert Email to user: ' + alertData.userId);
         const userHelper = require('../Helpers/userHelper');
 
-        const user = userHelper.getById(alertData.userId);
-        console.log(alertData);
-        console.log(sensorData);
-        await emailHelper.sendAlertEmail(
-            user.email,
-            sensorData.sensor_id, // TODO: Fetch profile
-            sensorData.sensor_id,
-            alertData.type,
-            triggerType,
-            sensorData[alertData.type],
-            triggerType == 'over' ? alertData.max : alertData.min
-        );
+        const user = await userHelper.getById(alertData.userId);
+        try {
+            await emailHelper.sendAlertEmail(
+                user.email,
+                sensorData.sensor_id, // TODO: Fetch profile
+                sensorData.sensor_id,
+                alertData.type,
+                triggerType,
+                sensorData[alertData.type],
+                triggerType == 'over' ? alertData.max : alertData.min
+            );
+        } catch (e) {
+            console.error(e);
+        }
     }
 }
 
@@ -157,7 +154,7 @@ const processAlerts = async (alerts, sensorData) => {
             await triggerAlert(alert, sensorData, 'over');
         }
         if (sensorData[alert.type] < alert.min) {
-            await triggerAlert(alert, sensorData, sensorData[alert.type], 'under');
+            await triggerAlert(alert, sensorData, 'under');
         }
     });
 }

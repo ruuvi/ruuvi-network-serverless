@@ -64,7 +64,7 @@ const sendEmailVerification = async (email, token, sourceDomain) => {
       </html>
     `;
 
-    return sendEmail(email, "Ruuvi Account E-mail Confirmation", htmlBody);
+    return await sendEmail(email, "Ruuvi Account E-mail Confirmation", htmlBody);
 };
 
 const sendResetEmail = async (email, token, sourceDomain) => {
@@ -94,7 +94,7 @@ const sendResetEmail = async (email, token, sourceDomain) => {
       </html>
     `;
 
-    return sendEmail(email, "Ruuvi Account Reset Confirmation", htmlBody);
+    return await sendEmail(email, "Ruuvi Account Reset Confirmation", htmlBody);
 };
 
 const sendAlertEmail = async (email, sensorName, sensor, alertType, overUnder, value, threshold) => {
@@ -115,7 +115,7 @@ const sendAlertEmail = async (email, sensorName, sensor, alertType, overUnder, v
       </html>
     `;
 
-    return sendEmail(email, `Sensor '${sensorName}' triggered an alert for ${alertType}!`, htmlBody);
+    return await sendEmail(email, `Sensor '${sensorName}' triggered an alert for ${alertType}!`, htmlBody);
 };
 
 const sendShareNotification = async (email, sensorName, sharerName) => {
@@ -143,7 +143,7 @@ const sendShareNotification = async (email, sensorName, sharerName) => {
       </html>
     `;
 
-    return sendEmail(email, `${sharerName} shared a Ruuvi sensor with you`, htmlBody);
+    return await sendEmail(email, `${sharerName} shared a Ruuvi sensor with you`, htmlBody);
 };
 
 /**
@@ -176,7 +176,7 @@ const sendShareRemovedNotification = async (email, sensorName, shareRecipient) =
       </html>
     `;
 
-    return sendEmail(email, `${shareRecipient} removed a Ruuvi sensor you had shared`, htmlBody);
+    return await sendEmail(email, `${shareRecipient} removed a Ruuvi sensor you had shared`, htmlBody);
 };
 
 module.exports = {

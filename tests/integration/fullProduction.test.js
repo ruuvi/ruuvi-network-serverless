@@ -429,8 +429,6 @@ describe('Full integration tests', () => {
 			});
 		} catch (e) {
 			console.log(e);
-			console.log(alertGatewayMac);
-			console.log(newGatewayMac);
 			expect(true).toBe(false, 'Failed to post data for triggering alert');
 		}
 
