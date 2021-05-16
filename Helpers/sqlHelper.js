@@ -157,7 +157,19 @@ const updateValues = async (table, fields, values, whereConditions, whereValues)
 }
 
 const fetchAlerts = async (sensorId) => {
-    return await fetchAll('sensor_id', sensorId, 'sensor_alerts');
+    return await mysql.query({
+        sql: 
+            `SELECT
+                sensor_alerts.*,
+                sensors.offset_humidity AS offset_humidity,
+                sensors.offset_temperature AS offset_temperature,
+                sensors.offset_pressure AS offset_pressure
+            FROM sensor_alerts
+            INNER JOIN sensors ON sensors.sensor_id = sensor_alerts.sensor_id
+            WHERE sensors.sensor_id = ?`,
+        timeout: 1000,
+        values: [sensorId]
+    });
 }
 
 /**

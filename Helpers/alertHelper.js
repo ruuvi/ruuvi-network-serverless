@@ -55,7 +55,7 @@ const getAlerts = async (sensor, userId = null, useCache = false, returnRaw = fa
 
     // Cache holds all alerts for a sensor; only refresh when all alerts are fetched from database
     if (userId === null) {
-        refreshAlertCache(sensor, raw);
+        await refreshAlertCache(sensor, raw);
     }
 
 
@@ -77,6 +77,9 @@ const formatAlerts = (raw) => {
             min: alert.min_value,
             max: alert.max_value,
             enabled: alert.enabled ? true : false,
+            offset_humidity: alert.offset_humidity,
+            offset_temperature: alert.offset_temperature,
+            offset_pressure: alert.offset_temperature,
             triggered: alert.triggered ? true : false,
             triggeredAt: alert.triggered_at
         });
@@ -150,10 +153,12 @@ const triggerAlert = async (alertData, sensorData, triggerType) => {
  */
 const processAlerts = async (alerts, sensorData) => {
     alerts.forEach(async (alert) => {
-        if (sensorData[alert.type] > alert.max) {
+        const offsetKey = 'offset_' + alert.type;
+        console.log(alert);
+        if (sensorData[alert.type] > alert.max + alert[offsetKey]) {
             await triggerAlert(alert, sensorData, 'over');
         }
-        if (sensorData[alert.type] < alert.min) {
+        if (sensorData[alert.type] < alert.min + alert[offsetKey]) {
             await triggerAlert(alert, sensorData, 'under');
         }
     });

@@ -445,6 +445,71 @@ describe('Full integration tests', () => {
 		expect(alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
 	});
 
+	itif(RI)('triggering a max limit alert on a sensor with offset is successful', async () => {
+		// Setup
+		const alertSensorMac = utils.randomMac();
+		const alertGatewayMac = utils.randomMac();
+
+		try {
+			await post('claim', {
+				sensor: alertSensorMac
+			});
+
+			// Set offset to 30 to push the test humidity over the edge (to 66.325)
+			await post('update', {
+				sensor: alertSensorMac,
+				name: 'sensor with humidity offset',
+				offsetHumidity: 30
+			});
+
+			// Alert range between 25-50, test point 36.325
+			await post('alerts', {
+				sensor: alertSensorMac,
+				type: 'humidity',
+				min: 25,
+				max: 50,
+				enabled: true
+			});
+		} catch (e) {
+			expect(true).toBe(false, 'Failed to create alert');
+		}
+
+		// Create request
+		let tags = {};
+		tags[alertSensorMac] = {
+			"rssi":	-76,
+			"timestamp":	Date.now() - 50,
+			// Has humidity of 36.325
+			"data": '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E'
+		};
+
+		try {
+			await post('record', {
+				"data":	{
+					"coordinates":	"",
+					"timestamp": Date.now(),
+					"gw_mac": alertGatewayMac,
+					"tags":	tags
+				}
+			});
+		} catch (e) {
+			console.log(e);
+			expect(true).toBe(false, 'Failed to post data for triggering alert');
+		}
+
+		// Validate alert
+		const readResult = await get('alerts', {
+			sensor: alertSensorMac
+		});
+
+		expect(readResult.status).toBe(200, 'Read');
+		expect(readResult.data.data.alerts.length).toBe(1);
+
+		const alerts = readResult.data.data.alerts;
+		expect(alerts[0].triggered).toBe(true);
+		expect(alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
+	});
+
 	itif(RI)('`unclaim` returns 200 OK', async () => {
 		const claimResult = await post('unclaim', {
 			sensor: newSensorMac
