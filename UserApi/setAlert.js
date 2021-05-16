@@ -37,7 +37,6 @@ exports.handler = async (event, context) => {
     }
 
     return gatewayHelper.successResponse({
-        action: res,
-        tempResponse: putResult
+        action: res
     });
 }
