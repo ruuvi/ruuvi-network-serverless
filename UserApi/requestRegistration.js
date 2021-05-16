@@ -27,7 +27,7 @@ exports.handler = async (event, context) => {
     };
 
     try {
-        const short = jwtHelper.createRegistrationJWT(userInfo.email, userInfo.type);
+        const short = await jwtHelper.createRegistrationJWT(userInfo.email, userInfo.type);
         if (!short) {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Unknown error occurred.', errorCodes.INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
         }
