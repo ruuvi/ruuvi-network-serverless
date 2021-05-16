@@ -45,11 +45,6 @@ exports.handler = async (event, context) => {
     let targetUserId = null;
 
     try {
-        targetUser = await userHelper.getByEmail(targetUserEmail);
-        if (!targetUser) {
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "User not found.", errorCodes.ER_USER_NOT_FOUND);
-        }
-
         // Get Subscription
         const subscription = await sqlHelper.fetchSingle('user_id', user.id, 'subscriptions');
         if (!subscription) {
@@ -83,6 +78,16 @@ exports.handler = async (event, context) => {
         const data = await dynamoHelper.getSensorData(sensor, 1, null, null);
         if (data.length === 0) {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Cannot share a sensor without data.', errorCodes.ER_NO_DATA_TO_SHARE);
+        }
+
+        // Validated that sharing is possible, check if user needs to be invited.
+        targetUser = await userHelper.getByEmail(targetUserEmail);
+        if (!targetUser) {
+            await userHelper.sendInvitation(targetUserEmail, user.email, sensor);
+            return gatewayHelper.successResponse({
+                sensor: sensor,
+                invited: true
+            });
         }
 
         targetUserId = targetUser.id;

@@ -37,7 +37,7 @@ const sendEmail = async (email, title, body) => {
     return sqs.sendMessage(params).promise();
 };
 
-const sendEmailVerification = async (email, token, sourceDomain) => {
+const sendEmailVerification = async (email, token, sourceDomain = null) => {
     let domain = process.env.BASE_API_URL;
     if (sourceDomain) {
         domain = sourceDomain;
@@ -65,6 +65,39 @@ const sendEmailVerification = async (email, token, sourceDomain) => {
     `;
 
     return await sendEmail(email, "Ruuvi Account E-mail Confirmation", htmlBody);
+};
+
+const sendEmailInvitation = async (email, fromEmail, sensorName, token, sourceDomain = null) => {
+    let domain = process.env.BASE_API_URL;
+    if (sourceDomain) {
+        domain = sourceDomain;
+    }
+    const link = `${domain}/verify?token=${token}`;
+
+    // TODO: This would be nicer to maintain by SES templates
+    const htmlBody = `
+      <!DOCTYPE html>
+      <html>
+        <head></head>
+        <body>
+            <h1>User shared a Ruuvi sensor with you!</h1>
+            <p>
+                User ${fromEmail} shared access to a sensor (${sensorName}) with you. Complete registration to view the data.
+            </p>
+            <p>
+                Please enter the code to your mobile application to complete the registration:
+                <div style="width:200px;text-align:center;">
+                    <h2 style="border:1px solid;padding:5px;">${token}</h2>
+                </div>
+            </p>
+            <p>
+            (...or follow <a href="${link}">this link</a>)
+            </p>
+        </body>
+      </html>
+    `;
+
+    return await sendEmail(email, "Ruuvi sensor was shared with you. Create an account to view it!", htmlBody);
 };
 
 const sendResetEmail = async (email, token, sourceDomain) => {
@@ -184,5 +217,6 @@ module.exports = {
     sendResetEmail,
     sendShareNotification,
     sendShareRemovedNotification,
-    sendAlertEmail
+    sendAlertEmail,
+    sendEmailInvitation
 };

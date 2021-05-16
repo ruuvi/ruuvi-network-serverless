@@ -350,6 +350,15 @@ functions:
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       EMAIL_QUEUE: { Ref: EmailQueue }
       TABLE_NAME: ${self:custom.dynamoSensorData}
+      BASE_API_URL:
+        !Join
+          - ''
+          - - 'https://'
+            - !Ref HttpApi
+            - '.execute-api.'
+            - ${opt:region, self:provider.region}
+            - '.'
+            - !Ref AWS::URLSuffix
 
   unshareSensor:
     handler: UserApi/unshareSensor.handler
