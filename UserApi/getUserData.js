@@ -22,7 +22,10 @@ exports.handler = async (event, context) => {
                 COALESCE(sensor_profiles.name, '') AS name,
                 owner.email AS owner,
                 COALESCE(sensor_profiles.picture, '') AS picture,
-                sensors.public AS public
+                sensors.public AS public,
+                sensors.offset_humidity AS offsetHumidity,
+                sensors.offset_temperature AS offsetTemperature,
+                sensors.offset_pressure AS offsetPressure
             FROM sensor_profiles
             INNER JOIN sensors ON sensor_profiles.sensor_id = sensors.sensor_id
             INNER JOIN users owner ON owner.id = sensors.owner_id

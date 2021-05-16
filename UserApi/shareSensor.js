@@ -93,31 +93,8 @@ exports.handler = async (event, context) => {
         targetUserId = targetUser.id;
 
         // Currently Enforces sharing restrictions on database level
-        results = await mysql.query({
-            sql: `INSERT INTO sensor_profiles (
-                    user_id,
-                    sensor_id,
-                    name,
-                    picture
-                ) SELECT
-                    ?,
-                    sensor_id,
-                    '',
-                    ''
-                FROM sensors
-                WHERE
-                    sensors.owner_id = ?
-                    AND sensors.owner_id != ?
-                    AND sensors.sensor_id = ?`,
-            timeout: 1000,
-            values: [targetUserId, user.id, targetUserId, sensor]
-        });
-
-        if (results.insertId) {
-            // Success
-            console.log(user.id + ' shared sensor ' + sensor + ' to ' + targetUserId);
-        } else {
-            console.log(user.id + ' failed to share sensor ' + sensor + ' to ' + targetUserId);
+        const results = await sqlHelper.shareSensor(targetUserId, user.id, sensor);
+        if (results === null) {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Unable to share sensor.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
         }
     } catch (e) {

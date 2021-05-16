@@ -218,6 +218,38 @@ const fetchAlerts = async (sensorId) => {
     return res;
 }
 
+const shareSensor = async (userId, ownerId, sensor) => {
+    results = await mysql.query({
+        sql: `INSERT INTO sensor_profiles (
+                user_id,
+                sensor_id,
+                name,
+                picture
+            ) SELECT
+                ?,
+                sensor_id,
+                '',
+                ''
+            FROM sensors
+            WHERE
+                sensors.owner_id = ?
+                AND sensors.owner_id != ?
+                AND sensors.sensor_id = ?`,
+        timeout: 1000,
+        values: [userId, ownerId, userId, sensor]
+    });
+
+    if (results.insertId) {
+        // Success
+        console.log(ownerId + ' shared sensor ' + sensor + ' to ' + userId);
+    } else {
+        console.log(ownerId + ' failed to share sensor ' + sensor + ' to ' + userId);
+        return null;
+    }
+
+    return results;
+}
+
 /**
  * Exports
  */
@@ -228,5 +260,6 @@ module.exports = {
 	setValue,
 	updateValues,
     fetchAlerts,
-    saveAlert
+    saveAlert,
+    shareSensor
 };
