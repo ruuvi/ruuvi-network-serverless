@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 const validator = require('../Helpers/validator');
 const dynamo = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 const dynamoHelper = require('../Helpers/dynamoHelper');
-//const dataHelper = require('../Helpers/sensorDataHelper');
+const throttleHelper = require('../Helpers/throttleHelper');
 
 exports.handler = async (event) => {
     const interval = parseInt(process.env.MAXIMUM_STORAGE_INTERVAL);
@@ -52,6 +52,11 @@ exports.handler = async (event) => {
             // Dedupe
             if (batchedIds.includes(key + "," + sensors[key]['timestamp'])) {
                 console.info("Deduped " + key);
+                return;
+            }
+
+            const throttleSensor = await throttleHelper.throttle('writer:' + key, process.env.INTERVAL);
+            if (throttleSensor) {
                 return;
             }
 
