@@ -62,7 +62,7 @@ exports.handler = async (event, context) => {
         sensor.public = sensor.public ? true : false;
         sensor.canShare = sensor.canShare ? true : false;
         if (!sensor.canShare) {
-            const data = await dynamoHelper.getSensorData(sensor, 1, null, null);
+            const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
             if (data.length > 0) {
                 sensor.canShare = true;
                 await sqlHelper.setValue('can_share', 1, 'sensors', 'sensor_id', sensor.sensor);
@@ -95,6 +95,10 @@ exports.handler = async (event, context) => {
     });
 
     sharedSensors.forEach((sensor) => {
+        if (!formatted[sensor.sensor]) {
+            // Broken reference
+            return;
+        }
         if (!formatted[sensor.sensor].sharedTo) {
             formatted[sensor.sensor].sharedTo = [];
         }
@@ -104,6 +108,6 @@ exports.handler = async (event, context) => {
     await sqlHelper.disconnect();
 
     return gatewayHelper.successResponse({
-        formatted
+        sensors: formatted
     });
 }
