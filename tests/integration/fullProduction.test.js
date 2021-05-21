@@ -376,11 +376,10 @@ describe('Full integration tests', () => {
 		const readResult = await get('alerts', {
 			sensor: newSensorMac
 		});
-
 		expect(readResult.status).toBe(200, 'Read');
-		expect(readResult.data.data.alerts.length).toBe(1);
+		expect(readResult.data.data[newSensorMac].length).toBe(1);
 
-		const alerts = readResult.data.data.alerts;
+		const alerts = readResult.data.data[newSensorMac];
 		expect(alerts[0].max).toBe(100);
 		expect(alerts[0].min).toBe(30);
 		expect(alerts[0].triggered).toBe(false);
@@ -438,9 +437,9 @@ describe('Full integration tests', () => {
 		});
 
 		expect(readResult.status).toBe(200, 'Read');
-		expect(readResult.data.data.alerts.length).toBe(1);
+		expect(readResult.data.data[alertSensorMac].length).toBe(1);
 
-		const alerts = readResult.data.data.alerts;
+		const alerts = readResult.data.data[alertSensorMac];
 		expect(alerts[0].triggered).toBe(true);
 		expect(alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
 	});
@@ -503,9 +502,9 @@ describe('Full integration tests', () => {
 		});
 
 		expect(readResult.status).toBe(200, 'Read');
-		expect(readResult.data.data.alerts.length).toBe(1);
+		expect(readResult.data.data[alertSensorMac].length).toBe(1);
 
-		const alerts = readResult.data.data.alerts;
+		const alerts = readResult.data.data[alertSensorMac];
 		expect(alerts[0].triggered).toBe(true);
 		expect(alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
 	});

@@ -167,7 +167,7 @@ const fetchAlerts = async (sensorId) => {
             FROM sensor_alerts
             INNER JOIN sensors ON sensors.sensor_id = sensor_alerts.sensor_id
             WHERE sensors.sensor_id = ?`,
-        timeout: 1000,
+        timeout: 3000,
         values: [sensorId]
     });
 }
@@ -187,6 +187,9 @@ const fetchAlerts = async (sensorId) => {
     }
 
     let res = null;
+
+    const enabledInt = enabled ? 1 : 0;
+
     try {
         res = await mysql.query({
             sql: `INSERT INTO sensor_alerts (
@@ -202,14 +205,14 @@ const fetchAlerts = async (sensorId) => {
                     ?,
                     ?,
                     ?,
-                    1
+                    ?
                 ) ON DUPLICATE KEY UPDATE
                     min_value = VALUES(min_value),
                     max_value = VALUES(max_value),
                     enabled = VALUES(enabled),
                     triggered = 0;`,
             timeout: 1000,
-            values: [userId, sensorId, type, min, max, enabled]
+            values: [userId, sensorId, type, min, max, enabledInt]
         });
     } catch (e) {
         console.error(e);
@@ -251,6 +254,40 @@ const shareSensor = async (userId, ownerId, sensor) => {
 }
 
 /**
+ * Fetch all sensors for a users.
+ * 
+ * @param {integer} userId User ID to fetch sensors for.
+ * @returns 
+ */
+const fetchSensorsForUser = async (userId) => {
+    const userIdInt = parseInt(userId);
+    const sensors = await mysql.query({
+        sql: `SELECT
+                sensors.sensor_id AS sensor,
+                COALESCE(sensor_profiles.name, '') AS name,
+                owner.email AS owner,
+                COALESCE(sensor_profiles.picture, '') AS picture,
+                sensors.public AS public,
+                sensors.offset_humidity AS offsetHumidity,
+                sensors.offset_temperature AS offsetTemperature,
+                sensors.offset_pressure AS offsetPressure
+            FROM sensor_profiles
+            INNER JOIN sensors ON sensor_profiles.sensor_id = sensors.sensor_id
+            INNER JOIN users owner ON owner.id = sensors.owner_id
+            WHERE
+                sensor_profiles.user_id = ?
+                AND sensor_profiles.is_active = 1`,
+        timeout: 1000,
+        values: [userIdInt, userIdInt]
+    });
+    return sensors;
+}
+
+const disconnect = async () => {
+    await mysql.end();
+}
+
+/**
  * Exports
  */
 module.exports = {
@@ -261,5 +298,7 @@ module.exports = {
 	updateValues,
     fetchAlerts,
     saveAlert,
-    shareSensor
+    shareSensor,
+    fetchSensorsForUser,
+    disconnect
 };
