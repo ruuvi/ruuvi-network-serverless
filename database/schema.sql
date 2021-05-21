@@ -51,6 +51,7 @@ CREATE TABLE sensors (
         public TINYINT(1) NOT NULL DEFAULT 0,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        can_share TINYINT(1) NOT NULL DEFAULT 0,
         PRIMARY KEY(id),
         -- Only one user can claim a sensor
         UNIQUE INDEX sensor_idx (sensor_id),

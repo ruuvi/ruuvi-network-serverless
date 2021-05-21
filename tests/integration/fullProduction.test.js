@@ -327,6 +327,20 @@ describe('Full integration tests', () => {
 		expect(sharedSensorData.sharedTo).toBe(secondaryEmail);
 	});
 
+	itif(RI)('`sensors` returns the proper response with shared and unshared sensors', async () => {
+		const sensorData = await get('sensors', {
+			sensor: newSensorMac
+		});
+		console.log(sensorData);
+		expect(sensorData.data.data.sensors.length).toBe(0);
+	});
+
+	itif(RI)('`sensors` works filtered to a single sensor', async () => {
+		const sensorData = await get('sensors');
+		console.log(sensorData);
+		expect(sensorData.data.data.sensors.length).toBe(0);
+	});
+
 	// DEPENDENT ON THE ABOVE
 	itif(RI)('`unshare` is successful', async () => {
 		const unshareResult = await post('unshare', {

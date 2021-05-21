@@ -391,6 +391,22 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
 
+  getSensorList:
+    handler: UserApi/getSensorList.handler
+    #reservedConcurrency: ${self:custom.lambdaConcurrency}
+    events:
+      - httpApi:
+          method: GET
+          path: /sensors
+          #payload: '2.0'
+    environment:
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      TABLE_NAME: ${self:custom.dynamoSensorData}
+
   # Sensor profile + picture updates
   updateSensor:
     handler: UserApi/updateSensor.handler
@@ -516,6 +532,9 @@ functions:
       - httpApi:
           method: OPTIONS
           path: /apple-app-site-association
+      - httpApi:
+          method: OPTIONS
+          path: /sensors
 
   # INTERNAL API
   whitelist:
