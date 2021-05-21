@@ -39,8 +39,6 @@ exports.handler = async (event, context) => {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid sensor ID given.", errorCodes.ER_INVALID_MAC_ADDRESS);
     }
 
-    let results = null;
-
     let targetUser = null;
     let targetUserId = null;
 
