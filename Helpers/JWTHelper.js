@@ -78,7 +78,7 @@ const createRegistrationJWT = async (targetEmail, registrationType, expirationTi
     }
 
     const expireMinutes = expirationTime === null ? process.env.INVITATION_EXPIRATION_INTERVAL * 60 : expirationTime * 60;
-    const jwt = jwtHelper.sign(userInfo, process.env.SIGNING_SECRET, expireMinutes);
+    const jwt = sign(userInfo, process.env.SIGNING_SECRET, expireMinutes);
     
     const tokenData = tokenGenerator.create(process.env.VERIFICATION_SHORT_TOKEN_LENGTH);
     const short = tokenData.token.toUpperCase();

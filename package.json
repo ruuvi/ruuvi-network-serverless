@@ -13,6 +13,7 @@
     "dateformat": "^3.0.3",
     "jsonwebtoken": "^8.5.1",
     "loadtest": "^5.0.4",
+    "node-ruuvitag": "^4.6.1",
     "redis": "^3.1.1",
     "serverless-dynamodb-autoscaling": "^0.6.2",
     "serverless-mysql": "^1.5.4",

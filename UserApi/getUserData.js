@@ -1,5 +1,6 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
+const sqlHelper = require('../Helpers/sqlHelper');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -16,22 +17,7 @@ exports.handler = async (event, context) => {
         return gatewayHelper.unauthorizedResponse();
     }
 
-    const sensors = await mysql.query({
-        sql: `SELECT
-                sensors.sensor_id AS sensor,
-                COALESCE(sensor_profiles.name, '') AS name,
-                owner.email AS owner,
-                COALESCE(sensor_profiles.picture, '') AS picture,
-                sensors.public AS public
-            FROM sensor_profiles
-            INNER JOIN sensors ON sensor_profiles.sensor_id = sensors.sensor_id
-            INNER JOIN users owner ON owner.id = sensors.owner_id
-            WHERE
-                sensor_profiles.user_id = ?
-                AND sensor_profiles.is_active = 1`,
-        timeout: 1000,
-        values: [user.id, user.id]
-    });
+    const sensors = await sqlHelper.fetchSensorsForUser(user.id);
 
     // Format returned data properly
     let formatted = [];

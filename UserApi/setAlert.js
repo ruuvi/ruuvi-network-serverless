@@ -3,7 +3,7 @@ const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const alertHelper = require('../Helpers/alertHelper');
 const errorCodes = require('../Helpers/errorCodes.js');
-const redis = require('../Helpers/redisHelper').getClient();
+const mysqlHelper = require('../Helpers/sqlHelper');
 
 exports.handler = async (event, context) => {
     const user = await auth.authorizedUser(event.headers);
@@ -23,9 +23,9 @@ exports.handler = async (event, context) => {
 
     const sensor = eventBody.sensor;
     const type = eventBody.type;
-    const enabled = eventBody.enabled;
-    const min = eventBody.min;
-    const max = eventBody.max;
+    const enabled = eventBody.enabled ? true : false;
+    const min = parseFloat(eventBody.min);
+    const max = parseFloat(eventBody.max);
 
     let res = 'success'; 
     let putResult = null;
@@ -36,8 +36,9 @@ exports.handler = async (event, context) => {
         res = 'failed';
     }
 
+    await mysqlHelper.disconnect();
+    
     return gatewayHelper.successResponse({
-        action: res,
-        tempResponse: putResult
+        action: res
     });
 }

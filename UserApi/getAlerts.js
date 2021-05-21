@@ -3,6 +3,7 @@ const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const errorCodes = require('../Helpers/errorCodes.js');
 const alertHelper = require('../Helpers/alertHelper');
+const sqlHelper = require('../Helpers/sqlHelper');
 
 exports.handler = async (event, context) => {
     const user = await auth.authorizedUser(event.headers);
@@ -10,15 +11,24 @@ exports.handler = async (event, context) => {
         return gatewayHelper.unauthorizedResponse();
     }
 
-    if (!event.queryStringParameters || !validator.hasKeys(event.queryStringParameters, ['sensor'])) {
-        console.error(event);
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing sensor.", errorCodes.ER_MISSING_ARGUMENT);
+    // Fetch either filtered or full list
+    let sensors = [];
+    if (validator.hasKeys(event.queryStringParameters, ['sensor'])) {
+        sensors.push(event.queryStringParameters.sensor);
+    } else {
+        const sensorData = await sqlHelper.fetchSensorsForUser(user.id);
+        sensorData.forEach((data) => {
+            sensors.push(data.sensor);
+        });
     }
 
-    const sensor = event.queryStringParameters.sensor;
-    const alertData = await alertHelper.getAlerts(sensor, user.id);
-
-    return gatewayHelper.successResponse({
-        alerts: alertData
+    let sensorAlerts = {};
+    sensors.forEach(async (sensor) => {
+        const alertData = await alertHelper.getAlerts(sensor, user.id);
+        sensorAlerts[sensor] = alertData;
     });
+
+    await sqlHelper.disconnect();
+
+    return gatewayHelper.successResponse(sensorAlerts);
 }
