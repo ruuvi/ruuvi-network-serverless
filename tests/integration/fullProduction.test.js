@@ -19,7 +19,7 @@ const secondaryToken = stageConfig[stage]['secondary'];
 const RI = process.env.IS_INTEGRATION_TEST;
 const primaryEmail = stageConfig[stage]['primaryEmail'];
 const secondaryEmail = stageConfig[stage]['secondaryEmail'];
-const unregisteredEmail = 'muhweli@gmail.com';
+const unregisteredEmail = stageConfig[stage]['unregisteredEmail'];
 const internalKey = stageConfig[stage]['internal'];
 
 /**
@@ -358,7 +358,7 @@ describe('Full integration tests', () => {
 	});
 
 	// DEPENDENT ON THE ABOVE
-/*	itif(RI)('`unshare` is successful', async () => {
+	itif(RI)('`unshare` is successful', async () => {
 		const unshareResult = await post('unshare', {
 			sensor: newSensorMac,
 			user: secondaryEmail
@@ -390,7 +390,7 @@ describe('Full integration tests', () => {
 
 		const userShareData = await get('shared');
 		expect(userShareData.data.data.sensors.length).toBe(0);
-	});*/
+	});
 
 	itif(RI)('creating an alert is successful', async () => {
 		const createResult = await post('alerts', {

@@ -46,7 +46,7 @@ exports.handler = async (event, context) => {
         userId = await userHelper.create(email);
     } else {
         const user = await userHelper.getByEmail(email);
-        userId = user.id ? user.id : 0;
+        userId = user && user.id ? user.id : 0;
     }
 
     if (userId > 0) {
@@ -64,11 +64,13 @@ exports.handler = async (event, context) => {
     }
 
     // Check pending shares
-    const pendingShares = await sqlHelper.getPendingShares(email);
-    for (const share of pendingShares) {
-        const shareResult = await sqlHelper.claimPendingShare(share.sensor_id, userId, share.email, share.creator_id);
-        if (shareResult === null) {
-            console.error(`Failed to share a pending share to ${email} <${userId}> (shared by ${share.creator_id}) for sensor ${share.sensor_id}`);
+    if (!isReset) {
+        const pendingShares = await sqlHelper.getPendingShares(email);
+        for (const share of pendingShares) {
+            const shareResult = await sqlHelper.claimPendingShare(share.sensor_id, userId, share.email, share.creator_id);
+            if (shareResult === null) {
+                console.error(`Failed to share a pending share to ${email} <${userId}> (shared by ${share.creator_id}) for sensor ${share.sensor_id}`);
+            }
         }
     }
 
