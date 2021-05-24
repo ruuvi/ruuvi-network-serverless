@@ -66,9 +66,9 @@ exports.handler = async (event, context) => {
     // Check pending shares
     const pendingShares = await sqlHelper.getPendingShares(email);
     for (const share of pendingShares) {
-        const shareResult = await sqlHelper.claimPendingShare(sensor, claimPendingShare, share.creator_id);
+        const shareResult = await sqlHelper.claimPendingShare(share.sensor_id, userId, share.email, share.creator_id);
         if (shareResult === null) {
-            console.error(`Failed to share a pending share to ${email} <${userId}> (shared by ${share.creator_id}) for sensor ${sensor}`);
+            console.error(`Failed to share a pending share to ${email} <${userId}> (shared by ${share.creator_id}) for sensor ${share.sensor_id}`);
         }
     }
 
@@ -77,6 +77,8 @@ exports.handler = async (event, context) => {
         console.error("Unable to delete `short_token`: " + short);
         console.error(userInfo);
     }
+
+    await sqlHelper.disconnect();
 
     return gatewayHelper.successResponse(userInfo);
 }

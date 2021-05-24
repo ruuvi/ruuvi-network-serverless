@@ -19,6 +19,8 @@ exports.handler = async (event, context) => {
 
     const sensors = await sqlHelper.fetchSensorsForUser(user.id);
 
+    sqlHelper.disconnect();
+
     // Format returned data properly
     let formatted = [];
     sensors.forEach((sensor) => {
