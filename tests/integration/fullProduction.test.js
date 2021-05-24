@@ -329,7 +329,6 @@ describe('Full integration tests', () => {
 
 	itif(RI)('`sensors` returns the proper response with shared and unshared sensors', async () => {
 		const sensorData = await get('sensors');
-		console.log(sensorData.data.data.sensors);
 
 		expect(sensorData.data.data.sensors).not.toBeNull();
 		expect(sensorData.data.data.sensors[newSensorMac].sharedTo.length).toBe(1);
