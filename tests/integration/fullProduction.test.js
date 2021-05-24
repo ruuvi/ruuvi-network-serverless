@@ -417,6 +417,21 @@ describe('Full integration tests', () => {
 		expect(alerts[0].type).toBe('humidity');
 	});
 
+	itif(RI)('getting alerts without filter is successful', async () => {
+		const readResult = await get('alerts');
+
+		expect(readResult.status).toBe(200, 'Read');
+		expect(Object.keys(readResult.data.data).length).toBeGreaterThan(0);
+
+		// Additional validation that at least one is new sensor mac
+		const alerts = readResult.data.data[newSensorMac];
+		expect(alerts[0].max).toBe(100);
+		expect(alerts[0].min).toBe(30);
+		expect(alerts[0].triggered).toBe(false);
+		expect(alerts[0].enabled).toBe(true);
+		expect(alerts[0].type).toBe('humidity');
+	});
+
 	itif(RI)('Updating an alert is successful', async () => {
 		const updateResult = await post('alerts', {
 			sensor: newSensorMac,

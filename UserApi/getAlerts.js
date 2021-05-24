@@ -13,7 +13,7 @@ exports.handler = async (event, context) => {
 
     // Fetch either filtered or full list
     let sensors = [];
-    if (validator.hasKeys(event.queryStringParameters, ['sensor'])) {
+    if (event.queryStringParameters && validator.hasKeys(event.queryStringParameters, ['sensor'])) {
         sensors.push(event.queryStringParameters.sensor);
     } else {
         const sensorData = await sqlHelper.fetchSensorsForUser(user.id);
@@ -23,10 +23,10 @@ exports.handler = async (event, context) => {
     }
 
     let sensorAlerts = {};
-    sensors.forEach(async (sensor) => {
+    for (const sensor of sensors) {
         const alertData = await alertHelper.getAlerts(sensor, user.id);
         sensorAlerts[sensor] = alertData;
-    });
+    };
 
     await sqlHelper.disconnect();
 

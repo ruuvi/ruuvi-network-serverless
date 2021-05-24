@@ -5,6 +5,9 @@
  * @param {array} target
  */
 const hasKeys = (given, target) => {
+    if (!given || target.length === 0) {
+        return false;
+    }
     let found = true;
     target.forEach((item) => {
         if (!given.hasOwnProperty(item)) {
