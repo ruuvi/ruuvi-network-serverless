@@ -14,7 +14,7 @@ exports.handler = async (event, context) => {
     const eventBody = JSON.parse(event.body);
 
     if (!eventBody || !validator.hasKeys(eventBody, ['sensor', 'type', 'min', 'max', 'enabled'])) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing setting type, enabled, min or max.", errorCodes.ER_MISSING_ARGUMENT);
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing setting sensor, type, enabled, min or max.", errorCodes.ER_MISSING_ARGUMENT);
     }
 
     if (!validator.validateEnum(eventBody.type, ['temperature', 'humidity', 'pressure', 'signal', 'movement'])) {
@@ -23,7 +23,7 @@ exports.handler = async (event, context) => {
 
     const sensor = eventBody.sensor;
     const type = eventBody.type;
-    const enabled = eventBody.enabled ? true : false;
+    const enabled = (eventBody.enabled === true || eventBody.enabled === 'true') ? true : false;
     const min = parseFloat(eventBody.min);
     const max = parseFloat(eventBody.max);
 

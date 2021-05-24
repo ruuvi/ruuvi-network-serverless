@@ -67,12 +67,14 @@ const sendEmailVerification = async (email, token, sourceDomain = null) => {
     return await sendEmail(email, "Ruuvi Account E-mail Confirmation", htmlBody);
 };
 
-const sendEmailInvitation = async (email, fromEmail, sensorName, token, sourceDomain = null) => {
+const sendEmailInvitation = async (email, fromEmail, sensorName, sourceDomain = null) => {
     let domain = process.env.BASE_API_URL;
     if (sourceDomain) {
         domain = sourceDomain;
     }
-    const link = `${domain}/verify?token=${token}`;
+
+    const androidLink = 'https://play.google.com/store/apps/details?id=com.ruuvi.station';
+    const iosLink = 'https://itunes.apple.com/us/app/core-beacons/id1350862272';
 
     // TODO: This would be nicer to maintain by SES templates
     const htmlBody = `
@@ -82,16 +84,12 @@ const sendEmailInvitation = async (email, fromEmail, sensorName, token, sourceDo
         <body>
             <h1>User shared a Ruuvi sensor with you!</h1>
             <p>
-                User ${fromEmail} shared access to a sensor (${sensorName}) with you. Complete registration to view the data.
+                User ${fromEmail} shared access to a sensor (${sensorName}) with you.
             </p>
             <p>
-                Please enter the code to your mobile application to complete the registration:
-                <div style="width:200px;text-align:center;">
-                    <h2 style="border:1px solid;padding:5px;">${token}</h2>
-                </div>
-            </p>
-            <p>
-            (...or follow <a href="${link}">this link</a>)
+                Create a Ruuvi account with the same email to view the data in the Mobile App:<br>
+                <a href="${androidLink}">Android</a><br>
+                <a href="${iosLink}">iOS</a>
             </p>
         </body>
       </html>

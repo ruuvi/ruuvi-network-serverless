@@ -1,11 +1,11 @@
-const dataHelper = require('../../Helpers/sensorDataHelper.js');
+const dataHelper = require('../../Helpers/sensorDataHelper');
 
 const successfulCases = [
 	{
 		data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
-		temperature: 20.505,
-		humidity: 36.325,
-		pressure: 984.68
+		temperature: 21.45,
+		humidity: 36.05,
+		pressure: 98606
 	},
 	//'0201061BFF99040510BC387CBDD8FFDC00000400B776B72F36EF544AE71D9E',
 	//'0201061BFF99040510BC39C1BDD5FFE0000403F4B836B72F45EF544AE71D9E',
@@ -25,8 +25,7 @@ const successfulCases = [
 ];
 
 const failingCases = [
-	//'03039FFE17169FFE02627158665A6733796F523000000178C1E03835', // Wrong version
-	//'0201061BFF9904058000FFFFFFFF800080008000FFFFFFFFFFFFFFFFFFFFFF', // Invalid values
+	
 ];
 
 successfulCases.forEach(function(testCase) {
@@ -43,6 +42,7 @@ failingCases.forEach(function(testCase) {
 	test('verify parsing a invalid payload throws: ' + testCase, () => {
 		expect(() => {
 			const result = dataHelper.parseData(testCase, 5);
+			console.log(result);
 		}).toThrow();
 	});
 });

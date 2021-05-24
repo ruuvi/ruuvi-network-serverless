@@ -27,14 +27,16 @@ exports.handler = async (event, context) => {
 
     let queryArguments = [user.id, user.id];
     let sensorFilter = '';
+    let filteredSensorId = null;
 
     if (
         event.queryStringParameters
         && validator.hasKeys(event.queryStringParameters, ['sensor'])
-        && validator.validateAlphaNumeric(event.queryStringParameters.sensor)
+        && validator.validateMacAddress(event.queryStringParameters.sensor)
     ) {
         sensorFilter = 'AND sensors.sensor_id = ?';
-        queryArguments.push(event.queryStringParameters.sensor);
+        filteredSensorId = event.queryStringParameters.sensor;
+        queryArguments.push(filteredSensorId);
     }
 
     const sensors = await mysql.query({
@@ -43,11 +45,9 @@ exports.handler = async (event, context) => {
                 sensor_profiles.name AS name,
                 sensor_profiles.picture AS picture,
                 sensors.public AS public,
-                users.email AS sharedTo,
                 sensors.can_share AS canShare
             FROM sensor_profiles
             INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
-            INNER JOIN users ON users.id = sensor_profiles.user_id
             WHERE
                 sensors.owner_id = ?
                 AND sensor_profiles.is_active = 1
@@ -57,7 +57,10 @@ exports.handler = async (event, context) => {
         values: queryArguments
     });
 
-    let formatted = [];
+    console.log(sensors);
+    console.log(sensorFilter);
+
+    let formatted = {};
     sensors.forEach(async (sensor) => {
         sensor.public = sensor.public ? true : false;
         sensor.canShare = sensor.canShare ? true : false;
@@ -70,7 +73,9 @@ exports.handler = async (event, context) => {
         }
 
         const sensorId = sensor.sensor;
+        
         delete sensor.sensor;
+        sensor.sharedTo = [];
 
         formatted[sensorId] = sensor;
     });
@@ -94,8 +99,13 @@ exports.handler = async (event, context) => {
         values: [user.id, user.id]
     });
 
+    console.log('HUR');
+    console.log(formatted);
+    console.log(sharedSensors);
+    console.log(user.id);
+
     sharedSensors.forEach((sensor) => {
-        if (!formatted[sensor.sensor]) {
+        if (!formatted[sensor.sensor] || (filteredSensorId !== null && filteredSensorId !== sensor.sensor)) {
             // Broken reference
             return;
         }

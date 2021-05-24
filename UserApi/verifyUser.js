@@ -63,10 +63,14 @@ exports.handler = async (event, context) => {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unable to register user.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_NO_USER);
     }
 
-    // If token grants access to sensors, add profiles
-    if (Array.isArray(decrypted.sensors)) {
-        
-    }
+    // Check pending shares
+    const pendingShares = await sqlHelper.getPendingShares(email);
+    pendingShares.forEach(async (share) => {
+        const shareResult = await sqlHelper.claimPendingShare(sensor, claimPendingShare, share.creator_id);
+        if (shareResult === null) {
+            console.error(`Failed to share a pending share to ${email} <${userId}> (shared by ${share.creator_id}) for sensor ${sensor}`);
+        }
+    });
 
     const deleteResult = await sqlHelper.deleteSingle('short_token', short, 'reset_tokens');
     if (!deleteResult) {
