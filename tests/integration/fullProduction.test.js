@@ -19,6 +19,7 @@ const secondaryToken = stageConfig[stage]['secondary'];
 const RI = process.env.IS_INTEGRATION_TEST;
 const primaryEmail = stageConfig[stage]['primaryEmail'];
 const secondaryEmail = stageConfig[stage]['secondaryEmail'];
+const unregisteredEmail = 'muhweli@gmail.com';
 const internalKey = stageConfig[stage]['internal'];
 
 /**
@@ -99,15 +100,14 @@ describe('Full integration tests', () => {
 	});
 
 	// USER
-	// itif(RI)('`register` returns 200 OK', async () => {
-	// 	const registerResult = await post('register', {
-	// 		email: newEmail
-	// 	});
-	// 	expect(registerResult.status).toBe(200);
-	// 	expect(registerResult.statusText).toBe('OK');
-	// 	expect(registerResult.token).not.toBeNull();
-	// 	registrationToken = registerResult.token;
-	// });
+	itif(RI)('`register` returns 200 OK', async () => {
+		const registerResult = await post('register', {
+			email: unregisteredEmail
+		});
+		expect(registerResult.status).toBe(200);
+		expect(registerResult.statusText).toBe('OK');
+		expect(registerResult.token).not.toBeNull();
+	});
 
 	itif(RI)('`verify` fails with invalid token', async () => {
 		// toThrow failed for some reason [temporary workaround]
@@ -328,17 +328,33 @@ describe('Full integration tests', () => {
 	});
 
 	itif(RI)('`sensors` returns the proper response with shared and unshared sensors', async () => {
-		const sensorData = await get('sensors', {
-			sensor: newSensorMac
-		});
-		console.log(sensorData);
-		expect(sensorData.data.data.sensors.length).toBe(0);
+		const sensorData = await get('sensors');
+		console.log(sensorData.data.data.sensors);
+
+		expect(sensorData.data.data.sensors).not.toBeNull();
+		expect(sensorData.data.data.sensors[newSensorMac].sharedTo.length).toBe(1);
+
 	});
 
 	itif(RI)('`sensors` works filtered to a single sensor', async () => {
-		const sensorData = await get('sensors');
-		console.log(sensorData);
-		expect(sensorData.data.data.sensors.length).toBe(0);
+		const sensorData = await get('sensors', {
+			sensor: newSensorMac
+		});
+		console.log(sensorData.data.data.sensors);
+		expect(sensorData.data.data.sensors.length).toBe(1);
+	});
+
+	itif(RI)('`share` to unregistered is successful', async () => {
+		const shareResult = await post('share', {
+			sensor: newSensorMac,
+			user: unregisteredEmail
+		});
+
+		expect(shareResult.status).toBe(200);
+		expect(shareResult.statusText).toBe('OK');
+		expect(shareResult.data.result).toBe('success');
+
+		expect(shareResult.data.data.sensor).toBe(newSensorMac);
 	});
 
 	// DEPENDENT ON THE ABOVE
@@ -399,6 +415,29 @@ describe('Full integration tests', () => {
 		expect(alerts[0].triggered).toBe(false);
 		expect(alerts[0].enabled).toBe(true);
 		expect(alerts[0].type).toBe('humidity');
+	});
+
+	itif(RI)('Updating an alert is successful', async () => {
+		const updateResult = await post('alerts', {
+			sensor: newSensorMac,
+			type: 'humidity',
+			min: 20,
+			max: 50,
+			enabled: false
+		});
+		expect(updateResult.status).toBe(200, 'Update');
+
+		// Validate existence
+		const readResult = await get('alerts', {
+			sensor: newSensorMac
+		});
+		expect(readResult.status).toBe(200, 'Read');
+		expect(readResult.data.data[newSensorMac].length).toBe(1);
+
+		const alerts = readResult.data.data[newSensorMac];
+		expect(alerts[0].max).toBe(50);
+		expect(alerts[0].min).toBe(20);
+		expect(alerts[0].enabled).toBe(false);
 	});
 
 	itif(RI)('triggering a min limit alert is successful', async () => {

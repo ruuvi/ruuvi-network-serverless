@@ -81,6 +81,8 @@ exports.handler = async (event, context) => {
         // Validated that sharing is possible, check if user needs to be invited.
         targetUser = await userHelper.getByEmail(targetUserEmail);
         if (!targetUser) {
+            await sqlHelper.createPendingShare(sensor, targetUserEmail, user.id);
+            
             await userHelper.sendInvitation(targetUserEmail, user.email, sensor);
             return gatewayHelper.successResponse({
                 sensor: sensor,

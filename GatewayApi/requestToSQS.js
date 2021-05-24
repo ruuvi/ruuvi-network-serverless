@@ -64,8 +64,12 @@ exports.handler = async (event, context) => {
         const alerts = await alertHelper.getAlerts(key, null, true);
         if (alerts.length > 0) {
             let alertData = sensorDataHelper.parseData(data.tags[key].data);
-            alertData.sensor_id = key;
-            await alertHelper.processAlerts(alerts, alertData);
+            if (alertData === null) {
+                console.error('Invalid data received: ' + data.tags[key].data);
+            } else {
+                alertData.sensor_id = key;
+                await alertHelper.processAlerts(alerts, alertData);
+            }
         }
 
         // Process throttling
