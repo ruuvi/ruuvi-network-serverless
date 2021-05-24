@@ -344,19 +344,6 @@ describe('Full integration tests', () => {
 		expect(sensorData.data.data.sensors[newSensorMac].sharedTo[0]).toBe(secondaryEmail);
 	});
 
-	itif(RI)('`share` to unregistered is successful', async () => {
-		const shareResult = await post('share', {
-			sensor: newSensorMac,
-			user: unregisteredEmail
-		});
-
-		expect(shareResult.status).toBe(200);
-		expect(shareResult.statusText).toBe('OK');
-		expect(shareResult.data.result).toBe('success');
-
-		expect(shareResult.data.data.sensor).toBe(newSensorMac);
-	});
-
 	// DEPENDENT ON THE ABOVE
 	itif(RI)('`unshare` is successful', async () => {
 		const unshareResult = await post('unshare', {
@@ -370,6 +357,19 @@ describe('Full integration tests', () => {
 
 		const userShareData = await get('shared');
 		expect(userShareData.data.data.sensors.length).toBe(0);
+	});
+
+	itif(RI)('`share` to unregistered is successful', async () => {
+		const shareResult = await post('share', {
+			sensor: newSensorMac,
+			user: unregisteredEmail
+		});
+
+		expect(shareResult.status).toBe(200);
+		expect(shareResult.statusText).toBe('OK');
+		expect(shareResult.data.result).toBe('success');
+
+		expect(shareResult.data.data.sensor).toBe(newSensorMac);
 	});
 
 	itif(RI)('`unshare` by sharee is successful', async () => {
