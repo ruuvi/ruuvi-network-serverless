@@ -65,12 +65,12 @@ exports.handler = async (event, context) => {
 
     // Check pending shares
     const pendingShares = await sqlHelper.getPendingShares(email);
-    pendingShares.forEach(async (share) => {
+    for (const share of pendingShares) {
         const shareResult = await sqlHelper.claimPendingShare(sensor, claimPendingShare, share.creator_id);
         if (shareResult === null) {
             console.error(`Failed to share a pending share to ${email} <${userId}> (shared by ${share.creator_id}) for sensor ${sensor}`);
         }
-    });
+    }
 
     const deleteResult = await sqlHelper.deleteSingle('short_token', short, 'reset_tokens');
     if (!deleteResult) {
