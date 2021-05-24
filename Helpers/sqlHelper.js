@@ -96,7 +96,6 @@ const fetchAll = async (field, value, table, orderByField = null, orderByDirecti
  * @param {string} table Target table
  * @param {string} keyField Key field for filtering
  * @param {string} keyValue Value of the key
- * @returns {boolean} True if value changed, false otherwise
  */
 const setValue = async (field, value, table, keyField, keyValue) => {
     const idInt = parseInt(value);
@@ -188,7 +187,7 @@ const fetchAlerts = async (sensorId) => {
 
     let res = null;
 
-    const enabledInt = enabled ? 1 : 0;
+    const enabledInt = enabled === true ? 1 : 0;
 
     try {
         res = await mysql.query({
@@ -222,7 +221,7 @@ const fetchAlerts = async (sensorId) => {
 }
 
 const shareSensor = async (userId, ownerId, sensor) => {
-    results = await mysql.query({
+    let results = await mysql.query({
         sql: `INSERT INTO sensor_profiles (
                 user_id,
                 sensor_id,
@@ -283,6 +282,103 @@ const fetchSensorsForUser = async (userId) => {
     return sensors;
 }
 
+/**
+ * Creates a pending invite for a user.
+ * 
+ * @param {string} sensor 
+ * @param {string} targetEmail 
+ * @param {integer} creatorId 
+ * @returns 
+ */
+const createPendingShare = async (sensor, targetEmail, creatorId) => {
+    let results = await mysql.query({
+        sql: `INSERT INTO pending_shares (
+                email,
+                sensor_id,
+                creator_id
+            ) VALUES (
+                ?,
+                ?,
+                ?
+            ) ON DUPLICATE KEY UPDATE
+                deleted = 0`,
+        timeout: 1000,
+        values: [targetEmail, sensor, creatorId]
+    });
+
+    if (results.insertId) {
+        // Success
+        console.log(creatorId + ' created pending share of sensor ' + sensor + ' to ' + targetEmail);
+    } else {
+        console.log(creatorId + ' failed to create a pending share of sensor ' + sensor + ' to ' + targetEmail);
+        return null;
+    }
+
+    return results;
+}
+
+/**
+ * Creates a pending invite for a user.
+ * 
+ * @param {string} sensor 
+ * @param {string} userId
+ * @param {string} targetEmail 
+ * @param {integer} creatorId 
+ * @returns 
+ */
+ const claimPendingShare = async (sensor, userId, targetEmail, creatorId) => {
+    const shareResult = await shareSensor(userId, creatorId, sensor);
+    if (shareResult === null) {
+        console.log(creatorId + ' failed to share ' + sensor + ' to ' + targetEmail);
+        return null;
+    }
+
+    let results = await mysql.query({
+        sql: `UPDATE pending_shares
+            SET deleted = 1
+            WHERE
+                sensor_id = ?
+                AND email = ?`,
+        timeout: 1000,
+        values: [sensor, targetEmail]
+    });
+
+    if (results.insertId) {
+        // Success
+        console.log(targetEmail + '<' + userId + '> claimed pending share of sensor share for ' + sensor);
+    } else {
+        console.log(targetEmail + '<' + userId + '> failed to claim a pending share of sensor ' + sensor);
+        return null;
+    }
+
+    return results;
+}
+
+/**
+ * Returns list of pending shares for a given user.
+ * 
+ * @param {string} targetEmail 
+ * @returns 
+ */
+const getPendingShares = async (targetEmail) => {
+    const validator = require('../Helpers/validator');
+    if (!validator.validateEmail(targetEmail)) {
+        console.error('Error parsing e-mail: ' + targetEmail);
+        return [];
+    }
+
+    const sensors = await mysql.query({
+        sql: `SELECT *
+            FROM pending_shares
+            WHERE
+                email = ?
+                AND deleted = 0`,
+        timeout: 1000,
+        values: [targetEmail]
+    });
+    return sensors;
+}
+
 const disconnect = async () => {
     await mysql.end();
 }
@@ -300,5 +396,8 @@ module.exports = {
     saveAlert,
     shareSensor,
     fetchSensorsForUser,
+    createPendingShare,
+    getPendingShares,
+    claimPendingShare,
     disconnect
 };

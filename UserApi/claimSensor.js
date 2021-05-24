@@ -67,9 +67,6 @@ exports.handler = async (event, context) => {
         if (profileResults.insertId) {
             // Success
         }
-
-        // Run clean up function
-        await mysql.end();
     } catch (e) {
         if (e.code === 'ER_DUP_ENTRY') {
             return gatewayHelper.errorResponse(HTTPCodes.CONFLICT, "Sensor already claimed.", errorCodes.ER_SENSOR_ALREADY_CLAIMED);
@@ -77,6 +74,9 @@ exports.handler = async (event, context) => {
         console.error(e);
         return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
     }
+
+    // Run clean up function
+    await mysql.end();
 
     return gatewayHelper.successResponse({
         sensor: sensor

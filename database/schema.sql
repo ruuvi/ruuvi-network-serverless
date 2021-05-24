@@ -51,6 +51,7 @@ CREATE TABLE sensors (
         public TINYINT(1) NOT NULL DEFAULT 0,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        can_share TINYINT(1) NOT NULL DEFAULT 0,
         PRIMARY KEY(id),
         -- Only one user can claim a sensor
         UNIQUE INDEX sensor_idx (sensor_id),
@@ -74,6 +75,18 @@ CREATE TABLE sensor_profiles (
         UNIQUE INDEX sensor_user_idx (user_id, sensor_id),
         FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+
+-- Pending shares to unregistered emails
+CREATE TABLE pending_shares (
+        id INT NOT NULL AUTO_INCREMENT,
+        email VARCHAR(320) NOT NULL,
+        sensor_id VARCHAR(64) NOT NULL,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        creator_id INT NOT NULL DEFAULT 0,
+        deleted TINYINT(1) NOT NULL DEFAULT 0,
+        PRIMARY KEY(id),
+        UNIQUE INDEX email_idx (email, sensor_id)
+) ENGINE=INNODB CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
 -- Alerts
 CREATE TABLE sensor_alerts (

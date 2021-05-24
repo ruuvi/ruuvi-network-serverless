@@ -46,7 +46,7 @@ exports.handler = async (event, context) => {
         userId = await userHelper.create(email);
     } else {
         const user = await userHelper.getByEmail(email);
-        userId = user.id ? user.id : 0;
+        userId = user && user.id ? user.id : 0;
     }
 
     if (userId > 0) {
@@ -63,9 +63,15 @@ exports.handler = async (event, context) => {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unable to register user.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_NO_USER);
     }
 
-    // If token grants access to sensors, add profiles
-    if (Array.isArray(decrypted.sensors)) {
-        
+    // Check pending shares
+    if (!isReset) {
+        const pendingShares = await sqlHelper.getPendingShares(email);
+        for (const share of pendingShares) {
+            const shareResult = await sqlHelper.claimPendingShare(share.sensor_id, userId, share.email, share.creator_id);
+            if (shareResult === null) {
+                console.error(`Failed to share a pending share to ${email} <${userId}> (shared by ${share.creator_id}) for sensor ${share.sensor_id}`);
+            }
+        }
     }
 
     const deleteResult = await sqlHelper.deleteSingle('short_token', short, 'reset_tokens');
@@ -73,6 +79,8 @@ exports.handler = async (event, context) => {
         console.error("Unable to delete `short_token`: " + short);
         console.error(userInfo);
     }
+
+    await sqlHelper.disconnect();
 
     return gatewayHelper.successResponse(userInfo);
 }
