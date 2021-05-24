@@ -96,7 +96,6 @@ const fetchAll = async (field, value, table, orderByField = null, orderByDirecti
  * @param {string} table Target table
  * @param {string} keyField Key field for filtering
  * @param {string} keyValue Value of the key
- * @returns {boolean} True if value changed, false otherwise
  */
 const setValue = async (field, value, table, keyField, keyValue) => {
     const idInt = parseInt(value);

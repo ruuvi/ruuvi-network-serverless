@@ -57,11 +57,9 @@ exports.handler = async (event, context) => {
         values: queryArguments
     });
 
-    console.log(sensors);
-    console.log(sensorFilter);
-
     let formatted = {};
-    sensors.forEach(async (sensor) => {
+
+    for (let sensor of sensors) {
         sensor.public = sensor.public ? true : false;
         sensor.canShare = sensor.canShare ? true : false;
         if (!sensor.canShare) {
@@ -73,20 +71,16 @@ exports.handler = async (event, context) => {
         }
 
         const sensorId = sensor.sensor;
-        
-        delete sensor.sensor;
         sensor.sharedTo = [];
 
-        formatted[sensorId] = sensor;
-    });
+        formatted[sensorId] = JSON.parse(JSON.stringify(sensor));
+        delete formatted[sensorId].sensor;
+    }
 
     // Fetch Shares
     const sharedSensors = await mysql.query({
         sql: `SELECT
-                sensors.sensor_id AS sensor,
-                sensor_profiles.name AS name,
-                sensor_profiles.picture AS picture,
-                sensors.public AS public,
+                sensor_profiles.sensor_id AS sensor,
                 users.email AS sharedTo
             FROM sensor_profiles
             INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
@@ -99,12 +93,7 @@ exports.handler = async (event, context) => {
         values: [user.id, user.id]
     });
 
-    console.log('HUR');
-    console.log(formatted);
-    console.log(sharedSensors);
-    console.log(user.id);
-
-    sharedSensors.forEach((sensor) => {
+    for (const sensor of sharedSensors) {
         if (!formatted[sensor.sensor] || (filteredSensorId !== null && filteredSensorId !== sensor.sensor)) {
             // Broken reference
             return;
@@ -113,7 +102,7 @@ exports.handler = async (event, context) => {
             formatted[sensor.sensor].sharedTo = [];
         }
         formatted[sensor.sensor].sharedTo.push(sensor.sharedTo);
-    });
+    }
 
     await sqlHelper.disconnect();
 
