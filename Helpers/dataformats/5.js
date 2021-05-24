@@ -8,7 +8,7 @@ const parseRawRuuvi = function (data) {
     robject.temperature = temperature / 200.0;
   
     robject.humidity = (((data[5] & 0xff) << 8) | (data[6] & 0xff)) / 400.0;
-    robject.pressure = (((data[7] & 0xff) << 8) | (data[8] & 0xff)) + 50000;
+    robject.pressure = ((((data[7] & 0xff) << 8) | (data[8] & 0xff)) + 50000) / 100; // hPa
   
     let accelerationX = (data[9] << 8) | (data[10] & 0xff);
     if (accelerationX > 32767) accelerationX -= 65536; // two's complement

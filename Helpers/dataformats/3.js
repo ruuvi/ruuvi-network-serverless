@@ -37,7 +37,7 @@ const parseRawRuuvi = function(manufacturerDataString) {
   
     let pressure = parseInt(manufacturerDataString.substring(pressureStart, pressureEnd), 16); // uint16_t pascals
     pressure += 50000; //Ruuvi format
-    robject.pressure = pressure;
+    robject.pressure = pressure / 100; // hPa
   
     let accelerationX = parseInt(manufacturerDataString.substring(accelerationXStart, accelerationXEnd), 16); // milli-g
     if (accelerationX > 32767) {
