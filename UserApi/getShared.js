@@ -47,6 +47,9 @@ exports.handler = async (event, context) => {
         formatted.push(sensor);
     });
 
+    // Run clean up function
+    await mysql.end();
+
     return gatewayHelper.successResponse({
         sensors: formatted
     });

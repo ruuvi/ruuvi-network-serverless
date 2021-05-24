@@ -106,7 +106,6 @@ exports.handler = async (event, context) => {
                 return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not claimed or found. Data not updated.", errorCodes.ER_SENSOR_NOT_FOUND);
             }    
         }
-
         await mysql.end();
     } catch (e) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);

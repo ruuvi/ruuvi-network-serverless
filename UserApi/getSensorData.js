@@ -128,6 +128,9 @@ exports.handler = async (event, context) => {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Internal server error.', errorCodes.ER_INTERNAL);
     }
 
+    // Close MySQL connection
+    await mysql.end();
+
     // Fetch from long term storage if requested for longer than TTL
     let dataPoints = [];
     let tableName = null;

@@ -4,6 +4,7 @@ const validator = require('../Helpers/validator');
 const jwtHelper = require('../Helpers/JWTHelper');
 const userHelper = require('../Helpers/userHelper');
 const errorCodes = require('../Helpers/errorCodes');
+const sqlHelper = require('../Helpers/sqlHelper');
 
 exports.handler = async (event, context) => {
     // TODO: This should no longer be required
@@ -54,6 +55,8 @@ exports.handler = async (event, context) => {
         console.error(e);
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL);
     }
+
+    sqlHelper.disconnect();
 
     return gatewayHelper.successResponse({
         email: userInfo.email

@@ -321,14 +321,15 @@ const createPendingShare = async (sensor, targetEmail, creatorId) => {
  * Creates a pending invite for a user.
  * 
  * @param {string} sensor 
+ * @param {string} userId
  * @param {string} targetEmail 
  * @param {integer} creatorId 
  * @returns 
  */
- const claimPendingShare = async (sensor, targetEmail, creatorId) => {
-    const shareResult = await shareSensor(userId, share.creator_id, sensor);
+ const claimPendingShare = async (sensor, userId, targetEmail, creatorId) => {
+    const shareResult = await shareSensor(userId, creatorId, sensor);
     if (shareResult === null) {
-        console.log(ownerId + ' failed to claim ' + sensor + ' to ' + targetEmail);
+        console.log(creatorId + ' failed to share ' + sensor + ' to ' + targetEmail);
         return null;
     }
 
@@ -339,14 +340,14 @@ const createPendingShare = async (sensor, targetEmail, creatorId) => {
                 sensor_id = ?
                 AND email = ?`,
         timeout: 1000,
-        values: [targetEmail, sensor, creatorId]
+        values: [sensor, targetEmail]
     });
 
     if (results.insertId) {
         // Success
-        console.log(ownerId + ' created pending share of sensor ' + sensor + ' to ' + targetEmail);
+        console.log(targetEmail + '<' + userId + '> claimed pending share of sensor share for ' + sensor);
     } else {
-        console.log(ownerId + ' failed to create a pending share of sensor ' + sensor + ' to ' + targetEmail);
+        console.log(targetEmail + '<' + userId + '> failed to claim a pending share of sensor ' + sensor);
         return null;
     }
 
@@ -368,7 +369,7 @@ const getPendingShares = async (targetEmail) => {
 
     const sensors = await mysql.query({
         sql: `SELECT *
-            FROM pending_invites
+            FROM pending_shares
             WHERE
                 email = ?
                 AND deleted = 0`,
