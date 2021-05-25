@@ -22,13 +22,19 @@ exports.handler = async (event, context) => {
         });
     }
 
-    let sensorAlerts = {};
+    let result = {
+        sensors: []
+    };
+    
     for (const sensor of sensors) {
         const alertData = await alertHelper.getAlerts(sensor, user.id);
-        sensorAlerts[sensor] = alertData;
+        result.sensors.push({
+            sensor: sensor,
+            alerts: alertData
+        });
     };
 
     await sqlHelper.disconnect();
 
-    return gatewayHelper.successResponse(sensorAlerts);
+    return gatewayHelper.successResponse(result);
 }

@@ -57,7 +57,7 @@ exports.handler = async (event, context) => {
         values: queryArguments
     });
 
-    let formatted = {};
+    let formatted = [];
 
     for (let sensor of sensors) {
         sensor.public = sensor.public ? true : false;
@@ -70,11 +70,8 @@ exports.handler = async (event, context) => {
             }
         }
 
-        const sensorId = sensor.sensor;
         sensor.sharedTo = [];
-
-        formatted[sensorId] = JSON.parse(JSON.stringify(sensor));
-        delete formatted[sensorId].sensor;
+        formatted.push(JSON.parse(JSON.stringify(sensor)));
     }
 
     // Fetch Shares
@@ -94,14 +91,23 @@ exports.handler = async (event, context) => {
     });
 
     for (const sensor of sharedSensors) {
-        if (!formatted[sensor.sensor] || (filteredSensorId !== null && filteredSensorId !== sensor.sensor)) {
-            // Broken reference
-            return;
+        var found = formatted.findIndex(s => s.sensor === sensor.sensor);
+        
+        // Broken reference
+        if (found === -1) {
+            console.log('Not found');
+            continue;
         }
-        if (!formatted[sensor.sensor].sharedTo) {
-            formatted[sensor.sensor].sharedTo = [];
+        console.log(found);
+        // Not the filtered sensor
+        if (filteredSensorId !== null) {
+            const filteredShared = sharedSensors.filter(s => s.sensor === filteredSensorId);
+            if (filteredShared.length === 0) {
+                console.log('filtered shared ' + filteredSensorId + ' ' + s.sensor);
+                continue;
+            }
         }
-        formatted[sensor.sensor].sharedTo.push(sensor.sharedTo);
+        formatted[found].sharedTo.push(sensor.sharedTo);
     }
 
     await sqlHelper.disconnect();

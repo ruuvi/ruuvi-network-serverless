@@ -155,20 +155,39 @@ const updateValues = async (table, fields, values, whereConditions, whereValues)
     return results.affectedRows;
 }
 
-const fetchAlerts = async (sensorId) => {
-    return await mysql.query({
-        sql: 
-            `SELECT
-                sensor_alerts.*,
-                sensors.offset_humidity AS offset_humidity,
-                sensors.offset_temperature AS offset_temperature,
-                sensors.offset_pressure AS offset_pressure
-            FROM sensor_alerts
-            INNER JOIN sensors ON sensors.sensor_id = sensor_alerts.sensor_id
-            WHERE sensors.sensor_id = ?`,
-        timeout: 3000,
-        values: [sensorId]
-    });
+const fetchAlerts = async (sensorId, userId = null) => {
+    if (userId === null) {
+        return await mysql.query({
+            sql: 
+                `SELECT
+                    sensor_alerts.*,
+                    sensors.offset_humidity AS offset_humidity,
+                    sensors.offset_temperature AS offset_temperature,
+                    sensors.offset_pressure AS offset_pressure
+                FROM sensor_alerts
+                INNER JOIN sensors ON sensors.sensor_id = sensor_alerts.sensor_id
+                WHERE sensors.sensor_id = ?`,
+            timeout: 3000,
+            values: [sensorId]
+        });
+    } else {
+        return await mysql.query({
+            sql: 
+                `SELECT
+                    sensor_alerts.*,
+                    sensors.offset_humidity AS offset_humidity,
+                    sensors.offset_temperature AS offset_temperature,
+                    sensors.offset_pressure AS offset_pressure
+                FROM sensor_alerts
+                INNER JOIN sensors ON sensors.sensor_id = sensor_alerts.sensor_id
+                INNER JOIN sensor_profiles ON sensor_profiles.sensor_id = sensors.sensor_id
+                WHERE
+                    sensors.sensor_id = ?
+                    AND sensor_profiles.user_id = ?`,
+            timeout: 3000,
+            values: [sensorId, userId]
+        });
+    }
 }
 
 /**

@@ -331,7 +331,8 @@ describe('Full integration tests', () => {
 		const sensorData = await get('sensors');
 
 		expect(sensorData.data.data.sensors).not.toBeNull();
-		expect(sensorData.data.data.sensors[newSensorMac].sharedTo.length).toBe(1);
+		const newSensor = sensorData.data.data.sensors.find(s => s.sensor === newSensorMac);
+		expect(newSensor.sharedTo.length).toBe(1);
 
 	});
 
@@ -339,9 +340,11 @@ describe('Full integration tests', () => {
 		const sensorData = await get('sensors', {
 			sensor: newSensorMac
 		});
-		expect(sensorData.data.data.sensors[newSensorMac]).not.toBeNull();
-		expect(sensorData.data.data.sensors[newSensorMac].sharedTo.length).toBe(1);
-		expect(sensorData.data.data.sensors[newSensorMac].sharedTo[0]).toBe(secondaryEmail);
+		
+		const newSensor = sensorData.data.data.sensors.find(s => s.sensor === newSensorMac);
+		expect(newSensor).not.toBeNull();
+		expect(newSensor.sharedTo.length).toBe(1);
+		expect(newSensor.sharedTo[0]).toBe(secondaryEmail);
 	});
 
 	// DEPENDENT ON THE ABOVE
@@ -407,29 +410,30 @@ describe('Full integration tests', () => {
 			sensor: newSensorMac
 		});
 		expect(readResult.status).toBe(200, 'Read');
-		expect(readResult.data.data[newSensorMac].length).toBe(1);
+		const newSensor = readResult.data.data.sensors.find(s => s.sensor === newSensorMac);
+		expect(newSensor.alerts.length).toBe(1);
 
-		const alerts = readResult.data.data[newSensorMac];
-		expect(alerts[0].max).toBe(100);
-		expect(alerts[0].min).toBe(30);
-		expect(alerts[0].triggered).toBe(false);
-		expect(alerts[0].enabled).toBe(true);
-		expect(alerts[0].type).toBe('humidity');
+		expect(newSensor.alerts[0].max).toBe(100);
+		expect(newSensor.alerts[0].min).toBe(30);
+		expect(newSensor.alerts[0].triggered).toBe(false);
+		expect(newSensor.alerts[0].enabled).toBe(true);
+		expect(newSensor.alerts[0].type).toBe('humidity');
 	});
 
 	itif(RI)('getting alerts without filter is successful', async () => {
 		const readResult = await get('alerts');
 
 		expect(readResult.status).toBe(200, 'Read');
-		expect(Object.keys(readResult.data.data).length).toBeGreaterThan(0);
+		const newSensor = readResult.data.data.sensors.find(s => s.sensor === newSensorMac);
+		expect(newSensor).not.toBeNull();
+		expect(newSensor.alerts.length).toBe(1);
 
 		// Additional validation that at least one is new sensor mac
-		const alerts = readResult.data.data[newSensorMac];
-		expect(alerts[0].max).toBe(100);
-		expect(alerts[0].min).toBe(30);
-		expect(alerts[0].triggered).toBe(false);
-		expect(alerts[0].enabled).toBe(true);
-		expect(alerts[0].type).toBe('humidity');
+		expect(newSensor.alerts[0].max).toBe(100);
+		expect(newSensor.alerts[0].min).toBe(30);
+		expect(newSensor.alerts[0].triggered).toBe(false);
+		expect(newSensor.alerts[0].enabled).toBe(true);
+		expect(newSensor.alerts[0].type).toBe('humidity');
 	});
 
 	itif(RI)('Updating an alert is successful', async () => {
@@ -447,12 +451,12 @@ describe('Full integration tests', () => {
 			sensor: newSensorMac
 		});
 		expect(readResult.status).toBe(200, 'Read');
-		expect(readResult.data.data[newSensorMac].length).toBe(1);
+		const newSensor = readResult.data.data.sensors.find(s => s.sensor === newSensorMac);
+		expect(newSensor.alerts.length).toBe(1);
 
-		const alerts = readResult.data.data[newSensorMac];
-		expect(alerts[0].max).toBe(50);
-		expect(alerts[0].min).toBe(20);
-		expect(alerts[0].enabled).toBe(false);
+		expect(newSensor.alerts[0].max).toBe(50);
+		expect(newSensor.alerts[0].min).toBe(20);
+		expect(newSensor.alerts[0].enabled).toBe(false);
 	});
 
 	itif(RI)('triggering a min limit alert is successful', async () => {
@@ -505,11 +509,11 @@ describe('Full integration tests', () => {
 		});
 
 		expect(readResult.status).toBe(200, 'Read');
-		expect(readResult.data.data[alertSensorMac].length).toBe(1);
+		const alertSensor = readResult.data.data.sensors.find(s => s.sensor === alertSensorMac);
+		expect(alertSensor.alerts.length).toBe(1);
 
-		const alerts = readResult.data.data[alertSensorMac];
-		expect(alerts[0].triggered).toBe(true);
-		expect(alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
+		expect(alertSensor.alerts[0].triggered).toBe(true);
+		expect(alertSensor.alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
 	});
 
 	itif(RI)('triggering a max limit alert on a sensor with offset is successful', async () => {
@@ -570,11 +574,11 @@ describe('Full integration tests', () => {
 		});
 
 		expect(readResult.status).toBe(200, 'Read');
-		expect(readResult.data.data[alertSensorMac].length).toBe(1);
+		const alertSensor = readResult.data.data.sensors.find(s => s.sensor === alertSensorMac);
+		expect(alertSensor.alerts.length).toBe(1);
 
-		const alerts = readResult.data.data[alertSensorMac];
-		expect(alerts[0].triggered).toBe(true);
-		expect(alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
+		expect(alertSensor.alerts[0].triggered).toBe(true);
+		expect(alertSensor.alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
 	});
 
 	itif(RI)('`unclaim` returns 200 OK', async () => {
