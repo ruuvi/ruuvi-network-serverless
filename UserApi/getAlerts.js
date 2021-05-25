@@ -25,9 +25,15 @@ exports.handler = async (event, context) => {
     let result = {
         sensors: []
     };
-    
+
     for (const sensor of sensors) {
         const alertData = await alertHelper.getAlerts(sensor, user.id);
+        alertData.forEach(function(a) {
+            delete a.offsetHumidity;
+            delete a.offsetTemperature;
+            delete a.offsetPressure;
+        });
+
         result.sensors.push({
             sensor: sensor,
             alerts: alertData
