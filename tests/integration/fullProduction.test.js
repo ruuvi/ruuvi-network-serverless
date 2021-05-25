@@ -418,6 +418,9 @@ describe('Full integration tests', () => {
 		expect(newSensor.alerts[0].triggered).toBe(false);
 		expect(newSensor.alerts[0].enabled).toBe(true);
 		expect(newSensor.alerts[0].type).toBe('humidity');
+		expect(newSensor.alerts[0].offsetHumidity).not.toBeDefined();
+		expect(newSensor.alerts[0].offsetPressure).not.toBeDefined();
+		expect(newSensor.alerts[0].offsetTemperature).not.toBeDefined();
 	});
 
 	itif(RI)('getting alerts without filter is successful', async () => {
