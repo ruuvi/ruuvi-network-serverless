@@ -596,7 +596,7 @@ describe('Full integration tests', () => {
 		const readResultSecondary = await get('alerts', null, secondaryHttp);
 		expect(readResultSecondary.status).toBe(200, 'Read');
 		const newSensorSecondary = readResultSecondary.data.data.sensors.find(s => s.sensor === newSensorMac);
-		expect(newSensorSecondary).toBeNull();
+		expect(newSensorSecondary).not.toBeDefined();
 	});
 
 
