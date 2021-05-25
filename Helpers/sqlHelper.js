@@ -183,9 +183,10 @@ const fetchAlerts = async (sensorId, userId = null) => {
                 INNER JOIN sensor_profiles ON sensor_profiles.sensor_id = sensors.sensor_id
                 WHERE
                     sensors.sensor_id = ?
-                    AND sensor_profiles.user_id = ?`,
+                    AND sensor_profiles.user_id = ?
+                    AND sensor_alerts.user_id = ?`,
             timeout: 3000,
-            values: [sensorId, userId]
+            values: [sensorId, userId, userId]
         });
     }
 }

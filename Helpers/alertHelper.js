@@ -121,7 +121,11 @@ const putAlert = async (userId, sensor, type, min, max, enabled) => {
  * @param {object} sensorData Sensor info
  * @param {string} triggerType over / under
  */
-const triggerAlert = async (alertData, sensorData, triggerType) => {
+const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled = false) => {
+    if (!overrideEnabled && !alertData.enabled) {
+        return;
+    }
+
     const nowDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
     var updateResult = await sqlHelper.updateValues('sensor_alerts', ['triggered = ?', 'triggered_at = ?'], [1, nowDate], ['sensor_id = ?', 'user_id = ?', 'triggered = ?'], [alertData.sensorId, alertData.userId, 0]);
     if (updateResult === 1) {
@@ -157,7 +161,11 @@ const capitalize = (s) => {
  * @param {string} data 
  */
 const processAlerts = async (alerts, sensorData) => {
-    alerts.forEach(async (alert) => {
+    for (const alert of alerts) {
+        if (!alert.enabled) {
+            return;
+        }
+
         const offsetKey = 'offset' + capitalize(alert.type);
         if (sensorData[alert.type] > alert.max + alert[offsetKey]) {
             await triggerAlert(alert, sensorData, 'over');
@@ -165,7 +173,7 @@ const processAlerts = async (alerts, sensorData) => {
         if (sensorData[alert.type] < alert.min + alert[offsetKey]) {
             await triggerAlert(alert, sensorData, 'under');
         }
-    });
+    };
 }
 
 /**

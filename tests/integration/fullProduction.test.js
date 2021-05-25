@@ -584,6 +584,22 @@ describe('Full integration tests', () => {
 		expect(alertSensor.alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
 	});
 
+	itif(RI)('cannot get alerts for another user', async () => {
+		const readResult = await get('alerts');
+
+		expect(readResult.status).toBe(200, 'Read');
+		const newSensor = readResult.data.data.sensors.find(s => s.sensor === newSensorMac);
+		expect(newSensor).not.toBeNull();
+		expect(newSensor.alerts.length).toBe(1);
+
+
+		const readResultSecondary = await get('alerts', null, secondaryHttp);
+		expect(readResultSecondary.status).toBe(200, 'Read');
+		const newSensorSecondary = readResultSecondary.data.data.sensors.find(s => s.sensor === newSensorMac);
+		expect(newSensorSecondary).toBeNull();
+	});
+
+
 	itif(RI)('`unclaim` returns 200 OK', async () => {
 		const claimResult = await post('unclaim', {
 			sensor: newSensorMac

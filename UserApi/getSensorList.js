@@ -98,7 +98,7 @@ exports.handler = async (event, context) => {
             console.log('Not found');
             continue;
         }
-        console.log(found);
+
         // Not the filtered sensor
         if (filteredSensorId !== null) {
             const filteredShared = sharedSensors.filter(s => s.sensor === filteredSensorId);
