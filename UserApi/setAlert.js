@@ -22,6 +22,12 @@ exports.handler = async (event, context) => {
     }
 
     const sensor = eventBody.sensor;
+
+    const isReadable = await mysqlHelper.canReadSensor(user.id, sensor);
+    if (!isReadable) {
+        return gatewayHelper.forbiddenResponse();
+    }
+
     const type = eventBody.type;
     const enabled = (eventBody.enabled === true || eventBody.enabled === 'true') ? true : false;
     const min = parseFloat(eventBody.min);

@@ -1,7 +1,6 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
-const errorCodes = require('../Helpers/errorCodes.js');
 const alertHelper = require('../Helpers/alertHelper');
 const sqlHelper = require('../Helpers/sqlHelper');
 
@@ -14,6 +13,12 @@ exports.handler = async (event, context) => {
     // Fetch either filtered or full list
     let sensors = [];
     if (event.queryStringParameters && validator.hasKeys(event.queryStringParameters, ['sensor'])) {
+        if (!validator.validateMacAddress(event.queryStringParameters.sensor)) {
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid request format.', errorCodes.ER_INVALID_FORMAT);
+        }
+        if (!sqlHelper.canReadSensor(user.id, event.queryStringParameters.sensor)) {
+            return gatewayHelper.forbiddenResponse();
+        }
         sensors.push(event.queryStringParameters.sensor);
     } else {
         const sensorData = await sqlHelper.fetchSensorsForUser(user.id);

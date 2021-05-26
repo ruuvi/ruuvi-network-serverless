@@ -403,6 +403,38 @@ const disconnect = async () => {
     await mysql.end();
 }
 
+const canReadSensor = async (userId, sensorId) => {
+    const readableResults = await mysql.query({
+        sql: `SELECT
+                sensors.id
+            FROM sensors
+            LEFT JOIN sensor_profiles ON
+                sensor_profiles.sensor_id = sensors.sensor_id
+            WHERE
+                sensors.sensor_id = ?
+                AND (
+                    (
+                        sensor_profiles.user_id = ?
+                        AND sensor_profiles.is_active = 1
+                    ) OR (
+                        sensors.public = 1
+                        AND sensor_profiles.user_id = sensors.owner_id
+                    )
+                )
+            LIMIT 1`,
+        timeout: 1000,
+        values: [
+            sensorId,
+            userId
+        ]
+    });
+    if (readableResults.length === 0) {
+        return false;
+    }
+    return true;
+}
+
+
 /**
  * Exports
  */
@@ -419,5 +451,8 @@ module.exports = {
     createPendingShare,
     getPendingShares,
     claimPendingShare,
-    disconnect
+    disconnect,
+
+    canReadSensor,
+    //canUpdateSensor
 };

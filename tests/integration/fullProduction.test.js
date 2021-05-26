@@ -423,6 +423,23 @@ describe('Full integration tests', () => {
 		expect(newSensor.alerts[0].offsetTemperature).not.toBeDefined();
 	});
 
+	itif(RI)('cannot create an alert for a sensor with no access rights', async () => {
+		try {
+			await post('alerts', {
+				sensor: newSensorMac,
+				type: 'humidity',
+				min: 30,
+				max: 100,
+				enabled: true
+			}, secondaryHttp);
+		} catch (e) {
+			expect(e.message).toMatch(/Request failed with status code 403/);
+			threw = true;
+		}
+
+		expect(threw).toBe(true);
+	});
+
 	itif(RI)('getting alerts without filter is successful', async () => {
 		const readResult = await get('alerts');
 
@@ -584,7 +601,7 @@ describe('Full integration tests', () => {
 		expect(alertSensor.alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
 	});
 
-	itif(RI)('cannot get alerts for another user', async () => {
+	itif(RI)('does not return alerts for another user', async () => {
 		const readResult = await get('alerts');
 
 		expect(readResult.status).toBe(200, 'Read');
@@ -599,6 +616,19 @@ describe('Full integration tests', () => {
 		expect(newSensorSecondary).not.toBeDefined();
 	});
 
+	itif(RI)('cannot request alerts for non-owned sensor', async () => {
+			// Validate existence
+		try {
+			await get('alerts', {
+				sensor: newSensorMac
+			}, secondaryHttp);
+		} catch (e) {
+			expect(e.message).toMatch(/Request failed with status code 403/);
+			threw = true;
+		}
+
+		expect(threw).toBe(true);
+	});
 
 	itif(RI)('`unclaim` returns 200 OK', async () => {
 		const claimResult = await post('unclaim', {
