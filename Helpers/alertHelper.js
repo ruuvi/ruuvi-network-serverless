@@ -1,6 +1,7 @@
 const redis = require('../Helpers/redisHelper').getClient();
 const sqlHelper = require('../Helpers/sqlHelper');
 const emailHelper = require('../Helpers/emailHelper');
+const throttleHelper = require('../Helpers/throttleHelper');
 
 /**
  * Fetches alerts for individual sensor
@@ -163,9 +164,19 @@ const capitalize = (s) => {
 const processAlerts = async (alerts, sensorData) => {
     for (const alert of alerts) {
         if (!alert.enabled) {
-            return;
+            continue;
         }
 
+        // Throttling
+        const throttleAlert = await throttleHelper.throttle(
+            `alert:${alert.userId}:${sensorData.sensor_id}:${alert.type}`,
+            throttleHelper.defaultIntervals.alert
+        );
+        if (throttleAlert) {
+            continue;
+        }
+
+        // Trigger
         const offsetKey = 'offset' + capitalize(alert.type);
         if (sensorData[alert.type] > alert.max + alert[offsetKey]) {
             await triggerAlert(alert, sensorData, 'over');
