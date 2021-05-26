@@ -128,7 +128,7 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
     }
 
     const nowDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    var updateResult = await sqlHelper.updateValues('sensor_alerts', ['triggered = ?', 'triggered_at = ?'], [1, nowDate], ['sensor_id = ?', 'user_id = ?', 'triggered = ?'], [alertData.sensorId, alertData.userId, 0]);
+    var updateResult = await sqlHelper.updateValues('sensor_alerts', ['triggered = ?', 'triggered_at = ?'], [1, nowDate], ['sensor_id = ?', 'user_id = ?', 'alert_type = ?'], [alertData.sensorId, alertData.userId, alertData.type]);
     if (updateResult === 1) {
         console.log('Sending Alert Email to user: ' + alertData.userId);
         const userHelper = require('../Helpers/userHelper');
@@ -147,6 +147,8 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
         } catch (e) {
             console.error(e);
         }
+    } else {
+        await refreshAlertCache(sensorData.sensor_id);
     }
 }
 
