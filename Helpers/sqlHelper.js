@@ -199,7 +199,7 @@ const fetchAlerts = async (sensorId, userId = null) => {
  * @param {enum} type Type in: ['temperature', 'humidity', 'pressure', 'signal', 'movement']
  * @returns 
  */
- const saveAlert = async (userId, sensorId, type, enabled = true, min = Number.MIN_VALUE, max = Number.MAX_VALUE) => {
+ const saveAlert = async (userId, sensorId, type, enabled = true, min = Number.MIN_VALUE, max = Number.MAX_VALUE, counter = 0, description = '') => {
     if (!validator.validateEnum(type, ['temperature', 'humidity', 'pressure', 'signal', 'movement'])) {
         console.error('Invalid type given: ' + type);
         return [];
@@ -217,8 +217,12 @@ const fetchAlerts = async (sensorId, userId = null) => {
                     alert_type,
                     min_value,
                     max_value,
-                    enabled
+                    counter,
+                    enabled,
+                    description
                 ) VALUES (
+                    ?,
+                    ?,
                     ?,
                     ?,
                     ?,
@@ -228,10 +232,12 @@ const fetchAlerts = async (sensorId, userId = null) => {
                 ) ON DUPLICATE KEY UPDATE
                     min_value = VALUES(min_value),
                     max_value = VALUES(max_value),
+                    counter = VALUES(counter),
+                    description = VALUES(description),
                     enabled = VALUES(enabled),
                     triggered = 0;`,
             timeout: 1000,
-            values: [userId, sensorId, type, min, max, enabledInt]
+            values: [userId, sensorId, type, min, max, counter, enabledInt, description]
         });
     } catch (e) {
         console.error(e);

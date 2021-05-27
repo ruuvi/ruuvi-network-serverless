@@ -456,6 +456,7 @@ functions:
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      TABLE_NAME: ${self:custom.dynamoSensorData}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 

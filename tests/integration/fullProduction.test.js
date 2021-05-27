@@ -396,12 +396,14 @@ describe('Full integration tests', () => {
 	});
 
 	itif(RI)('creating an alert is successful', async () => {
+		const testAlertDescription = 'Hoblaa, nice alert!';
 		const createResult = await post('alerts', {
 			sensor: newSensorMac,
 			type: 'humidity',
 			min: 30,
 			max: 100,
-			enabled: true
+			enabled: true,
+			description: testAlertDescription
 		});
 		expect(createResult.status).toBe(200, 'Create');
 
@@ -413,6 +415,7 @@ describe('Full integration tests', () => {
 		const newSensor = readResult.data.data.sensors.find(s => s.sensor === newSensorMac);
 		expect(newSensor.alerts.length).toBe(1);
 
+		expect(newSensor.alerts[0].description).toBe(testAlertDescription);
 		expect(newSensor.alerts[0].max).toBe(100);
 		expect(newSensor.alerts[0].min).toBe(30);
 		expect(newSensor.alerts[0].triggered).toBe(false);
@@ -457,12 +460,14 @@ describe('Full integration tests', () => {
 	});
 
 	itif(RI)('Updating an alert is successful', async () => {
+		const updatedAlertDescription = 'Hola!';
 		const updateResult = await post('alerts', {
 			sensor: newSensorMac,
 			type: 'humidity',
 			min: 20,
 			max: 50,
-			enabled: false
+			enabled: false,
+			description: updatedAlertDescription
 		});
 		expect(updateResult.status).toBe(200, 'Update');
 
@@ -474,6 +479,7 @@ describe('Full integration tests', () => {
 		const newSensor = readResult.data.data.sensors.find(s => s.sensor === newSensorMac);
 		expect(newSensor.alerts.length).toBe(1);
 
+		expect(newSensor.alerts[0].description).toBe(updatedAlertDescription);
 		expect(newSensor.alerts[0].max).toBe(50);
 		expect(newSensor.alerts[0].min).toBe(20);
 		expect(newSensor.alerts[0].enabled).toBe(false);
@@ -596,7 +602,6 @@ describe('Full integration tests', () => {
 		expect(readResult.status).toBe(200, 'Read');
 		const alertSensor = readResult.data.data.sensors.find(s => s.sensor === alertSensorMac);
 		expect(alertSensor.alerts.length).toBe(1);
-
 		expect(alertSensor.alerts[0].triggered).toBe(true);
 		expect(alertSensor.alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
 	});

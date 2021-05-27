@@ -77,10 +77,12 @@ const formatAlerts = (raw) => {
             type: alert.alert_type,
             min: alert.min_value,
             max: alert.max_value,
+            counter: alert.counter,
             enabled: alert.enabled ? true : false,
             offsetHumidity: alert.offset_humidity,
             offsetTemperature: alert.offset_temperature,
             offsetPressure: alert.offset_temperature,
+            description: alert.description,
             triggered: alert.triggered ? true : false,
             triggeredAt: alert.triggered_at
         });
@@ -99,10 +101,10 @@ const formatAlerts = (raw) => {
  * @param {*} enabled 
  * @returns 
  */
-const putAlert = async (userId, sensor, type, min, max, enabled) => {
+const putAlert = async (userId, sensor, type, min = Number.MIN_VALUE, max = Number.MAX_VALUE, counter = 0, enabled = true, description = '') => {
     let res = true;
     try {
-        const putResult = await sqlHelper.saveAlert(userId, sensor, type, enabled, min, max);
+        const putResult = await sqlHelper.saveAlert(userId, sensor, type, enabled, min, max, counter, description);
     } catch (e) {
         console.error(e);
         res = false;

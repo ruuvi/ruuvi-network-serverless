@@ -39,7 +39,9 @@ exports.handler = async (event, context) => {
                 type: a.type,
                 min: a.min,
                 max: a.max,
+                counter: a.counter,
                 enabled: a.enabled,
+                description: a.description,
                 triggered: a.triggered,
                 triggeredAt: a.triggeredAt
             });
