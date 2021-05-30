@@ -35,7 +35,7 @@ exports.handler = async (event, context) => {
     if (eventBody.type === 'movement' && !validator.hasKeys(eventBody, ['counter'])) {
         const lastDataPoint = await dynamoHelper.getSensorData(eventBody.sensor, 1, null, null);
         if (lastDataPoint.length > 0) {
-            const lastDataParsed = sensorDataHelper.parseData(lastDataPoint.SensorData);
+            const lastDataParsed = sensorDataHelper.parseData(lastDataPoint[0].SensorData);
             counter = lastDataParsed.movementCounter ? parseInt(lastDataParsed.movementCounter) : 0;
         }
     } else if (eventBody.type === 'movement') {
