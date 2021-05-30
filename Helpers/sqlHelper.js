@@ -155,20 +155,40 @@ const updateValues = async (table, fields, values, whereConditions, whereValues)
     return results.affectedRows;
 }
 
-const fetchAlerts = async (sensorId) => {
-    return await mysql.query({
-        sql: 
-            `SELECT
-                sensor_alerts.*,
-                sensors.offset_humidity AS offset_humidity,
-                sensors.offset_temperature AS offset_temperature,
-                sensors.offset_pressure AS offset_pressure
-            FROM sensor_alerts
-            INNER JOIN sensors ON sensors.sensor_id = sensor_alerts.sensor_id
-            WHERE sensors.sensor_id = ?`,
-        timeout: 3000,
-        values: [sensorId]
-    });
+const fetchAlerts = async (sensorId, userId = null) => {
+    if (userId === null) {
+        return await mysql.query({
+            sql: 
+                `SELECT
+                    sensor_alerts.*,
+                    sensors.offset_humidity AS offset_humidity,
+                    sensors.offset_temperature AS offset_temperature,
+                    sensors.offset_pressure AS offset_pressure
+                FROM sensor_alerts
+                INNER JOIN sensors ON sensors.sensor_id = sensor_alerts.sensor_id
+                WHERE sensors.sensor_id = ?`,
+            timeout: 3000,
+            values: [sensorId]
+        });
+    } else {
+        return await mysql.query({
+            sql: 
+                `SELECT
+                    sensor_alerts.*,
+                    sensors.offset_humidity AS offset_humidity,
+                    sensors.offset_temperature AS offset_temperature,
+                    sensors.offset_pressure AS offset_pressure
+                FROM sensor_alerts
+                INNER JOIN sensors ON sensors.sensor_id = sensor_alerts.sensor_id
+                INNER JOIN sensor_profiles ON sensor_profiles.sensor_id = sensors.sensor_id
+                WHERE
+                    sensors.sensor_id = ?
+                    AND sensor_profiles.user_id = ?
+                    AND sensor_alerts.user_id = ?`,
+            timeout: 3000,
+            values: [sensorId, userId, userId]
+        });
+    }
 }
 
 /**
@@ -179,7 +199,7 @@ const fetchAlerts = async (sensorId) => {
  * @param {enum} type Type in: ['temperature', 'humidity', 'pressure', 'signal', 'movement']
  * @returns 
  */
- const saveAlert = async (userId, sensorId, type, enabled = true, min = Number.MIN_VALUE, max = Number.MAX_VALUE) => {
+ const saveAlert = async (userId, sensorId, type, enabled = true, min = Number.MIN_VALUE, max = Number.MAX_VALUE, counter = 0, description = '') => {
     if (!validator.validateEnum(type, ['temperature', 'humidity', 'pressure', 'signal', 'movement'])) {
         console.error('Invalid type given: ' + type);
         return [];
@@ -197,8 +217,12 @@ const fetchAlerts = async (sensorId) => {
                     alert_type,
                     min_value,
                     max_value,
-                    enabled
+                    counter,
+                    enabled,
+                    description
                 ) VALUES (
+                    ?,
+                    ?,
                     ?,
                     ?,
                     ?,
@@ -208,10 +232,12 @@ const fetchAlerts = async (sensorId) => {
                 ) ON DUPLICATE KEY UPDATE
                     min_value = VALUES(min_value),
                     max_value = VALUES(max_value),
+                    counter = VALUES(counter),
+                    description = VALUES(description),
                     enabled = VALUES(enabled),
                     triggered = 0;`,
             timeout: 1000,
-            values: [userId, sensorId, type, min, max, enabledInt]
+            values: [userId, sensorId, type, min, max, counter, enabledInt, description]
         });
     } catch (e) {
         console.error(e);
@@ -383,6 +409,38 @@ const disconnect = async () => {
     await mysql.end();
 }
 
+const canReadSensor = async (userId, sensorId) => {
+    const readableResults = await mysql.query({
+        sql: `SELECT
+                sensors.id
+            FROM sensors
+            LEFT JOIN sensor_profiles ON
+                sensor_profiles.sensor_id = sensors.sensor_id
+            WHERE
+                sensors.sensor_id = ?
+                AND (
+                    (
+                        sensor_profiles.user_id = ?
+                        AND sensor_profiles.is_active = 1
+                    ) OR (
+                        sensors.public = 1
+                        AND sensor_profiles.user_id = sensors.owner_id
+                    )
+                )
+            LIMIT 1`,
+        timeout: 1000,
+        values: [
+            sensorId,
+            userId
+        ]
+    });
+    if (readableResults.length === 0) {
+        return false;
+    }
+    return true;
+}
+
+
 /**
  * Exports
  */
@@ -399,5 +457,8 @@ module.exports = {
     createPendingShare,
     getPendingShares,
     claimPendingShare,
-    disconnect
+    disconnect,
+
+    canReadSensor,
+    //canUpdateSensor
 };

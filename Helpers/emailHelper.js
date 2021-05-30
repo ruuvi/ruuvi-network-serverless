@@ -74,7 +74,7 @@ const sendEmailInvitation = async (email, fromEmail, sensorName, sourceDomain = 
     }
 
     const androidLink = 'https://play.google.com/store/apps/details?id=com.ruuvi.station';
-    const iosLink = 'https://itunes.apple.com/us/app/core-beacons/id1350862272';
+    const iosLink = 'https://itunes.apple.com/app/ruuvi-station/id1384475885';
 
     // TODO: This would be nicer to maintain by SES templates
     const htmlBody = `

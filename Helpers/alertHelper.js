@@ -1,6 +1,7 @@
 const redis = require('../Helpers/redisHelper').getClient();
 const sqlHelper = require('../Helpers/sqlHelper');
 const emailHelper = require('../Helpers/emailHelper');
+const throttleHelper = require('../Helpers/throttleHelper');
 
 /**
  * Fetches alerts for individual sensor
@@ -76,10 +77,12 @@ const formatAlerts = (raw) => {
             type: alert.alert_type,
             min: alert.min_value,
             max: alert.max_value,
+            counter: alert.counter,
             enabled: alert.enabled ? true : false,
             offsetHumidity: alert.offset_humidity,
             offsetTemperature: alert.offset_temperature,
             offsetPressure: alert.offset_temperature,
+            description: alert.description,
             triggered: alert.triggered ? true : false,
             triggeredAt: alert.triggered_at
         });
@@ -98,10 +101,10 @@ const formatAlerts = (raw) => {
  * @param {*} enabled 
  * @returns 
  */
-const putAlert = async (userId, sensor, type, min, max, enabled) => {
+const putAlert = async (userId, sensor, type, min = Number.MIN_VALUE, max = Number.MAX_VALUE, counter = 0, enabled = true, description = '') => {
     let res = true;
     try {
-        const putResult = await sqlHelper.saveAlert(userId, sensor, type, enabled, min, max);
+        const putResult = await sqlHelper.saveAlert(userId, sensor, type, enabled, min, max, counter, description);
     } catch (e) {
         console.error(e);
         res = false;
@@ -121,9 +124,13 @@ const putAlert = async (userId, sensor, type, min, max, enabled) => {
  * @param {object} sensorData Sensor info
  * @param {string} triggerType over / under
  */
-const triggerAlert = async (alertData, sensorData, triggerType) => {
+const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled = false) => {
+    if (!overrideEnabled && !alertData.enabled) {
+        return;
+    }
+
     const nowDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    var updateResult = await sqlHelper.updateValues('sensor_alerts', ['triggered = ?', 'triggered_at = ?'], [1, nowDate], ['sensor_id = ?', 'user_id = ?', 'triggered = ?'], [alertData.sensorId, alertData.userId, 0]);
+    var updateResult = await sqlHelper.updateValues('sensor_alerts', ['triggered = ?', 'triggered_at = ?'], [1, nowDate], ['sensor_id = ?', 'user_id = ?', 'alert_type = ?'], [alertData.sensorId, alertData.userId, alertData.type]);
     if (updateResult === 1) {
         console.log('Sending Alert Email to user: ' + alertData.userId);
         const userHelper = require('../Helpers/userHelper');
@@ -142,6 +149,8 @@ const triggerAlert = async (alertData, sensorData, triggerType) => {
         } catch (e) {
             console.error(e);
         }
+    } else {
+        await refreshAlertCache(sensorData.sensor_id);
     }
 }
 
@@ -157,7 +166,21 @@ const capitalize = (s) => {
  * @param {string} data 
  */
 const processAlerts = async (alerts, sensorData) => {
-    alerts.forEach(async (alert) => {
+    for (const alert of alerts) {
+        if (!alert.enabled) {
+            continue;
+        }
+
+        // Throttling
+        const throttleAlert = await throttleHelper.throttle(
+            `alert:${alert.userId}:${sensorData.sensor_id}:${alert.type}`,
+            throttleHelper.defaultIntervals.alert
+        );
+        if (throttleAlert) {
+            continue;
+        }
+
+        // Trigger
         const offsetKey = 'offset' + capitalize(alert.type);
         if (sensorData[alert.type] > alert.max + alert[offsetKey]) {
             await triggerAlert(alert, sensorData, 'over');
@@ -165,7 +188,7 @@ const processAlerts = async (alerts, sensorData) => {
         if (sensorData[alert.type] < alert.min + alert[offsetKey]) {
             await triggerAlert(alert, sensorData, 'under');
         }
-    });
+    };
 }
 
 /**

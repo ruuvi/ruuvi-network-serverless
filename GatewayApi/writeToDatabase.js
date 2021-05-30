@@ -55,7 +55,7 @@ exports.handler = async (event) => {
                 return;
             }
 
-            const throttleSensor = await throttleHelper.throttle('writer:' + key, process.env.INTERVAL);
+            const throttleSensor = await throttleHelper.throttle('writer:' + key, interval);
             if (throttleSensor) {
                 return;
             }

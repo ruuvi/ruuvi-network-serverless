@@ -96,6 +96,7 @@ CREATE TABLE sensor_alerts (
         alert_type VARCHAR(32) NOT NULL,
         min_value DOUBLE PRECISION NOT NULL DEFAULT 0,
         max_value DOUBLE PRECISION NOT NULL DEFAULT 0,
+        counter INT NOT NULL DEFAULT 0,
         enabled TINYINT NOT NULL DEFAULT 0,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         triggered TINYINT NOT NULL DEFAULT 0,

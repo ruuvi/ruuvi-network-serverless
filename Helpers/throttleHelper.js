@@ -1,6 +1,10 @@
 const redis = require('../Helpers/redisHelper').getClient();
 const validator = require('../Helpers/validator');
 
+const defaultIntervals = {
+    alert: 3600
+}
+
 /**
  * If throttled, returns true. Otherwise, refreshes latest value and returns false.
  * 
@@ -33,5 +37,7 @@ const validator = require('../Helpers/validator');
  * Exports
  */
 module.exports = {
-    throttle
+    throttle,
+
+    defaultIntervals
 };
