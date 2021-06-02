@@ -5,7 +5,8 @@ const successfulCases = [
 		data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
 		temperature: 21.45,
 		humidity: 36.05,
-		pressure: 986.06
+		pressure: 986.06,
+		movementCounter: 184
 	},
 	//'0201061BFF99040510BC387CBDD8FFDC00000400B776B72F36EF544AE71D9E',
 	//'0201061BFF99040510BC39C1BDD5FFE0000403F4B836B72F45EF544AE71D9E',
@@ -35,6 +36,7 @@ successfulCases.forEach(function(testCase) {
 		expect(result.temperature).toBe(testCase.temperature);
 		expect(result.humidity).toBe(testCase.humidity);
 		expect(result.pressure).toBe(testCase.pressure);
+		expect(result.movementCounter).toBe(testCase.movementCounter);
 	});
 });
 

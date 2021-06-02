@@ -13,7 +13,7 @@ custom:
 
   # Kinesis mode
   #gatewayStream: ${self:custom.stage}-ruuvi-sensor-stream
-  gatewayStream: prod-ruuvi-sensor-stream
+  gatewayStream: ${self:custom.stage}-ruuvi-sensor-stream
 
   # SNS + SQS mode
   writerQueueName: ${self:custom.stage}-ruuvi_network
@@ -155,7 +155,7 @@ provider:
       Action:
         - "kinesis:PutRecord"
         - "kinesis:PutRecords"
-      Resource: "arn:aws:kinesis:eu-central-1:038625053741:stream/prod-ruuvi-sensor-stream"
+      Resource: { 'Fn::Join': [':', ['arn:aws:kinesis', { Ref: 'AWS::Region' }, { Ref: 'AWS::AccountId' }, 'stream/${self:custom.gatewayStream}']] }
 
 # Lambdas
 functions:

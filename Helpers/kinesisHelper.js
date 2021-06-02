@@ -16,7 +16,7 @@
         const parsed = JSON.parse(asciiData);
         return parsed;
     } catch (e) {
-        console.log('Error parsing kinesis JSON', e);
+        console.error('Error parsing kinesis JSON', e);
         return null;
     }
 }

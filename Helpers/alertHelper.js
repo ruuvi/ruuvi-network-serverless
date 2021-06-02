@@ -181,12 +181,21 @@ const processAlerts = async (alerts, sensorData) => {
         }
 
         // Trigger
-        const offsetKey = 'offset' + capitalize(alert.type);
-        if (sensorData[alert.type] > alert.max + alert[offsetKey]) {
-            await triggerAlert(alert, sensorData, 'over');
-        }
-        if (sensorData[alert.type] < alert.min + alert[offsetKey]) {
-            await triggerAlert(alert, sensorData, 'under');
+        if (alert.type !== 'movement') {
+            const offsetKey = 'offset' + capitalize(alert.type);
+            if (sensorData[alert.type] > alert.max + alert[offsetKey]) {
+                await triggerAlert(alert, sensorData, 'over');
+            }
+            if (sensorData[alert.type] < alert.min + alert[offsetKey]) {
+                await triggerAlert(alert, sensorData, 'under');
+            }
+        } else {
+            if (
+                alert.type === 'movement'
+                && parseInt(sensorData['movementCounter']) !== parseInt(alert.counter)
+            ) {
+                await triggerAlert(alert, sensorData, 'different from');
+            }
         }
     };
 }
