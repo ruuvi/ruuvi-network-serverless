@@ -6,3 +6,5 @@ else
   RSTAGE=$1
 fi
 STAGE=$RSTAGE IS_INTEGRATION_TEST=true jest --bail
+
+date

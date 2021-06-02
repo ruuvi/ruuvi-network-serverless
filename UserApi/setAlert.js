@@ -32,14 +32,15 @@ exports.handler = async (event, context) => {
     }
 
     let counter = 0;
-    if (eventBody.type === 'movement' && !validator.hasKeys(eventBody, ['counter'])) {
-        const lastDataPoint = await dynamoHelper.getSensorData(eventBody.sensor, 1, null, null);
-        if (lastDataPoint.length > 0) {
-            const lastDataParsed = sensorDataHelper.parseData(lastDataPoint[0].SensorData);
-            counter = lastDataParsed.movementCounter ? parseInt(lastDataParsed.movementCounter) : 0;
-        }
-    } else if (eventBody.type === 'movement') {
+    if (eventBody.type === 'movement') {
         counter = parseInt(eventBody.counter);
+        if (!validator.hasKeys(eventBody, ['counter'])) {
+            const lastDataPoint = await dynamoHelper.getSensorData(eventBody.sensor, 1, null, null);
+            if (lastDataPoint.length > 0) {
+                const lastDataParsed = sensorDataHelper.parseData(lastDataPoint[0].SensorData);
+                counter = lastDataParsed.movementCounter ? parseInt(lastDataParsed.movementCounter) : 0;
+            }
+        }
     }
 
     const sensor = eventBody.sensor;

@@ -3,6 +3,7 @@ const validator = require('../Helpers/validator');
 const dynamo = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 const dynamoHelper = require('../Helpers/dynamoHelper');
 const throttleHelper = require('../Helpers/throttleHelper');
+const kinesisHelper = require('../Helpers/kinesisHelper');
 
 exports.handler = async (event) => {
     const interval = parseInt(process.env.MAXIMUM_STORAGE_INTERVAL);
@@ -29,13 +30,19 @@ exports.handler = async (event) => {
     // Flatten into an array
     let flattenedData = [];
 
-    for (const { messageId, body, messageAttributes } of event.Records) {
-        if (!messageAttributes.gwmac) {
-            console.error("Error! No 'gwmac' present.", messageAttributes);
+    for (const fullRecord of event.Records) {
+        const recordData = kinesisHelper.getData(fullRecord);
+        const {
+            data,
+            meta
+        } = recordData;
+
+        if (!meta.gwmac) {
+            console.error("Error! No 'gwmac' present.", meta);
             continue;
         }
 
-        const gwmac = messageAttributes.gwmac.stringValue;
+        const gwmac = meta.gwmac;
 
         // -- INSTRUMENT PLACEHOLDER --
         if (!loggedGateways.includes(gwmac)) {
@@ -43,10 +50,10 @@ exports.handler = async (event) => {
             loggedGateways.push(gwmac);
         }
 
-        const coordinates = messageAttributes.coordinates.stringValue;
-        const timestamp = messageAttributes.timestamp.stringValue;
+        const coordinates = meta.coordinates;
+        const timestamp = meta.timestamp;
 
-        let sensors = JSON.parse(body);
+        let sensors = data;
 
         await Promise.all(Object.keys(sensors).map(async (key) => {
             // Dedupe
