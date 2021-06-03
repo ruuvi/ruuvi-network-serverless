@@ -492,7 +492,8 @@ describe('Full integration tests', () => {
 
 		try {
 			await post('claim', {
-				sensor: alertSensorMac
+				sensor: alertSensorMac,
+				name: 'TemperatureTestSensor'
 			});
 
 			await post('alerts', {
@@ -500,7 +501,8 @@ describe('Full integration tests', () => {
 				type: 'temperature',
 				min: 25,
 				max: 30,
-				enabled: true
+				enabled: true,
+				description: 'Amazing Temperature test for min alert!'
 			});
 		} catch (e) {
 			expect(true).toBe(false, 'Failed to create alert');

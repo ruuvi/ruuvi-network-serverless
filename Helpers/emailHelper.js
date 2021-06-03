@@ -128,11 +128,16 @@ const sendResetEmail = async (email, token, sourceDomain) => {
     return await sendEmail(email, "Ruuvi Account Reset Confirmation", htmlBody);
 };
 
-const sendAlertEmail = async (email, sensorName, sensor, alertType, overUnder, value, threshold) => {
+const sendAlertEmail = async (email, sensorName, sensor, alertType, violationType, value, threshold, description) => {
     // TODO: This would be nicer to maintain by SES templates
     if (!sensorName) {
         sensorName = 'Unnamed sensor';
     }
+    let descriptionParagraph = '';
+    if (description !== '') {
+        descriptionParagraph = `<p>${description}</p>`;
+    }
+
     const htmlBody = `
       <!DOCTYPE html>
       <html>
@@ -140,8 +145,9 @@ const sendAlertEmail = async (email, sensorName, sensor, alertType, overUnder, v
         <body>
             <h1>Sensor '${sensorName}' triggered an alert for ${alertType}!</h1>
             <p>
-                ${sensorName} (${sensor}) reported a value of ${value} for ${alertType} which is ${overUnder} the threshold of ${threshold}!
+                ${sensorName} (${sensor}) reported a value of ${value} for ${alertType} which is ${violationType} the threshold of ${threshold}!
             </p>
+            ${descriptionParagraph}
         </body>
       </html>
     `;
