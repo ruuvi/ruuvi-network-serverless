@@ -284,8 +284,17 @@ const shareSensor = async (userId, ownerId, sensor) => {
  * @param {integer} userId User ID to fetch sensors for.
  * @returns 
  */
-const fetchSensorsForUser = async (userId) => {
+const fetchSensorsForUser = async (userId, sensorId = null) => {
     const userIdInt = parseInt(userId);
+
+    let values = [userIdInt];
+    let filter = '';
+
+    if (sensorId !== null) {
+        filter = 'AND sensor_profiles.sensor_id = ?';
+        values.push(sensorId);
+    }
+
     const sensors = await mysql.query({
         sql: `SELECT
                 sensors.sensor_id AS sensor,
@@ -301,9 +310,10 @@ const fetchSensorsForUser = async (userId) => {
             INNER JOIN users owner ON owner.id = sensors.owner_id
             WHERE
                 sensor_profiles.user_id = ?
-                AND sensor_profiles.is_active = 1`,
+                AND sensor_profiles.is_active = 1
+                ${filter}`,
         timeout: 1000,
-        values: [userIdInt, userIdInt]
+        values: values
     });
     return sensors;
 }
