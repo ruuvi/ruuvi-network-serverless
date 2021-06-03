@@ -138,7 +138,7 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
         const sensorProfile = await sqlHelper.fetchSensorsForUser(alertData.userId, sensorData.sensor_id);
 
         let name = sensorData.sensor_id;
-        if (sensorProfile.count > 0 && sensorProfile[0].name !== '') {
+        if (sensorProfile.length > 0 && sensorProfile[0].name !== '') {
             name = sensorProfile[0].name;
         }
 
