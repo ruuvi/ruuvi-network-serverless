@@ -46,7 +46,6 @@ const refreshAlertCache = async (sensor, data = null) => {
 const getAlerts = async (sensor, userId = null, useCache = false, returnRaw = false) => {
     if (useCache) {
         const cachedAlerts = await getCachedAlerts(sensor);
-        console.log(cachedAlerts);
         return cachedAlerts;
     }
 
@@ -137,8 +136,7 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
         const userHelper = require('../Helpers/userHelper');
         const user = await userHelper.getById(alertData.userId);
         const sensorProfile = await sqlHelper.fetchSensorsForUser(alertData.userId, sensorData.sensor_id);
-        console.log(sensorProfile);
-        console.log(sensorData);
+
         let name = sensorData.sensor_id;
         if (sensorProfile.count > 0 && sensorProfile[0].name !== '') {
             name = sensorProfile[0].name;
@@ -154,7 +152,6 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
         }
 
         try {
-            console.log(alertData);
             await emailHelper.sendAlertEmail(
                 user.email,
                 name,
