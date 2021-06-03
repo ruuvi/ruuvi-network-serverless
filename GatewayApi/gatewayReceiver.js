@@ -67,6 +67,8 @@ exports.handler = async (event, context) => {
                 console.error('Invalid data received: ' + data.tags[key].data);
             } else {
                 alertData.sensor_id = key;
+                alertData.signal = data.tags[key].rssi; // Not a part of the data payload
+
                 await alertHelper.processAlerts(alerts, alertData);
             }
         }

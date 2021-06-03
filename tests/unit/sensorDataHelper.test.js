@@ -1,6 +1,21 @@
 const dataHelper = require('../../Helpers/sensorDataHelper');
 
 const successfulCases = [
+	/*
+		{
+        	temperature: 21.45,
+        	humidity: 36.05,
+        	pressure: 986.06,
+        	accelerationX: -24,
+        	accelerationY: 0,
+        	accelerationZ: 1032,
+        	battery: 3067,
+        	txPower: 4,
+        	movementCounter: 184,
+        	measurementSequenceNumber: 12320,
+        	mac: 'EF:54:4A:E7:1D:9E'
+      	}
+	*/
 	{
 		data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
 		temperature: 21.45,
@@ -8,6 +23,8 @@ const successfulCases = [
 		pressure: 986.06,
 		movementCounter: 184
 	},
+
+
 	//'0201061BFF99040510BC387CBDD8FFDC00000400B776B72F36EF544AE71D9E',
 	//'0201061BFF99040510BC39C1BDD5FFE0000403F4B836B72F45EF544AE71D9E',
 	//'0201061BFF99040510BC3966BDD5FFE8FFFC0400B776B72F55EF544AE71D9E',

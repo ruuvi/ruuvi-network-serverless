@@ -81,7 +81,7 @@ const formatAlerts = (raw) => {
             enabled: alert.enabled ? true : false,
             offsetHumidity: alert.offset_humidity,
             offsetTemperature: alert.offset_temperature,
-            offsetPressure: alert.offset_temperature,
+            offsetPressure: alert.offset_pressure,
             description: alert.description,
             triggered: alert.triggered ? true : false,
             triggeredAt: alert.triggered_at
@@ -199,10 +199,17 @@ const processAlerts = async (alerts, sensorData) => {
         // Trigger
         if (alert.type !== 'movement') {
             const offsetKey = 'offset' + capitalize(alert.type);
-            if (sensorData[alert.type] > alert.max + alert[offsetKey]) {
+            const offset = alert.type !== 'signal' ? alert[offsetKey] : 0
+
+            console.log(offsetKey, offset);
+            console.log(alert, alert);
+            console.log('alert.type', alert.type);
+            console.log('sdata', sensorData[alert.type]);
+
+            if (sensorData[alert.type] > alert.max + offset) {
                 await triggerAlert(alert, sensorData, 'over');
             }
-            if (sensorData[alert.type] < alert.min + alert[offsetKey]) {
+            if (sensorData[alert.type] < alert.min + offset) {
                 await triggerAlert(alert, sensorData, 'under');
             }
         } else {
