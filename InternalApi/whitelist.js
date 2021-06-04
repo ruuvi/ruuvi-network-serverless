@@ -35,7 +35,10 @@ exports.handler = async (event, context) => {
                 Item: {
                     "GatewayId": { "S": inputData.gatewayId },
                     "DeviceId": { "S": inputData.deviceId },
-                    "DeviceAddr": { "S": inputData.deviceAddr }
+                    "DeviceAddr": { "S": inputData.deviceAddr },
+                    "Whitelisted": { "N": Date.now().toString() },
+                    "Connected": { "N": 0 },
+                    "Latest": { "N": 0 }
                 }
             }
         });
