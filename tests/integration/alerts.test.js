@@ -129,8 +129,8 @@ const triggerAlertTestCases = [
         signal: -76,
 
         type: 'pressure',
-        min: 985,
-        max: 987,
+        min: 98605,
+        max: 98607,
         enabled: true,
         description: 'Pressure test',
         data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
@@ -145,8 +145,8 @@ const triggerAlertTestCases = [
         signal: -76,
 
         type: 'pressure',
-        min: 984,
-        max: 985,
+        min: 98605,
+        max: 98607,
         enabled: true,
         description: 'Pressure max test without offset',
         data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
@@ -161,8 +161,8 @@ const triggerAlertTestCases = [
         signal: -76,
 
         type: 'pressure',
-        min: 985,
-        max: 987,
+        min: 98605,
+        max: 98607,
         enabled: true,
         description: 'Pressure max test with offset',
         data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',

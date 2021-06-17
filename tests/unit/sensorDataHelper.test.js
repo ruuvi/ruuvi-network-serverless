@@ -5,7 +5,7 @@ const successfulCases = [
 		{
         	temperature: 21.45,
         	humidity: 36.05,
-        	pressure: 986.06,
+        	pressure: 98606,
         	accelerationX: -24,
         	accelerationY: 0,
         	accelerationZ: 1032,
@@ -20,7 +20,7 @@ const successfulCases = [
 		data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
 		temperature: 21.45,
 		humidity: 36.05,
-		pressure: 986.06,
+		pressure: 98606,
 		movementCounter: 184
 	},
 

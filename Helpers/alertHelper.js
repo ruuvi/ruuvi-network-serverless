@@ -140,6 +140,10 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
         let name = sensorData.sensor_id;
         if (sensorProfile.length > 0 && sensorProfile[0].name !== '') {
             name = sensorProfile[0].name;
+        } else if (sensorProfile.length === 0) {
+            console.error(`No sensor profile found for user ${alertData.userId} and sensor ${sensorData.sensor_id}. Not sending alert and refreshing cache.`);
+            await refreshAlertCache(sensorData.sensor_id);
+            return;
         }
 
         let previousValue = '';
@@ -165,9 +169,9 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
         } catch (e) {
             console.error(e);
         }
-    } else {
-        await refreshAlertCache(sensorData.sensor_id);
     }
+    
+    await refreshAlertCache(sensorData.sensor_id);
 }
 
 const capitalize = (s) => {
