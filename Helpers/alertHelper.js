@@ -81,7 +81,7 @@ const formatAlerts = (raw) => {
             enabled: alert.enabled ? true : false,
             offsetHumidity: alert.offset_humidity,
             offsetTemperature: alert.offset_temperature,
-            offsetPressure: alert.offset_temperature,
+            offsetPressure: alert.offset_pressure,
             description: alert.description,
             triggered: alert.triggered ? true : false,
             triggeredAt: alert.triggered_at
@@ -138,8 +138,12 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
         const sensorProfile = await sqlHelper.fetchSensorsForUser(alertData.userId, sensorData.sensor_id);
 
         let name = sensorData.sensor_id;
-        if (sensorProfile.count > 0 && sensorProfile[0].name !== '') {
+        if (sensorProfile.length > 0 && sensorProfile[0].name !== '') {
             name = sensorProfile[0].name;
+        } else if (sensorProfile.length === 0) {
+            console.error(`No sensor profile found for user ${alertData.userId} and sensor ${sensorData.sensor_id}. Not sending alert and refreshing cache.`);
+            await refreshAlertCache(sensorData.sensor_id);
+            return;
         }
 
         let previousValue = '';
@@ -165,9 +169,9 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
         } catch (e) {
             console.error(e);
         }
-    } else {
-        await refreshAlertCache(sensorData.sensor_id);
     }
+    
+    await refreshAlertCache(sensorData.sensor_id);
 }
 
 const capitalize = (s) => {
@@ -199,10 +203,12 @@ const processAlerts = async (alerts, sensorData) => {
         // Trigger
         if (alert.type !== 'movement') {
             const offsetKey = 'offset' + capitalize(alert.type);
-            if (sensorData[alert.type] > alert.max + alert[offsetKey]) {
+            const offset = alert.type !== 'signal' ? alert[offsetKey] : 0
+
+            if (sensorData[alert.type] + offset > alert.max) {
                 await triggerAlert(alert, sensorData, 'over');
             }
-            if (sensorData[alert.type] < alert.min + alert[offsetKey]) {
+            if (sensorData[alert.type] + offset < alert.min) {
                 await triggerAlert(alert, sensorData, 'under');
             }
         } else {

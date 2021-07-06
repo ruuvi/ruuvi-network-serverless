@@ -10,6 +10,44 @@ const mysql = require('serverless-mysql')({
 });
 
 /**
+ * Inserts a single row to a table
+ *
+ * @param {array} newObject Object with keys as the sql field names and corresponding values
+ * @param {string} table Target table
+ * @returns {object} True on success
+ */
+ const insertSingle = async (newObject, table) => {
+    if (!newObject || !table) {
+        console.error('Invalid input data', newObject, table);
+        return null;
+    }
+
+    const keys = Object.keys(newObject);
+    const fieldNames = keys.join(',');
+    const valueHolders = new Array(keys.length).fill('?').join(',');
+    
+    let values = [];
+    for (let key of keys) {
+        values.push(newObject[key]);
+    }
+
+    try {
+        return await mysql.query({
+            sql: `INSERT INTO ${table} (
+                    ${fieldNames}
+                ) VALUES (
+                    ${valueHolders}
+                );`,
+            timeout: 5000,
+            values: values
+        });
+    } catch (err) {
+        console.error(err);
+        return err;
+    }
+}
+
+/**
  * Fetches a row by id column
  *
  * @param {string} field Field name to use for filtering
@@ -33,6 +71,35 @@ const fetchSingle = async (field, value, table) => {
         return null;
     }
     return null;
+}
+
+/**
+ * Fetches a count by id column
+ *
+ * @param {string} field Field name to use for filtering
+ * @param {string} value Value to filter by
+ * @param {string} table Target table
+ * @returns {object} First result or null if none
+ */
+ const fetchCount = async (field, value, table) => {
+    try {
+        const result = await mysql.query({
+            sql: `SELECT COUNT(*) AS count FROM ${table} WHERE ${field} = ?`,
+            timeout: 1000,
+            values: [value]
+        });
+
+        console.log(`SELECT COUNT(*) AS count FROM ${table} WHERE ${field} = ?`);
+        console.log(result[0]);
+
+        if (result.length === 1) {
+            return parseInt(result[0].count);
+        }
+    } catch (err) {
+        console.error(err);
+        return -1;
+    }
+    return -1;
 }
 
 /**
@@ -458,7 +525,9 @@ module.exports = {
 	fetchAll,
     fetchSingle,
     deleteSingle,
-	setValue,
+    insertSingle,
+    fetchCount,
+    setValue,
 	updateValues,
     fetchAlerts,
     saveAlert,

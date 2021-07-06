@@ -1,72 +1,28 @@
 /**
- * Runs a load test against the given end-point
+ * @jest-environment node
  */
-const querystring = require('querystring');
-const axios = require('axios');
-const utils = require('./integrationHelpers');
-
-// Only run when condition is met; used for skipping tests
-const itif = (condition) => condition ? it : it.skip;
-
-// Load configuration
-const stage = process.env.STAGE ? process.env.STAGE : 'dev';
-const stageConfig = require('./integrationCredentials');
-const { debug } = require('console');
-
-const baseURL = stageConfig[stage]['url'];
-const primaryToken = stageConfig[stage]['primary'];
-const secondaryToken = stageConfig[stage]['secondary'];
-const RI = process.env.IS_INTEGRATION_TEST;
-const primaryEmail = stageConfig[stage]['primaryEmail'];
-const secondaryEmail = stageConfig[stage]['secondaryEmail'];
-const unregisteredEmail = stageConfig[stage]['unregisteredEmail'];
-const internalKey = stageConfig[stage]['internal'];
 
 /**
- * HTTP Client with Authorization set up
+ * General test suite for the back-end.
  */
-const instance = axios.create({
-	baseURL: baseURL,
-	timeout: 10000,
-	headers: {
-		Authorization: `Bearer ${primaryToken}`,
-		//'X-Internal-Secret': internalKey  // TODO: This currently fails CORS using Axios
-	}
-});
+const {
+	utils,
 
-/**
- * HTTP Client with Authorization set up
- */
-const secondaryHttp = axios.create({
-	baseURL: baseURL,
-	timeout: 10000,
-	headers: {
-		Authorization: `Bearer ${secondaryToken}`,
-		//'X-Internal-Secret': internalKey  // TODO: This currently fails CORS using Axios
-	}
-});
+	itif,
+    get,
+    post,
 
-/**
- * Perform GET call to the back-end
- *
- * @param {string} endpoint
- * @param {object} queryParams
- */
-const get = async (endpoint, queryParams, client = null) => {
-	client = client ? client : instance;
-	return await client.get('/' + endpoint + '?' + querystring.stringify(queryParams))
-}
+	RI,
+    
+	internalHttp,
+	secondaryHttp,
+    primaryEmail,
+    secondaryEmail,
+    unregisteredEmail,
 
-/**
- * Performs a POST call to the back-end
- *
- * @param {string} endpoint
- * @param {object} body
- */
-const post = async (endpoint, body, client = null) => {
-	client = client ? client : instance;
-	return await client.post('/' + endpoint, body)
-}
+	sleep
+} = require('./common');
+const { randomMac, randomHex } = require('./integrationHelpers');
 
 // Set up some defaults
 const newSensorMac = utils.randomMac();
@@ -75,8 +31,9 @@ const testData = utils.randomHex(32);
 
 // Verifiable test e-mail here would be best
 const newEmail = utils.randomHex(8) + '@' + utils.randomHex(8) + '.com';
-
 let registrationToken = null;
+
+const maxClaims = 25;
 
 describe('Full integration tests', () => {
 	// INTERNAL
@@ -87,16 +44,44 @@ describe('Full integration tests', () => {
 		try {
 			await post('whitelist', {
 				"gateways": [
-					{"gatewayId": "abbacd", "deviceId": "1234", "deviceAddr": "5678"},
-					{"gatewayId": "bbbace", "deviceId": "abcd", "deviceAddr": "efae"},
-					{"gatewayId": "cbbacf", "deviceId": "qwer", "deviceAddr": "aaee"}
+					{"macAddress": "ab:ba:cd:ba:ca:ba", "secret": "1234"},
+					{"macAddress": "bb:ba:ce:ba:ca:ba", "secret": "abcd"},
+					{"macAddress": "cb:ba:cf:ba:ca:ba", "secret": "qwer"}
 				]
 			});
 		} catch (e) {
-			expect(e.message).toMatch(/Request failed with status code 400/);
+			expect(e.message).toMatch(/Request failed with status code 403/);
 			threw = true;
 		}
 		expect(threw).toBe(true);
+	});
+
+	itif(RI)('`whitelist` with internal token succeeds', async () => {
+		const result = await post('whitelist', {
+			"gateways": [
+				{ "macAddress": randomMac(), "secret": randomHex(64) }
+			]
+		}, internalHttp);
+		expect(result.status).toBe(200);
+		expect(result.data.data.gateways.length).toBeGreaterThan(0);
+	});
+
+	itif(RI)('`gwinfo` returns data for whitelisted gateway', async () => {
+		const newGWMac = randomMac();
+		const whitelistResult = await post('whitelist', {
+			"gateways": [
+				{ "macAddress": newGWMac, "secret": randomHex(64) }
+			]
+		}, internalHttp);
+		expect(whitelistResult.status).toBe(200, 'successfully whitelisted');
+
+		const gwinfoResult = await get('gwinfo', {
+			gateway: newGWMac
+		}, internalHttp);
+
+		expect(gwinfoResult.status).toBe(200);
+		expect(gwinfoResult.data.data.gateway.GatewayId).toBe(newGWMac);
+		expect(gwinfoResult.data.data.gateway.InvalidSignatureTimestamp).toBeNull();
 	});
 
 	// USER
@@ -177,7 +162,7 @@ describe('Full integration tests', () => {
 				}
 			});
 
-			const recordResult = await post('record', {
+			await post('record', {
 				"data":	{
 					"coordinates":	"",
 					"timestamp": Date.now(),
@@ -206,7 +191,17 @@ describe('Full integration tests', () => {
 
 	// This might fail if SQS processing above is slow
 	itif(RI)('`get` returns dense sensor data', async () => {
-		const sensorData = await get('get', { sensor: newSensorMac, mode: 'dense' })
+		// NOTICE! The data might take a little bit to go through the stream so we retry a couple of times
+		let sensorData = null;
+
+		for (let retry = 0; retry < 3; retry++) {
+			sensorData = await get('get', { sensor: newSensorMac, mode: 'dense' })
+			if (sensorData.data.data.measurements.length > 0) {
+				break;
+			}
+			await sleep(1000);
+		}
+
 		expect(sensorData.data.data.measurements.length).toBeGreaterThan(0);
 		expect(sensorData.data.data.measurements[0].data).toBe(testData);
 	});
@@ -225,8 +220,6 @@ describe('Full integration tests', () => {
 		expect(sensorData.data.data.measurements[0].data).toBe(testData);
 	});
 	
-
-
 	itif(RI)('`update` updates sensor data', async () => {
 		const testName = 'awesome test sensor';
 		const updateResult = await post('update', {
@@ -395,310 +388,6 @@ describe('Full integration tests', () => {
 		expect(userShareData.data.data.sensors.length).toBe(0);
 	});
 
-	itif(RI)('creating an alert is successful', async () => {
-		const testAlertDescription = 'Hoblaa, nice alert!';
-		const createResult = await post('alerts', {
-			sensor: newSensorMac,
-			type: 'humidity',
-			min: 30,
-			max: 100,
-			enabled: true,
-			description: testAlertDescription
-		});
-		expect(createResult.status).toBe(200, 'Create');
-
-		// Validate existence
-		const readResult = await get('alerts', {
-			sensor: newSensorMac
-		});
-		expect(readResult.status).toBe(200, 'Read');
-		const newSensor = readResult.data.data.sensors.find(s => s.sensor === newSensorMac);
-		expect(newSensor.alerts.length).toBe(1);
-
-		expect(newSensor.alerts[0].description).toBe(testAlertDescription);
-		expect(newSensor.alerts[0].max).toBe(100);
-		expect(newSensor.alerts[0].min).toBe(30);
-		expect(newSensor.alerts[0].triggered).toBe(false);
-		expect(newSensor.alerts[0].enabled).toBe(true);
-		expect(newSensor.alerts[0].type).toBe('humidity');
-		expect(newSensor.alerts[0].offsetHumidity).not.toBeDefined();
-		expect(newSensor.alerts[0].offsetPressure).not.toBeDefined();
-		expect(newSensor.alerts[0].offsetTemperature).not.toBeDefined();
-	});
-
-	itif(RI)('cannot create an alert for a sensor with no access rights', async () => {
-		try {
-			await post('alerts', {
-				sensor: newSensorMac,
-				type: 'humidity',
-				min: 30,
-				max: 100,
-				enabled: true
-			}, secondaryHttp);
-		} catch (e) {
-			expect(e.message).toMatch(/Request failed with status code 403/);
-			threw = true;
-		}
-
-		expect(threw).toBe(true);
-	});
-
-	itif(RI)('getting alerts without filter is successful', async () => {
-		const readResult = await get('alerts');
-
-		expect(readResult.status).toBe(200, 'Read');
-		const newSensor = readResult.data.data.sensors.find(s => s.sensor === newSensorMac);
-		expect(newSensor).not.toBeNull();
-		expect(newSensor.alerts.length).toBe(1);
-
-		// Additional validation that at least one is new sensor mac
-		expect(newSensor.alerts[0].max).toBe(100);
-		expect(newSensor.alerts[0].min).toBe(30);
-		expect(newSensor.alerts[0].triggered).toBe(false);
-		expect(newSensor.alerts[0].enabled).toBe(true);
-		expect(newSensor.alerts[0].type).toBe('humidity');
-	});
-
-	itif(RI)('Updating an alert is successful', async () => {
-		const updatedAlertDescription = 'Hola!';
-		const updateResult = await post('alerts', {
-			sensor: newSensorMac,
-			type: 'humidity',
-			min: 20,
-			max: 50,
-			enabled: false,
-			description: updatedAlertDescription
-		});
-		expect(updateResult.status).toBe(200, 'Update');
-
-		// Validate existence
-		const readResult = await get('alerts', {
-			sensor: newSensorMac
-		});
-		expect(readResult.status).toBe(200, 'Read');
-		const newSensor = readResult.data.data.sensors.find(s => s.sensor === newSensorMac);
-		expect(newSensor.alerts.length).toBe(1);
-
-		expect(newSensor.alerts[0].description).toBe(updatedAlertDescription);
-		expect(newSensor.alerts[0].max).toBe(50);
-		expect(newSensor.alerts[0].min).toBe(20);
-		expect(newSensor.alerts[0].enabled).toBe(false);
-	});
-
-	itif(RI)('triggering a min limit alert is successful', async () => {
-		// Setup
-		const alertSensorMac = utils.randomMac();
-		const alertGatewayMac = utils.randomMac();
-
-		try {
-			await post('claim', {
-				sensor: alertSensorMac,
-				name: 'TemperatureTestSensor'
-			});
-
-			await post('alerts', {
-				sensor: alertSensorMac,
-				type: 'temperature',
-				min: 25,
-				max: 30,
-				enabled: true,
-				description: 'Amazing Temperature test for min alert!'
-			});
-		} catch (e) {
-			expect(true).toBe(false, 'Failed to create alert');
-		}
-
-		// Create request
-		let tags = {};
-		tags[alertSensorMac] = {
-			"rssi":	-76,
-			"timestamp":	Date.now() - 50,
-			// Has temperature of 20.505 degrees
-			"data": '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E'
-		};
-
-		try {
-			await post('record', {
-				"data":	{
-					"coordinates":	"",
-					"timestamp": Date.now(),
-					"gw_mac": alertGatewayMac,
-					"tags":	tags
-				}
-			});
-		} catch (e) {
-			console.log(e);
-			expect(true).toBe(false, 'Failed to post data for triggering alert');
-		}
-
-		// Validate alert
-		const readResult = await get('alerts', {
-			sensor: alertSensorMac
-		});
-
-		expect(readResult.status).toBe(200, 'Read');
-		const alertSensor = readResult.data.data.sensors.find(s => s.sensor === alertSensorMac);
-		expect(alertSensor.alerts.length).toBe(1);
-
-		expect(alertSensor.alerts[0].triggered).toBe(true);
-		expect(alertSensor.alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
-	});
-
-	itif(RI)('triggering a max limit alert on a sensor with offset is successful', async () => {
-		// Setup
-		const alertSensorMac = utils.randomMac();
-		const alertGatewayMac = utils.randomMac();
-
-		try {
-			await post('claim', {
-				sensor: alertSensorMac
-			});
-
-			// Set offset to 30 to push the test humidity over the edge (to 66.325)
-			await post('update', {
-				sensor: alertSensorMac,
-				name: 'sensor with humidity offset',
-				offsetHumidity: 30
-			});
-
-			// Alert range between 25-50, test point 36.325
-			await post('alerts', {
-				sensor: alertSensorMac,
-				type: 'humidity',
-				min: 25,
-				max: 50,
-				enabled: true
-			});
-		} catch (e) {
-			expect(true).toBe(false, 'Failed to create alert');
-		}
-
-		// Create request
-		let tags = {};
-		tags[alertSensorMac] = {
-			"rssi":	-76,
-			"timestamp":	Date.now() - 50,
-			// Has humidity of 36.325
-			"data": '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E'
-		};
-
-		try {
-			await post('record', {
-				"data":	{
-					"coordinates":	"",
-					"timestamp": Date.now(),
-					"gw_mac": alertGatewayMac,
-					"tags":	tags
-				}
-			});
-		} catch (e) {
-			console.log(e);
-			expect(true).toBe(false, 'Failed to post data for triggering alert');
-		}
-
-		// Validate alert
-		const readResult = await get('alerts', {
-			sensor: alertSensorMac
-		});
-
-		expect(readResult.status).toBe(200, 'Read');
-		const alertSensor = readResult.data.data.sensors.find(s => s.sensor === alertSensorMac);
-		expect(alertSensor.alerts.length).toBe(1);
-		expect(alertSensor.alerts[0].triggered).toBe(true);
-		expect(alertSensor.alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
-	});
-
-	itif(RI)('triggering a movement alert on a sensor is successful', async () => {
-		// Setup
-		const alertSensorMac = utils.randomMac();
-		const alertGatewayMac = utils.randomMac();
-
-		try {
-			await post('claim', {
-				sensor: alertSensorMac
-			});
-
-			// Set offset to 30 to push the test humidity over the edge (to 66.325)
-			await post('update', {
-				sensor: alertSensorMac,
-				name: 'sensor for movement'
-			});
-
-			// Alert range between 25-50, test point 36.325
-			await post('alerts', {
-				sensor: alertSensorMac,
-				type: 'movement',
-				counter: 183,
-				enabled: true
-			});
-		} catch (e) {
-			expect(true).toBe(false, 'Failed to create movement alert');
-		}
-
-		// Create request
-		let tags = {};
-		tags[alertSensorMac] = {
-			"rssi":	-76,
-			"timestamp":	Date.now() - 50,
-			// Has movements of 184
-			"data": '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E'
-		};
-
-		try {
-			await post('record', {
-				"data":	{
-					"coordinates":	"",
-					"timestamp": Date.now(),
-					"gw_mac": alertGatewayMac,
-					"tags":	tags
-				}
-			});
-		} catch (e) {
-			console.log(e);
-			expect(true).toBe(false, 'Failed to post data for triggering alert');
-		}
-
-		// Validate alert
-		const readResult = await get('alerts', {
-			sensor: alertSensorMac
-		});
-
-		expect(readResult.status).toBe(200, 'Read');
-		const alertSensor = readResult.data.data.sensors.find(s => s.sensor === alertSensorMac);
-		expect(alertSensor.alerts.length).toBe(1);
-		expect(alertSensor.alerts[0].triggered).toBe(true);
-		expect(alertSensor.alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
-	});
-
-	itif(RI)('does not return alerts for another user', async () => {
-		const readResult = await get('alerts');
-
-		expect(readResult.status).toBe(200, 'Read');
-		const newSensor = readResult.data.data.sensors.find(s => s.sensor === newSensorMac);
-		expect(newSensor).not.toBeNull();
-		expect(newSensor.alerts.length).toBe(1);
-
-
-		const readResultSecondary = await get('alerts', null, secondaryHttp);
-		expect(readResultSecondary.status).toBe(200, 'Read');
-		const newSensorSecondary = readResultSecondary.data.data.sensors.find(s => s.sensor === newSensorMac);
-		expect(newSensorSecondary).not.toBeDefined();
-	});
-
-	itif(RI)('cannot request alerts for non-owned sensor', async () => {
-			// Validate existence
-		try {
-			await get('alerts', {
-				sensor: newSensorMac
-			}, secondaryHttp);
-		} catch (e) {
-			expect(e.message).toMatch(/Request failed with status code 403/);
-			threw = true;
-		}
-
-		expect(threw).toBe(true);
-	});
-
 	itif(RI)('`unclaim` returns 200 OK', async () => {
 		const claimResult = await post('unclaim', {
 			sensor: newSensorMac
@@ -715,6 +404,61 @@ describe('Full integration tests', () => {
 			threw = true;
 		}
 		expect(threw).toBe(true);
+	});
+
+	itif(RI)('can `claim` maximum for subscription', async () => {
+		const sensorData = await get('sensors');
+		const existingSensors = sensorData.data.data.sensors.length;
+		
+		let sensors = [];
+		let threw = false;
+		let i = 0;
+		try {
+			for (i = 0; i < maxClaims - existingSensors; i++) {
+				const successfulSensor = randomMac();
+				const claimResult = await post('claim', {
+					sensor: successfulSensor,
+					description: `Success ${i}`
+				});
+				expect(claimResult.status).toBe(200);
+				expect(claimResult.statusText).toBe('OK');
+				sensors.push(successfulSensor);
+			}
+		} catch (e) {
+			console.log(i);
+			console.log(e);
+			threw = true;
+		}
+		expect(threw).toBe(false, 'Claim until max claims');
+
+		let claimResult = 0;
+		try {
+			const unsuccessfulSensor = randomMac();
+			await post('claim', {
+				sensor: unsuccessfulSensor
+			});
+		} catch (e) {
+			claimResult = e.response.status;
+			//console.log(e);
+		}
+
+		// Clean up
+		let cleanupError = false;
+		for (const sensor of sensors) {
+			try {
+				const unclaimResult = await post('unclaim', {
+					sensor: sensor
+				});
+				expect(unclaimResult.status).toBe(200);
+				expect(unclaimResult.statusText).toBe('OK');	
+			} catch (e) {
+				console.error('Error', e);
+				cleanupError = true;
+			}
+			expect(cleanupError).toBe(false, 'clean up error');
+		}
+
+		expect(claimResult).toBe(400);
 	});
 
 	itif(RI)('`settings` insert is successful', async () => {

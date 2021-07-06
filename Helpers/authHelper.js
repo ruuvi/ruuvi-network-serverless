@@ -60,24 +60,24 @@ const authorizedUser = async (headers) => {
  *
  * @param {string} givenSignature Signature to validate
  * @param {mixed} data Request data to validate
- * @param {string} gatewayId Gateway id to validate
+ * @param {string} gatewayMacAddress Gateway id to validate
  * @param {integer} timestamp Unix timestamp of the message (as provided in the headers)
  * @param {integer} maxAge Maximum age of the request
  */
-const validateGatewaySignature = async (givenSignature, data, gatewayId, nonce, timestamp, maxAge) => {
-    if (givenSignature === null || gatewayId === null || timestamp === null) {
+const validateGatewaySignature = async (givenSignature, data, gatewayMacAddress, nonce, timestamp, maxAge) => {
+    if (givenSignature === null || gatewayMacAddress === null || timestamp === null) {
         return false;
     }
 
     const dynamoHelper = require('../Helpers/dynamoHelper');
 
-    const gatewayData = await dynamoHelper.getGatewayData(gatewayId);
+    const gatewayData = await dynamoHelper.getGatewayData(gatewayMacAddress);
     if (!gatewayData || gatewayData.length === 0) {
-        console.error("Gateway not whitelisted: " + gatewayId);
+        console.error("Gateway not whitelisted: " + gatewayMacAddress);
         return false;
     }
 
-    return validateSignature(givenSignature, data, nonce, timestamp, maxAge, gatewayData[0].DeviceId + gatewayData[0].DeviceAddr);
+    return validateSignature(givenSignature, data, nonce, timestamp, maxAge, gatewayData[0].Secret);
 }
 
 /**

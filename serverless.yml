@@ -31,7 +31,7 @@ custom:
   denseDataInterval: 60      # seconds between data points
   sparseDataInterval: 900      # seconds between data points
   gatewayThrottleInterval: 15  # seconds between gateway updates  
-  rawDataTTL: 10800                 # 10800 = 3h, 7776000 = 3 months
+  rawDataTTL: 86400                 # 10800 = 3h, 86400 = 24h, 7776000 = 3 months
   verificationShortTokenLength: 4   # Length of the short verification token sent in the e-mail
 
   sourceEmail: 'noreply@ruuvi.com'
@@ -160,28 +160,28 @@ provider:
 # Lambdas
 functions:
   # Gateway Facing API
-  requestToSQS:
-    handler: GatewayApi/requestToSQS.handler
-    #reservedConcurrency: ${self:custom.gatewayReceiverLambdaConcurrency}
-    events:
-      - httpApi:
-          method: POST
-          path: /record_old
-    environment:
-      GATEWAY_SEND_RATE: ${self:custom.gatewaySendRate}
-      TARGET_QUEUE: { Ref: GatewayQueue }
-      TARGET_TOPIC: { Ref: GatewayEventTopic }
-      ENFORCE_SIGNATURE: ${self:custom.gatewayEnforceSignature}
-      GATEWAY_REQUEST_TTL: ${self:custom.gatewayRequestTTL}
-      WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
-      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
-      GATEWAY_THROTTLE_INTERVAL: ${self:custom.gatewayThrottleInterval}
-      MINIMUM_SENSOR_THROTTLE_INTERVAL: ${self:custom.denseDataInterval}
-      EMAIL_QUEUE: { Ref: EmailQueue }
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
-      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+#  requestToSQS:
+#    handler: GatewayApi/requestToSQS.handler
+#    #reservedConcurrency: ${self:custom.gatewayReceiverLambdaConcurrency}
+#    events:
+#      - httpApi:
+#          method: POST
+#          path: /record_old
+#    environment:
+#      GATEWAY_SEND_RATE: ${self:custom.gatewaySendRate}
+#      TARGET_QUEUE: { Ref: GatewayQueue }
+#      TARGET_TOPIC: { Ref: GatewayEventTopic }
+#      ENFORCE_SIGNATURE: ${self:custom.gatewayEnforceSignature}
+#      GATEWAY_REQUEST_TTL: ${self:custom.gatewayRequestTTL}
+#      WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
+#      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+#      GATEWAY_THROTTLE_INTERVAL: ${self:custom.gatewayThrottleInterval}
+#      MINIMUM_SENSOR_THROTTLE_INTERVAL: ${self:custom.denseDataInterval}
+#      EMAIL_QUEUE: { Ref: EmailQueue }
+#      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
+#      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+#      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+#      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
 
   # Gateway update receiver that forwards to Kinesis
   gatewayReceiver:
@@ -205,6 +205,7 @@ functions:
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNATURE_HEADER_NAME: 'Ruuvi-HMAC-SHA256'
 
   writeToDatabase:
     handler: GatewayApi/writeToDatabase.handler
@@ -609,6 +610,19 @@ functions:
     environment:
       INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key~true}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+
+  gatewayInfo:
+    handler: InternalApi/gatewayInfo.handler
+    events:
+      - httpApi:
+          method: GET
+          path: /gwinfo
+    environment:
+      INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key~true}
+      WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+
   appleVerification:
     handler: InternalApi/appleVerification.handler
     events:

@@ -111,6 +111,7 @@ CREATE TABLE sensor_alerts (
 -- Ruuvi Subscriptions
 CREATE TABLE subscriptions (
         user_id INT NOT NULL,
+        max_claims INT(11) NOT NULL DEFAULT 25,
         max_shares INT NOT NULL DEFAULT 40,
         max_shares_per_sensor INT NOT NULL DEFAULT 10,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
