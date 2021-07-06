@@ -16,13 +16,13 @@ const recordLastUpdate = async (key) => {
     if (analyticsVar === null) {
         // TODO: Attempt to fetch from Dynamo
         data = {
-            First: now,
-            Last: now,
+            FirstUpdate: now,
+            LastUpdate: now,
             LastPermanent: now
         };
     } else {
         data = JSON.parse(analyticsVar);
-        data.Last = now;
+        data.LastUpdate = now;
 
         if (parseInt(data.LastPermanent) < now - 60) {
             // TODO: Store to Dynamo
