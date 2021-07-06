@@ -12,6 +12,7 @@ const errorCodes = {
     // Subscriptions and Sharing
     ER_SUBSCRIPTION_NOT_FOUND: 'ER_SUBSCRIPTION_NOT_FOUND', // Thrown when action requires a subscription but it is not found
     ER_SHARE_COUNT_REACHED: 'ER_SHARE_COUNT_REACHED', // Maximum share count for the user reached
+    ER_CLAIM_COUNT_REACHED: 'ER_CLAIM_COUNT_REACHED', // Maximum claim count for the user reached
     ER_SENSOR_SHARE_COUNT_REACHED: 'ER_SENSOR_SHARE_COUNT_REACHED', // Maximum share count for the sensor reached
     ER_NO_DATA_TO_SHARE: 'ER_NO_DATA_TO_SHARE', // In order to share a sensor, it must have data - thrown when condition is not met
     ER_SENSOR_ALREADY_SHARED: 'ER_SENSOR_ALREADY_SHARED', // The sensor has already been shared to target user

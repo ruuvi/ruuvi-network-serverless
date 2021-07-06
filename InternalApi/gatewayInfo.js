@@ -1,6 +1,7 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
-const AWS = require('aws-sdk');
 const dynamoHelper = require('../Helpers/dynamoHelper');
+const redis = require('../Helpers/redisHelper').getClient();
+const validator = require('../Helpers/validator');
 
 exports.handler = async (event, context) => {
     // TODO: This should no longer be required
@@ -13,16 +14,29 @@ exports.handler = async (event, context) => {
         return gatewayHelper.invalid();
     }
 
-    const eventBody = JSON.parse(event.body);
+    const gateway = event.queryStringParameters.gateway;
 
-    if (!eventBody || !eventBody.gateway) {
+    if (!validator.validateMacAddress(event.queryStringParameters.gateway)) {
         return gatewayHelper.invalid();
     }
 
-    const gateway = eventBody.gateway;
+    
     const tableName = process.env.WHITELIST_TABLE_NAME;
 
-    const data = dynamoHelper.fetch(tableName, 'GatewayId', gateway, ['GatewayId', 'Whitelisted', 'First', 'Latest']);
+    let data = {};
+    try {
+        data = dynamoHelper.fetch(tableName, 'GatewayId', gateway, ['GatewayId', 'Whitelisted', 'FirstUpdate', 'LastUpdate']);
+    } catch (e) {
+        console.error('Error fetching Dynamo Data', e);
+        return gatewayHelper.internal();
+    }
+
+    if (!data.GatewayId) {
+        data = { "GatewayId": gateway };
+    }
+
+    const invalidSignatureTimestamp = await redis.get('invalid_signature_' + gateway.toUpperCase());
+    data.InvalidSignatureTimestamp = invalidSignatureTimestamp;
 
     return gatewayHelper.successResponse({
         gateway: data

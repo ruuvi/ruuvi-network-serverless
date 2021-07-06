@@ -49,11 +49,9 @@ const create = async (email) => {
     }
 
     try {
-        results = await mysql.query({
-            sql: `INSERT INTO users (email) VALUES (?);`,
-            timeout: 1000,
-            values: [email]
-        });
+        let results = await mysqlHelper.insertSingle({
+            email: email
+        }, 'users');
         return results.insertId;
     } catch (err) {
         console.error(err);
@@ -78,11 +76,10 @@ const createUserToken = async (userId) => {
     const tokenData = tokenGenerator.create(64, userId);
 
     try {
-        results = await mysql.query({
-            sql: `INSERT INTO user_tokens (user_id, access_token) VALUES (?, ?);`,
-            timeout: 1000,
-            values: [idInt, tokenData.hash]
-        });
+        await mysqlHelper.insertSingle({
+            user_id: idInt,
+            access_token: tokenData.hash
+        }, 'user_tokens');
 
         return tokenData.composite;
     } catch (err) {
@@ -120,11 +117,9 @@ const createSubscription = async (userId) => {
     }
 
     try {
-        results = await mysql.query({
-            sql: `INSERT INTO subscriptions (user_id) VALUES (?);`,
-            timeout: 1000,
-            values: [idInt]
-        });
+        await mysqlHelper.insertSingle({
+            user_id: idInt
+        }, 'subscriptions');
     } catch (err) {
         console.error(err);
     }

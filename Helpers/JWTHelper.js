@@ -1,13 +1,5 @@
 const tokenGenerator = require('../Helpers/tokenGenerator');
-
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD
-    }
-});
+const sqlHelper = require('../Helpers/sqlHelper');
 
 /**
  * Creates a symmetric JWT for the given data.
@@ -83,11 +75,10 @@ const createRegistrationJWT = async (targetEmail, registrationType, expirationTi
     const tokenData = tokenGenerator.create(process.env.VERIFICATION_SHORT_TOKEN_LENGTH);
     const short = tokenData.token.toUpperCase();
 
-    result = await mysql.query({
-        sql: `INSERT INTO reset_tokens (short_token, long_token) VALUES (?, ?)`,
-        timeout: 1000,
-        values: [short, jwt]
-    });
+    result = await sqlHelper.insertSingle({
+        short_token: short,
+        long_token: jwt
+    }, 'reset_tokens');
 
     if (!result.insertId) {
         return null;

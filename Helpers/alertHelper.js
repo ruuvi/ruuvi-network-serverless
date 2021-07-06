@@ -205,15 +205,10 @@ const processAlerts = async (alerts, sensorData) => {
             const offsetKey = 'offset' + capitalize(alert.type);
             const offset = alert.type !== 'signal' ? alert[offsetKey] : 0
 
-            console.log(offsetKey, offset);
-            console.log(alert, alert);
-            console.log('alert.type', alert.type);
-            console.log('sdata', sensorData[alert.type]);
-
-            if (sensorData[alert.type] > alert.max + offset) {
+            if (sensorData[alert.type] + offset > alert.max) {
                 await triggerAlert(alert, sensorData, 'over');
             }
-            if (sensorData[alert.type] < alert.min + offset) {
+            if (sensorData[alert.type] + offset < alert.min) {
                 await triggerAlert(alert, sensorData, 'under');
             }
         } else {

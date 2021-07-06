@@ -18,6 +18,7 @@ const secondaryToken = stageConfig[stage]['secondary'];
 const primaryEmail = stageConfig[stage]['primaryEmail'];
 const secondaryEmail = stageConfig[stage]['secondaryEmail'];
 const unregisteredEmail = stageConfig[stage]['unregisteredEmail'];
+const internalKey = stageConfig[stage]['internalKey'];
 
 // Release test
 const RI = process.env.IS_INTEGRATION_TEST;
@@ -29,8 +30,7 @@ const instance = axios.create({
     baseURL: baseURL,
     timeout: 10000,
     headers: {
-        Authorization: `Bearer ${primaryToken}`,
-        //'X-Internal-Secret': internalKey  // TODO: This currently fails CORS using Axios
+        Authorization: `Bearer ${primaryToken}`
     }
 });
 
@@ -41,11 +41,21 @@ const secondaryHttp = axios.create({
     baseURL: baseURL,
     timeout: 10000,
     headers: {
-        Authorization: `Bearer ${secondaryToken}`,
-        //'X-Internal-Secret': internalKey  // TODO: This currently fails CORS using Axios
+        Authorization: `Bearer ${secondaryToken}`
     }
 });
- 
+
+/**
+ * HTTP Client with Authorization set up
+ */
+ const internalHttp = axios.create({
+    baseURL: baseURL,
+    timeout: 10000,
+    headers: {
+        'X-Internal-Secret': internalKey
+    }
+});
+
 /**
  * Perform GET call to the back-end
  *
@@ -83,10 +93,13 @@ module.exports = {
     get,
     post,
 
+    internalHttp,
     secondaryHttp,
     primaryEmail,
     secondaryEmail,
     unregisteredEmail,
+
+    internalKey,
 
     sleep
 }

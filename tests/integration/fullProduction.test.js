@@ -1,4 +1,8 @@
 /**
+ * @jest-environment node
+ */
+
+/**
  * General test suite for the back-end.
  */
 const {
@@ -10,6 +14,7 @@ const {
 
 	RI,
     
+	internalHttp,
 	secondaryHttp,
     primaryEmail,
     secondaryEmail,
@@ -17,6 +22,7 @@ const {
 
 	sleep
 } = require('./common');
+const { randomMac, randomHex } = require('./integrationHelpers');
 
 // Set up some defaults
 const newSensorMac = utils.randomMac();
@@ -27,6 +33,8 @@ const testData = utils.randomHex(32);
 const newEmail = utils.randomHex(8) + '@' + utils.randomHex(8) + '.com';
 let registrationToken = null;
 
+const maxClaims = 25;
+
 describe('Full integration tests', () => {
 	// INTERNAL
 	itif(RI)('`whitelist` without internal token fails', async () => {
@@ -36,16 +44,44 @@ describe('Full integration tests', () => {
 		try {
 			await post('whitelist', {
 				"gateways": [
-					{"gatewayId": "abbacd", "deviceId": "1234", "deviceAddr": "5678"},
-					{"gatewayId": "bbbace", "deviceId": "abcd", "deviceAddr": "efae"},
-					{"gatewayId": "cbbacf", "deviceId": "qwer", "deviceAddr": "aaee"}
+					{"macAddress": "ab:ba:cd:ba:ca:ba", "secret": "1234"},
+					{"macAddress": "bb:ba:ce:ba:ca:ba", "secret": "abcd"},
+					{"macAddress": "cb:ba:cf:ba:ca:ba", "secret": "qwer"}
 				]
 			});
 		} catch (e) {
-			expect(e.message).toMatch(/Request failed with status code 400/);
+			expect(e.message).toMatch(/Request failed with status code 403/);
 			threw = true;
 		}
 		expect(threw).toBe(true);
+	});
+
+	itif(RI)('`whitelist` with internal token succeeds', async () => {
+		const result = await post('whitelist', {
+			"gateways": [
+				{ "macAddress": randomMac(), "secret": randomHex(64) }
+			]
+		}, internalHttp);
+		expect(result.status).toBe(200);
+		expect(result.data.data.gateways.length).toBeGreaterThan(0);
+	});
+
+	itif(RI)('`gwinfo` returns data for whitelisted gateway', async () => {
+		const newGWMac = randomMac();
+		const whitelistResult = await post('whitelist', {
+			"gateways": [
+				{ "macAddress": newGWMac, "secret": randomHex(64) }
+			]
+		}, internalHttp);
+		expect(whitelistResult.status).toBe(200, 'successfully whitelisted');
+
+		const gwinfoResult = await get('gwinfo', {
+			gateway: newGWMac
+		}, internalHttp);
+
+		expect(gwinfoResult.status).toBe(200);
+		expect(gwinfoResult.data.data.gateway.GatewayId).toBe(newGWMac);
+		expect(gwinfoResult.data.data.gateway.InvalidSignatureTimestamp).toBeNull();
 	});
 
 	// USER
@@ -368,6 +404,61 @@ describe('Full integration tests', () => {
 			threw = true;
 		}
 		expect(threw).toBe(true);
+	});
+
+	itif(RI)('can `claim` maximum for subscription', async () => {
+		const sensorData = await get('sensors');
+		const existingSensors = sensorData.data.data.sensors.length;
+		
+		let sensors = [];
+		let threw = false;
+		let i = 0;
+		try {
+			for (i = 0; i < maxClaims - existingSensors; i++) {
+				const successfulSensor = randomMac();
+				const claimResult = await post('claim', {
+					sensor: successfulSensor,
+					description: `Success ${i}`
+				});
+				expect(claimResult.status).toBe(200);
+				expect(claimResult.statusText).toBe('OK');
+				sensors.push(successfulSensor);
+			}
+		} catch (e) {
+			console.log(i);
+			console.log(e);
+			threw = true;
+		}
+		expect(threw).toBe(false, 'Claim until max claims');
+
+		let claimResult = 0;
+		try {
+			const unsuccessfulSensor = randomMac();
+			await post('claim', {
+				sensor: unsuccessfulSensor
+			});
+		} catch (e) {
+			claimResult = e.response.status;
+			//console.log(e);
+		}
+
+		// Clean up
+		let cleanupError = false;
+		for (const sensor of sensors) {
+			try {
+				const unclaimResult = await post('unclaim', {
+					sensor: sensor
+				});
+				expect(unclaimResult.status).toBe(200);
+				expect(unclaimResult.statusText).toBe('OK');	
+			} catch (e) {
+				console.error('Error', e);
+				cleanupError = true;
+			}
+			expect(cleanupError).toBe(false, 'clean up error');
+		}
+
+		expect(claimResult).toBe(400);
 	});
 
 	itif(RI)('`settings` insert is successful', async () => {

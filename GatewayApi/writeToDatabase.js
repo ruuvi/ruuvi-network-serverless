@@ -66,6 +66,9 @@ exports.handler = async (event) => {
             if (throttleSensor) {
                 return;
             }
+            if (interval > 100) {
+                console.info("SD: " + key);
+            }
 
             sensors[key].id = key;
             sensors[key].gwmac = gwmac;

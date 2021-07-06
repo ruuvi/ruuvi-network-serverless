@@ -4,6 +4,7 @@ const auth = require('../Helpers/authHelper')
 const throttleHelper = require('../Helpers/throttleHelper');
 const alertHelper = require('../Helpers/alertHelper');
 const sensorDataHelper = require('../Helpers/sensorDataHelper');
+const validator = require('../Helpers/validator');
 
 AWS.config.update({region: 'eu-central-1'});
 const kinesis = new AWS.Kinesis({apiVersion: '2013-12-02'});
@@ -12,27 +13,32 @@ const kinesis = new AWS.Kinesis({apiVersion: '2013-12-02'});
  * Sends received data to SQS queue for processing
  */
 exports.handler = async (event, context) => {
-    const signature = gatewayHelper.getHeader('x-ruuvi-signature', event.headers);
-    const timestamp = gatewayHelper.getHeader('x-ruuvi-timestamp', event.headers);
-    const nonce = gatewayHelper.getHeader('x-ruuvi-nonce', event.headers);
     const eventBody = JSON.parse(event.body);
-
     const data = eventBody.data;
 
     // TODO: This validation is pretty rudimentary
     const MAX_UPLOAD_DELAY = 30 * 24 * 60 * 60 * 1000; // 1 month
+
     if (
-        !eventBody.hasOwnProperty('data')
-        || !data.hasOwnProperty('tags')
-        || !data.hasOwnProperty('gw_mac')
-        || !data.hasOwnProperty('timestamp')
-        || !data.hasOwnProperty('coordinates')
+        !validator.validateAll(data, [
+            { name: 'tags', type: 'ARRAY', required: true },
+            { name: 'gw_mac', type: 'MAC', required: true },
+            { name: 'timestamp', type: 'INT', required: true },
+            { name: 'coordinates', type: 'STRING', required: true },
+        ])
         || (parseInt(data.timestamp) * 1000) < Date.now() - MAX_UPLOAD_DELAY // Cap history upload
     ) {
         return gatewayHelper.invalid();
     }
 
-    if (signature !== null || process.env.ENFORCE_SIGNATURE === '1') {
+    // Signature
+    const signature = gatewayHelper.getHeader(process.env.SIGNATURE_HEADER_NAME, event.headers);
+    const timestamp = data.timestamp;
+    const nonce = data.nonce ? data.nonce : ''; // Must be required with ENFORCE_SIGNATURE
+
+    if (signature !== null || parseInt(process.env.ENFORCE_SIGNATURE) === 1) {
+        console.log('Signed Update', event.headers, data);
+
         const validationResult = await auth.validateGatewaySignature(
             signature,
             eventBody,
@@ -44,6 +50,11 @@ exports.handler = async (event, context) => {
         );
 
         if (!validationResult) {
+            const redis = require('../Helpers/redisHelper').getClient();
+
+            // Log Invalid Signature to Redis for Validation
+            await redis.set('invalid_signature_' + data.gw_mac.toUpperCase(), validator.now());
+
             console.error("Invalid signature: " + signature);
             return gatewayHelper.unauthorizedResponse();
         }

@@ -95,7 +95,7 @@ const triggerAlertTestCases = [
         signal: -76,
 
         type: 'temperature',
-        min: 25,
+        min: 0,
         max: 50,
         enabled: true,
         description: 'Temperature max test with offset',
@@ -111,7 +111,7 @@ const triggerAlertTestCases = [
         signal: -76,
 
         type: 'temperature',
-        min: 51,
+        min: 52,
         max: 120,
         enabled: true,
         description: 'Temperature min test with offset',
@@ -120,7 +120,7 @@ const triggerAlertTestCases = [
         triggered: true
     },
 
-    // Has pressure of 986.06
+    // Has pressure of 98606
     {
         sensorName: 'Pressure Sensor (not triggered)',
         offsetHumidity: 0,
@@ -141,12 +141,12 @@ const triggerAlertTestCases = [
         sensorName: 'Pressure Sensor without Offset (max)',
         offsetHumidity: 0,
         offsetTemperature: 0,
-        offsetPressure: -30,
+        offsetPressure: 0,
         signal: -76,
 
         type: 'pressure',
-        min: 98605,
-        max: 98607,
+        min: 0,
+        max: 98605,
         enabled: true,
         description: 'Pressure max test without offset',
         data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
@@ -157,11 +157,11 @@ const triggerAlertTestCases = [
         sensorName: 'Pressure Sensor with Offset (max)',
         offsetHumidity: 0,
         offsetTemperature: 0,
-        offsetPressure: -30,
+        offsetPressure: 30,
         signal: -76,
 
         type: 'pressure',
-        min: 98605,
+        min: 0,
         max: 98607,
         enabled: true,
         description: 'Pressure max test with offset',
@@ -173,12 +173,12 @@ const triggerAlertTestCases = [
         sensorName: 'Pressure Sensor with Offset (min)',
         offsetHumidity: 0,
         offsetTemperature: 0,
-        offsetPressure: 30,
+        offsetPressure: -30,
         signal: -76,
 
         type: 'pressure',
-        min: 1016,
-        max: 1026,
+        min: 98605,
+        max: 1000000,
         enabled: true,
         description: 'Pressure min test with offset',
         data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
@@ -414,6 +414,14 @@ describe('Alerts integration test suite', () => {
             expect(alertSensor.alerts[0].description).toBe(testCase.description);
             expect(alertSensor.alerts[0].triggered).toBe(testCase.triggered);
             expect(alertSensor.alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
+
+            try {
+                await post('unclaim', {
+                    sensor: alertSensorMac
+                });
+            } catch (e) {
+                console.log(e);
+            }
         });
     }
 
@@ -479,6 +487,14 @@ describe('Alerts integration test suite', () => {
         expect(alertSensor.alerts.length).toBe(1);
         expect(alertSensor.alerts[0].triggered).toBe(true);
         expect(alertSensor.alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
+
+        try {
+            await post('unclaim', {
+                sensor: alertSensorMac
+            });
+        } catch (e) {
+            console.log(e);
+        }
     });
 
 	itif(RI)('triggering a movement alert on a sensor is successful', async () => {
@@ -541,6 +557,14 @@ describe('Alerts integration test suite', () => {
 		expect(alertSensor.alerts.length).toBe(1);
 		expect(alertSensor.alerts[0].triggered).toBe(true);
 		expect(alertSensor.alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
+
+        try {
+            await post('unclaim', {
+                sensor: alertSensorMac
+            });
+        } catch (e) {
+            console.log(e);
+        }
 	});
 
 	itif(RI)('does not return alerts for another user', async () => {

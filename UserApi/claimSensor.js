@@ -3,6 +3,7 @@ const { HTTPCodes } = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const errorCodes = require('../Helpers/errorCodes');
+const sqlHelper = require('../Helpers/sqlHelper');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -26,52 +27,58 @@ exports.handler = async (event, context) => {
         return gatewayHelper.errorResponse(HTTPCodes.INVALID, "Missing or invalid sensor given", errorCodes.ER_MISSING_ARGUMENT);
     }
 
+    // Check Subscription
+    const subscription = await sqlHelper.fetchSingle('user_id', user.id, 'subscriptions');
+    if (!subscription) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'No subscription found.', errorCodes.ER_SUBSCRIPTION_NOT_FOUND);
+    }
+    const maxClaims = parseInt(subscription.max_claims);
+    const currentClaims = await sqlHelper.fetchCount('owner_id', user.id, 'sensors');
+    if (currentClaims < 0) {
+        await mysql.end();
+        return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
+    }
+
+    if (currentClaims >= maxClaims) {
+        await mysql.end();
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Maximum claims for subscription reached.', errorCodes.ER_CLAIM_COUNT_REACHED);
+    }
+
     const sensor = eventBody.sensor;
 
-    let results = null;
-    let sensorName = validator.hasKeys(eventBody, ['name']) ? eventBody.name : '';
+    const sensorName = validator.hasKeys(eventBody, ['name']) ? eventBody.name : '';
+    const description = validator.hasKeys(eventBody, ['description']) ? eventBody.name : '';
 
-    try {
-        results = await mysql.query({
-            sql: `INSERT INTO sensors (
-                    owner_id,
-                    sensor_id
-                ) VALUES (
-                    ?,
-                    ?
-                );`,
-            timeout: 1000,
-            values: [user.id, sensor]
-        });
+    const results = await sqlHelper.insertSingle({
+        'owner_id': user.id,
+        'sensor_id': sensor,
+        'description': description || ''
+    }, 'sensors');
 
-        if (results.insertId) {
-            // Success
-        }
+    if (!results) {
+        return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL);
+    } else if (results.code) {
+        await mysql.end();
 
-        const profileResults = await mysql.query({
-            sql: `INSERT INTO sensor_profiles (
-                    user_id,
-                    sensor_id,
-                    name,
-                    picture
-                ) VALUES (
-                    ?,
-                    ?,
-                    ?,
-                    ''
-                );`,
-            timeout: 1000,
-            values: [user.id, sensor, sensorName]
-        });
-
-        if (profileResults.insertId) {
-            // Success
-        }
-    } catch (e) {
-        if (e.code === 'ER_DUP_ENTRY') {
+        if (results.code === 'ER_DUP_ENTRY') {
             return gatewayHelper.errorResponse(HTTPCodes.CONFLICT, "Sensor already claimed.", errorCodes.ER_SENSOR_ALREADY_CLAIMED);
+        } else {
+            console.error('Error inserting sensor', results);
+            return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
         }
-        console.error(e);
+    }
+
+    const profileResults = sqlHelper.insertSingle({
+        user_id: user.id,
+        sensor_id: sensor,
+        name: sensorName,
+        picture: ''
+    }, 'sensor_profiles');
+
+    if (!profileResults || profileResults.code) {
+        await mysql.end();
+
+        console.error('Error inserting sensor_profile', profileResults);
         return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
     }
 

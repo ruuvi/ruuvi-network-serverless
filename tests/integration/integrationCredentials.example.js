@@ -6,7 +6,8 @@ module.exports = {
 		secondary: 'PRODUCTION ACCESS TOKEN 2',
 		secondaryEmail: 'test2@ruuvi.com',
 		unregisteredEmail: 'test3@ruuvi.com',
-		url: 'PRODUCTION URL'
+		url: 'PRODUCTION URL',
+		internalKey: 'hello-there'
 	},
 	dev: {
 		primary: 'DEV ACCESS TOKEN 1',
@@ -14,6 +15,7 @@ module.exports = {
 		secondary: 'DEV ACCESS TOKEN 2',
 		secondaryEmail: 'test2@ruuvi.com',
 		unregisteredEmail: 'test3@ruuvi.com',
-		url: 'DEVELOPMENT URL'
+		url: 'DEVELOPMENT URL',
+		internalKey: 'hello-there'
 	}
 }
