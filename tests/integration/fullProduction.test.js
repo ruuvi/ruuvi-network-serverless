@@ -43,11 +43,8 @@ describe('Full integration tests', () => {
 		let threw = false;
 		try {
 			await post('whitelist', {
-				"gateways": [
-					{"macAddress": "ab:ba:cd:ba:ca:ba", "secret": "1234"},
-					{"macAddress": "bb:ba:ce:ba:ca:ba", "secret": "abcd"},
-					{"macAddress": "cb:ba:cf:ba:ca:ba", "secret": "qwer"}
-				]
+				macAddress: "ab:ba:cd:ba:ca:ba",
+				secret: "1234"
 			});
 		} catch (e) {
 			expect(e.message).toMatch(/Request failed with status code 403/);
@@ -57,21 +54,20 @@ describe('Full integration tests', () => {
 	});
 
 	itif(RI)('`whitelist` with internal token succeeds', async () => {
+		const newGwMac = randomMac();
 		const result = await post('whitelist', {
-			"gateways": [
-				{ "macAddress": randomMac(), "secret": randomHex(64) }
-			]
+			macAddress: newGwMac,
+			secret: randomHex(64)
 		}, internalHttp);
 		expect(result.status).toBe(200);
-		expect(result.data.data.gateways.length).toBeGreaterThan(0);
+		expect(result.data.data.gateway.macAddress).toBe(newGwMac);
 	});
 
 	itif(RI)('`gwinfo` returns data for whitelisted gateway', async () => {
 		const newGWMac = randomMac();
 		const whitelistResult = await post('whitelist', {
-			"gateways": [
-				{ "macAddress": newGWMac, "secret": randomHex(64) }
-			]
+			macAddress: newGWMac,
+			secret: randomHex(64)
 		}, internalHttp);
 		expect(whitelistResult.status).toBe(200, 'successfully whitelisted');
 

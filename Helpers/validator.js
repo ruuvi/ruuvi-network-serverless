@@ -63,6 +63,10 @@ const validateAll = (given, definitions, allowExtra = true) => {
                 console.error('Failed to validate INT', given[definition.name]);
                 return false;
             }
+            if (definition.type === 'ALPHANUM' && !validateAlphaNumeric(given[definition.name])) {
+                console.error('Failed to validate ALPHANUM', given[definition.name]);
+                return false;
+            }
             if (definition.type === 'STRING' && typeof given[definition.name] !== 'string') {
                 console.error('Failed to validate STRING', given[definition.name]);
                 return false;
