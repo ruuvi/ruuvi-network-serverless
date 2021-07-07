@@ -10,7 +10,7 @@ AWS.config.update({region: 'eu-central-1'});
 const kinesis = new AWS.Kinesis({apiVersion: '2013-12-02'});
 
 /**
- * Sends received data to SQS queue for processing
+ * Sends received data to Kinesis Stream for processing
  */
 exports.handler = async (event, context) => {
     const eventBody = JSON.parse(event.body);
@@ -37,13 +37,12 @@ exports.handler = async (event, context) => {
     const nonce = data.nonce ? data.nonce : ''; // Must be required with ENFORCE_SIGNATURE
 
     if (signature !== null || parseInt(process.env.ENFORCE_SIGNATURE) === 1) {
-        console.log('Signed Update', event.headers, data);
+        console.log('Signed Update', event.headers, event.body);
 
         const validationResult = await auth.validateGatewaySignature(
             signature,
-            eventBody,
+            event.body,
             data.gw_mac,
-            nonce,
             timestamp,
             process.env.GATEWAY_REQUEST_TTL,
             process.env.GATEWAY_SIGNATURE_SECRET

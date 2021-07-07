@@ -33,10 +33,10 @@ Enjoy!
 - [x] API Gateway forwards payloads to Receiver Lambda
 - [x] Receiver Lambda authorizes request
 - [x] Receiver Lambda validates request (rudimentary)
-- [x] Receiver relays data to SQS
+- [x] Receiver relays data to Kinesis
 
 ### Writer
-- [x] Reader Lambda reads from SQS
+- [x] Reader Lambda reads from Kinesis
 - [x] Reader Lambda writes to DynamoDB
 
 ### Client API

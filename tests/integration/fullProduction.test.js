@@ -185,7 +185,7 @@ describe('Full integration tests', () => {
 		expect(claimResult.statusText).toBe('OK');
 	});
 
-	// This might fail if SQS processing above is slow
+	// This might fail if Kinesis processing above is slow
 	itif(RI)('`get` returns dense sensor data', async () => {
 		// NOTICE! The data might take a little bit to go through the stream so we retry a couple of times
 		let sensorData = null;
@@ -202,14 +202,14 @@ describe('Full integration tests', () => {
 		expect(sensorData.data.data.measurements[0].data).toBe(testData);
 	});
 
-	// This might fail if SQS processing above is slow
+	// This might fail if Kinesis processing above is slow
 	itif(RI)('`get` returns sparse sensor data', async () => {
 		const sensorData = await get('get', { sensor: newSensorMac, mode: 'sparse' })
 		expect(sensorData.data.data.measurements.length).toBeGreaterThan(0);
 		expect(sensorData.data.data.measurements[0].data).toBe(testData);
 	});
 
-	// This might fail if SQS processing above is slow
+	// This might fail if Kinesis processing above is slow
 	itif(RI)('`get` returns mixed sensor data (only validates argument)', async () => {
 		const sensorData = await get('get', { sensor: newSensorMac, mode: 'mixed' })
 		expect(sensorData.data.data.measurements.length).toBeGreaterThan(0);
@@ -421,7 +421,7 @@ describe('Full integration tests', () => {
 	itif(RI)('can `claim` maximum for subscription', async () => {
 		const sensorData = await get('sensors');
 		const existingSensors = sensorData.data.data.sensors.length;
-		
+
 		let sensors = [];
 		let threw = false;
 		let i = 0;
@@ -437,8 +437,7 @@ describe('Full integration tests', () => {
 				sensors.push(successfulSensor);
 			}
 		} catch (e) {
-			console.log(i);
-			console.log(e);
+			console.error(`Error at claiming index ${i}`, e);
 			threw = true;
 		}
 		expect(threw).toBe(false, 'Claim until max claims');
