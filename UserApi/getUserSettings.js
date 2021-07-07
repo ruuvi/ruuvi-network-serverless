@@ -7,7 +7,8 @@ const mysql = require('serverless-mysql')({
         host     : process.env.DATABASE_ENDPOINT,
         database : process.env.DATABASE_NAME,
         user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD
+        password : process.env.DATABASE_PASSWORD,
+        charset  : 'utf8mb4'
     }
 });
 

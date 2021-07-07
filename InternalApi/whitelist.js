@@ -21,88 +21,70 @@ exports.handler = async (event, context) => {
 
     const eventBody = JSON.parse(event.body);
 
-    if (!eventBody || !eventBody.gateways || !eventBody.gateways.length) {
-        console.error("Invalid Gateways", eventBody);
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid input data. Required: gateways.", errorCodes.ER_ER_INVALID_FORMAT);
+    if (!validator.validateAll(eventBody, [
+        { name: 'macAddress', type: 'MAC', required: true },
+        { name: 'secret', type: 'ALPHANUM', required: true }
+    ], false)) {
+        console.error("Invalid Gateway Data", eventBody);
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid input data. Required: macAddress, secret.", errorCodes.ER_ER_INVALID_FORMAT);
     }
 
-    const gateways = eventBody.gateways;
-    console.log('Whitelisting gateways', gateways);
+    console.log(`Whitelisting gateway: ${eventBody.macAddress}`);
+
+    const tableName = process.env.WHITELIST_TABLE_NAME;
+    const macAddress = eventBody.macAddress;
+    const secret = eventBody.secret;
 
     let batch = {
         RequestItems: { }
     };
-    const tableName = process.env.WHITELIST_TABLE_NAME;
-
     batch.RequestItems[tableName] = [];
 
-    let gatewaysSeen = [];
+    let gatewaySeen = {};
     
-    for (let i = 0, len = gateways.length; i < len; i++) {
-        const inputData = gateways[i];
-        if (!validator.hasKeys(inputData, ['macAddress', 'secret']) || !validator.validateMacAddress(inputData.macAddress)) {
-            console.error('Invalid inputData', inputData);
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid gateway data. Required: macAddress (valid), secret.", errorCodes.ER_ER_INVALID_FORMAT);
-        }
-        batch.RequestItems[tableName].push({
-            PutRequest: {
-                Item: {
-                    "GatewayId": { "S": inputData.macAddress },
-                    "Secret": { "S": inputData.secret },
-                    "Whitelisted": { "N": Date.now().toString() },
-                    "Connected": { "N": "0" },
-                    "Latest": { "N": "0" }
-                }
+    batch.RequestItems[tableName].push({
+        PutRequest: {
+            Item: {
+                "GatewayId": { "S": macAddress },
+                "Secret": { "S": secret },
+                "Whitelisted": { "N": Date.now().toString() },
+                "Connected": { "N": "0" },
+                "Latest": { "N": "0" }
             }
-        });
+        }
+    });
 
-        if (batch.RequestItems[tableName].length >= 25) {
-            try {
-                await dynamo.batchWriteItem(batch, function(err, data) {
-                    if (err) {
-                        console.error("Error", err);
-                    }
-                }).promise();
-            } catch (e) {
-                console.error("Error writing whitelist batch to Dynamo", e);
+    try {
+        await dynamo.batchWriteItem(batch, function(err, data) {
+            if (err) {
+                console.error("Error", err);
             }
-            batch.RequestItems[tableName] = [];
-        }
-
-        // List seen timestamps
-        try {
-            console.log(`Fetching last invalid signature timestamp for ${inputData.macAddress}`, inputData);
-            var lastSeen = await redis.get('invalid_signature_' + inputData.macAddress.toUpperCase());
-            gatewaysSeen.push({
-                macAddress: inputData.macAddress,
-                blockedAt: lastSeen
-            });
-            console.log(`Successfully fetched invalid signature timestamp for ${inputData.macAddress}`, lastSeen);
-        } catch (e) {
-            console.error("Error fetching invalid signature timestamp", e);
-            gatewaysSeen.push({
-                macAddress: inputData.macAddress,
-                blockedAt: 0,
-                message: 'Unable to fetch data'
-            });
-        }
+        }).promise();
+    } catch (e) {
+        console.error("Error writing whitelist batch to Dynamo", e);
     }
 
-    if (batch.RequestItems[tableName].length > 0) {
-        try {
-            await dynamo.batchWriteItem(batch, function(err, data) {
-                if (err) {
-                    console.error("Error", err);
-                }
-            }).promise();
-        } catch (e) {
-            console.error("Error writing whitelist batch to Dynamo", e);
-        }
+    // List seen timestamps
+    try {
+        console.log(`Fetching last invalid signature timestamp for ${macAddress}`);
+        var lastSeen = await redis.get('invalid_signature_' + macAddress.toUpperCase());
+        gatewaySeen = {
+            macAddress: macAddress,
+            blockedAt: lastSeen
+        };
+        console.log(`Successfully fetched invalid signature timestamp for ${macAddress}`, lastSeen);
+    } catch (e) {
+        console.error("Error fetching invalid signature timestamp", e);
+        gatewaySeen = {
+            macAddress: macAddress,
+            blockedAt: 0,
+            message: 'Unable to fetch data'
+        };
     }
 
-    console.log('Whitelisted gateways', gateways);
+    console.log('Whitelisted gateway: ', macAddress);
 
     return gatewayHelper.successResponse({
-        gateways: gatewaysSeen
+        gateway: gatewaySeen
     });
 };

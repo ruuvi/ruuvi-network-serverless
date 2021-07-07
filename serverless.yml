@@ -3,6 +3,7 @@
 # For full config options: docs.serverless.com
 
 service: ruuvi-network-serverless
+variablesResolutionMode: 20210326
 
 plugins:
   - serverless-dynamodb-autoscaling
@@ -178,8 +179,8 @@ functions:
 #      GATEWAY_THROTTLE_INTERVAL: ${self:custom.gatewayThrottleInterval}
 #      MINIMUM_SENSOR_THROTTLE_INTERVAL: ${self:custom.denseDataInterval}
 #      EMAIL_QUEUE: { Ref: EmailQueue }
-#      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-#      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+#      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+#      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
 #      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
 #      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
 
@@ -201,8 +202,8 @@ functions:
       GATEWAY_THROTTLE_INTERVAL: ${self:custom.gatewayThrottleInterval}
       MINIMUM_SENSOR_THROTTLE_INTERVAL: ${self:custom.denseDataInterval}
       EMAIL_QUEUE: { Ref: EmailQueue }
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNATURE_HEADER_NAME: 'Ruuvi-HMAC-SHA256'
@@ -267,15 +268,15 @@ functions:
           #payload: '2.0'
     environment:
       DEBUG: 1
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       TABLE_NAME: ${self:custom.dynamoSensorData}
       REDUCED_TABLE_NAME: ${self:custom.dynamoSensorDataReduced}
       RAW_DATA_TTL: ${self:custom.rawDataTTL}
       REQUIRE_LOGIN: ${self:custom.requireLoginForData}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
       DEFAULT_RESULTS: 15
       MAX_RESULTS: 10000
 
@@ -288,11 +289,11 @@ functions:
           path: /user
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
 
   getUserSettings:
     handler: UserApi/getUserSettings.handler
@@ -303,11 +304,11 @@ functions:
           path: /settings
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
 
   setUserSettings:
     handler: UserApi/setUserSetting.handler
@@ -318,11 +319,11 @@ functions:
           path: /settings
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
 
   requestRegistration:
     handler: UserApi/requestRegistration.handler
@@ -332,16 +333,16 @@ functions:
           method: POST
           path: /register
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
       INVITATION_EXPIRATION_INTERVAL: ${self:custom.invitationExpirationInterval}
       EMAIL_QUEUE: { Ref: EmailQueue }
       SOURCE_DOMAIN: ${self:custom.sourceDomain}
       VERIFICATION_SHORT_TOKEN_LENGTH: ${self:custom.verificationShortTokenLength}
-      INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key~true}
+      INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key}
       BASE_API_URL:
         !Join
           - ''
@@ -361,11 +362,11 @@ functions:
           path: /verify
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
 
   claimSensor:
     handler: UserApi/claimSensor.handler
@@ -376,11 +377,11 @@ functions:
           path: /claim
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
 
   unclaimSensor:
     handler: UserApi/unclaimSensor.handler
@@ -391,11 +392,11 @@ functions:
           path: /unclaim
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
 
   shareSensor:
     handler: UserApi/shareSensor.handler
@@ -406,11 +407,11 @@ functions:
           path: /share
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
       EMAIL_QUEUE: { Ref: EmailQueue }
       TABLE_NAME: ${self:custom.dynamoSensorData}
       BASE_API_URL:
@@ -432,11 +433,11 @@ functions:
           path: /unshare
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
       EMAIL_QUEUE: { Ref: EmailQueue }
 
   getSharedSensors:
@@ -448,11 +449,11 @@ functions:
           path: /shared
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
 
   getSensorList:
     handler: UserApi/getSensorList.handler
@@ -463,11 +464,11 @@ functions:
           path: /sensors
           #payload: '2.0'
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
       TABLE_NAME: ${self:custom.dynamoSensorData}
 
   # Sensor profile + picture updates
@@ -478,11 +479,11 @@ functions:
           method: POST
           path: /update
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
 
   uploadSensorPicture:
     handler: UserApi/uploadSensorPicture.handler
@@ -491,11 +492,11 @@ functions:
           method: POST
           path: /upload
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
       BUCKET_NAME: ${self:custom.sensorProfileBucket}
       BUCKET_URL:
         !Join
@@ -515,12 +516,12 @@ functions:
           method: POST
           path: /alerts
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       TABLE_NAME: ${self:custom.dynamoSensorData}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
   getAlert:
@@ -530,11 +531,11 @@ functions:
           method: GET
           path: /alerts
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret~true}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
   emailSender:
@@ -608,7 +609,7 @@ functions:
           method: POST
           path: /whitelist
     environment:
-      INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key~true}
+      INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
@@ -619,7 +620,7 @@ functions:
           method: GET
           path: /gwinfo
     environment:
-      INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key~true}
+      INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
@@ -641,8 +642,8 @@ functions:
           description: 'Triggers access token clean up periodically.'
           rate: rate(1 hour)
     environment:
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username~true}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password~true}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       MAX_TOKEN_AGE: 180 # Days
