@@ -266,6 +266,22 @@ describe('Full integration tests', () => {
 		expect(resetPublicFlagResult.data.data.public).toBe(0);
 	});
 
+	itif(RI)('`update` updates sensor name with unicode (smiley)', async () => {
+		const testName = "🤩";
+		const updateResult = await post('update', {
+			sensor: newSensorMac,
+			name: testName,
+		});
+
+		expect(updateResult.status).toBe(200);
+		expect(updateResult.statusText).toBe('OK');
+		expect(updateResult.data.data.name === testName).toBe(true);
+
+		// Test successful update
+		const updatedSensorData = await get('get', { sensor: newSensorMac });
+		expect(updatedSensorData.data.data.name === testName).toBe(true);
+	});
+
 	itif(RI)('`upload` gets an image URL to upload to', async () => {
 		const uploadLinkResult = await post('upload', {
 			sensor: newSensorMac,
