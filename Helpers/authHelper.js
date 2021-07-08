@@ -95,11 +95,16 @@ const validateSignature = (givenSignature, data, timestamp, maxAge, secret) => {
     }
 
     const now = Date.now();
-    if (now - timestamp > maxAge) {
+    if (now - (timestamp * 1000) > maxAge) {
+        const diff = now - timestamp;
+        console.error(`Signature expired diff: ${diff}, max-age: ${maxAge}, now: ${now}, ts: ${timestamp}`);
         return false;
     }
 
     const signature = createSignature(data, secret);
+    if (signature !== givenSignature) {
+        console.error(`Non-matching signatures: Calculated: ${signature}, Given: ${givenSignature}`);
+    }
 
     return givenSignature === signature;
 }
@@ -121,7 +126,6 @@ const createSignature = (data, secret) => {
     const signatureBody = dataStr;
 
     const crypto = require('crypto');
-
     return crypto.createHmac('sha256', secret)
         .update(signatureBody)
         .digest('hex');

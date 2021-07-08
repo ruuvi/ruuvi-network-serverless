@@ -34,10 +34,9 @@ exports.handler = async (event, context) => {
     // Signature
     const signature = gatewayHelper.getHeader(process.env.SIGNATURE_HEADER_NAME, event.headers);
     const timestamp = data.timestamp;
-    const nonce = data.nonce ? data.nonce : ''; // Must be required with ENFORCE_SIGNATURE
 
     if (signature !== null || parseInt(process.env.ENFORCE_SIGNATURE) === 1) {
-        console.log('Signed Update', event.headers, event.body);
+        console.log('Signed Update', event.headers, event.body, event);
 
         const validationResult = await auth.validateGatewaySignature(
             signature,
