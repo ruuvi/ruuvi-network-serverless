@@ -169,7 +169,7 @@ const getGatewayData = async (gatewayId) => {
         process.env.WHITELIST_TABLE_NAME,
         'GatewayId',
         gatewayId,
-        ['GatewayId', 'DeviceId', 'DeviceAddr'],
+        ['GatewayId', 'Secret'],
         1,
         false
     );

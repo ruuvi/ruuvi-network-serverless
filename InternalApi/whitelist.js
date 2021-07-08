@@ -23,10 +23,10 @@ exports.handler = async (event, context) => {
 
     if (!validator.validateAll(eventBody, [
         { name: 'macAddress', type: 'MAC', required: true },
-        { name: 'secret', type: 'ALPHANUM', required: true }
+        { name: 'secret', type: 'STRING', required: true }
     ], false)) {
         console.error("Invalid Gateway Data", eventBody);
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid input data. Required: macAddress, secret.", errorCodes.ER_ER_INVALID_FORMAT);
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid macAddress or secret.", errorCodes.ER_ER_INVALID_FORMAT);
     }
 
     console.log(`Whitelisting gateway: ${eventBody.macAddress}`);

@@ -64,7 +64,7 @@ const authorizedUser = async (headers) => {
  * @param {integer} timestamp Unix timestamp of the message (as provided in the headers)
  * @param {integer} maxAge Maximum age of the request
  */
-const validateGatewaySignature = async (givenSignature, data, gatewayMacAddress, nonce, timestamp, maxAge) => {
+const validateGatewaySignature = async (givenSignature, data, gatewayMacAddress, timestamp, maxAge) => {
     if (givenSignature === null || gatewayMacAddress === null || timestamp === null) {
         return false;
     }
@@ -77,7 +77,7 @@ const validateGatewaySignature = async (givenSignature, data, gatewayMacAddress,
         return false;
     }
 
-    return validateSignature(givenSignature, data, nonce, timestamp, maxAge, gatewayData[0].Secret);
+    return validateSignature(givenSignature, data, timestamp, maxAge, gatewayData[0].Secret);
 }
 
 /**
@@ -89,17 +89,22 @@ const validateGatewaySignature = async (givenSignature, data, gatewayMacAddress,
  * @param {integer} maxAge Maximum age of the request
  * @param {string} secret Signing secret
  */
-const validateSignature = (givenSignature, data, nonce, timestamp, maxAge, secret) => {
-    if (givenSignature === null || timestamp === null || secret === null || nonce === null) {
+const validateSignature = (givenSignature, data, timestamp, maxAge, secret) => {
+    if (givenSignature === null || timestamp === null || secret === null) {
         return false;
     }
 
     const now = Date.now();
-    if (now - timestamp > maxAge) {
+    if (now - (timestamp * 1000) > maxAge) {
+        const diff = now - timestamp;
+        console.error(`Signature expired diff: ${diff}, max-age: ${maxAge}, now: ${now}, ts: ${timestamp}`);
         return false;
     }
 
-    const signature = createSignature(data, nonce, timestamp, secret);
+    const signature = createSignature(data, secret);
+    if (signature !== givenSignature) {
+        console.error(`Non-matching signatures: Calculated: ${signature}, Given: ${givenSignature}`);
+    }
 
     return givenSignature === signature;
 }
@@ -112,16 +117,15 @@ const validateSignature = (givenSignature, data, nonce, timestamp, maxAge, secre
  * @param {integer} timestamp Unix timestamp integer
  * @param {string} secret Signing secret
  */
-const createSignature = (data, nonce, timestamp, secret) => {
+const createSignature = (data, secret) => {
     let dataStr = data;
     if (typeof data !== 'string') {
         dataStr = JSON.stringify(data);
     }
 
-    const signatureBody = secret + nonce + timestamp + dataStr;
+    const signatureBody = dataStr;
 
     const crypto = require('crypto');
-
     return crypto.createHmac('sha256', secret)
         .update(signatureBody)
         .digest('hex');
