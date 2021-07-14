@@ -144,6 +144,35 @@ const data = '{\n' +
 '\t}\n' +
 '}';
 
+const data2 = '{\n' +
+'\t"data":\t{\n' +
+'\t\t"coordinates":\t"",\n' +
+'\t\t"timestamp":\t"1625873260",\n' +
+'\t\t"nonce":\t"4171214409",\n' +
+'\t\t"gw_mac":\t"C8:25:2D:8E:9C:2C",\n' +
+'\t\t"tags":\t{\n' +
+'\t\t\t"E3:75:CF:37:4E:23":\t{\n' +
+'\t\t\t\t"rssi":\t-63,\n' +
+'\t\t\t\t"timestamp":\t"1625873259",\n' +
+'\t\t\t\t"data":\t"0201061BFF99040512824DF2BE4BFC300100FFE0AF36461DF9E375CF374E23"\n' +
+'\t\t\t},\n' +
+'\t\t\t"F4:1F:0C:28:CB:D6":\t{\n' +
+'\t\t\t\t"rssi":\t-58,\n' +
+'\t\t\t\t"timestamp":\t"1625873260",\n' +
+'\t\t\t\t"data":\t"0201061BFF990405147445D1BEBAFC70FE30FFF8B2F65202AFF41F0C28CBD6"\n' +
+'\t\t\t},\n' +
+'\t\t\t"C6:A5:B9:E0:AD:06":\t{\n' +
+'\t\t\t\t"rssi":\t-72,\n' +
+'\t\t\t\t"timestamp":\t"1625873257",\n' +
+'\t\t\t\t"data":\t"0201061BFF990405126A4A37BE98010CFBEC001CAF36DF1D33C6A5B9E0AD06"\n' +
+'\t\t\t}\n' +
+'\t\t}\n' +
+'\t}\n' +
+'}';
+
+const signature2 = '2d2c861fb143d9096f81bf33043dbee4e76a912ba4043fc6a346858e2ad85e43';
+const secret2 = '40:98:A7:78:58:1A:E1:38';
+
 test('fox', () => {
 	const expected = 'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8';
 	const data = "The quick brown fox jumps over the lazy dog";
@@ -154,5 +183,10 @@ test('fox', () => {
 
 test('verify validates correct signature', () => {
 	const result = auth.validateSignature(signature, data, timestamp, 100000000000, secret);
+	expect(result).toBe(true);
+});
+
+test('verify validates correct signature real gw', () => {
+	const result = auth.validateSignature(signature2, data2, timestamp, 100000000000, 'Ruuvi');
 	expect(result).toBe(true);
 });
