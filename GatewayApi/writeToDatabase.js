@@ -103,13 +103,31 @@ exports.handler = async (event) => {
         for (let gwmac of loggedGateways) {
             var params = {
                 TableName: whitelistTableName,
-                Item: {
-                    "GatewayId": { "S": gwmac },
-                    "Latest": { "N": now.toString() }
-                }
+                ExpressionAttributeNames: {
+                    "#L": "Latest"
+                },
+                ExpressionAttributeValues: {
+                    ":l": {
+                        N: now.toString()
+                    }
+                },
+                Key: {
+                    "GatewayId": {
+                        S: gwmac
+                    }
+                },
+                UpdateExpression: "SET #L = :l"
             };
-            
-            var updateLatest = dynamo.putItem(params, function(err, data) {
+
+            // If first time we actually accept, store timestamp.
+            const gwData = await dynamoHelper.getGatewayData(gwmac, ['Connected']);
+            if (!gwData.Connected) {
+                params.ExpressionAttributeNames['#N'] = 'Connected';
+                params.ExpressionAttributeValues[':n'] = { "N": now.toString() };
+                params.UpdateExpression += ', #N = :n';
+            }
+
+            var updateLatest = dynamo.updateItem(params, function(err, data) {
                 if (err) {
                     console.log("Error", err);
                 }

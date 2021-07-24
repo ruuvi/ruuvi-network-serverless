@@ -159,17 +159,21 @@ const getSensorData = async (sensor, count, startDate, endDate, ascending = fals
  *
  * @param {string} gatewayId ID of the gateway data to fetch
  */
-const getGatewayData = async (gatewayId) => {
+const getGatewayData = async (gatewayId, fields = ['Secret']) => {
     if (typeof process.env.WHITELIST_TABLE_NAME === 'undefined') {
         console.error('WHITELIST_TABLE_NAME not defined in environment.');
         return [];
+    }
+
+    if (!fields.includes('GatewayId')) {
+        fields.push('GatewayId');
     }
 
     return fetch(
         process.env.WHITELIST_TABLE_NAME,
         'GatewayId',
         gatewayId,
-        ['GatewayId', 'Secret'],
+        ['GatewayId', 'Secret', 'Connected', 'Latest'],
         1,
         false
     );
