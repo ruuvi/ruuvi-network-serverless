@@ -126,6 +126,7 @@ exports.handler = async (event, context) => {
         response.offsetTemperature = hasClaim[0].offsetTemperature;
         response.offsetHumidity = hasClaim[0].offsetHumidity;
         response.offsetPressure = hasClaim[0].offsetPressure;
+        response.picture = hasClaim[0].picture;
     } catch (e) {
         console.error(e);
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Internal server error.', errorCodes.ER_INTERNAL);
