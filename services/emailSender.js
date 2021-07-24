@@ -3,6 +3,7 @@ const ses = new aws.SES({
     region: 'eu-central-1'
 });
 const validator = require('../Helpers/validator');
+const sqlHelper = require('../Helpers/sqlHelper');
 
 exports.handler = async (event) => {
     let emails = 0;
@@ -24,6 +25,17 @@ exports.handler = async (event) => {
 
         const title = messageAttributes.Title.stringValue;
         const email = messageAttributes.TargetEmail.stringValue;
+
+        // Verify that e-mails are not disabled
+        const user = await sqlHelper.fetchSingle('email', email, 'users');
+        if (user !== null) {
+            const userSettings = await sqlHelper.fetchAll('key', 'disable_emails', 'user_settings');
+            const disabledSetting = userSettings.find(setting => parseInt(setting.user_id) == parseInt(user.id));
+            if (parseInt(disabledSetting.value) === 1) {
+                console.log(`Email not sent to ${email} because emails are disabled.`);
+                continue;
+            }
+        }
 
         const fromBase64 = Buffer.from(from).toString('base64');
         const noReplyAddress = 'noreply@' + from.substring(from.indexOf('@') + 1);

@@ -52,6 +52,12 @@ exports.handler = async (event, context) => {
         ret.name = eventBody.name;
     }
 
+    if (validator.hasKeys(eventBody, ['picture']) && validator.validateFilename(eventBody.picture)) {
+        profileUpdates.push('picture = ?');
+        profileValues.push(eventBody.picture);
+        ret.picture = eventBody.picture;
+    }
+
     // Sensor updates
 	if (validator.hasKeys(eventBody, ['public']) && (parseInt(eventBody.public) === 0 || parseInt(eventBody.public) === 1)) {
         sensorUpdates.push('public = ?');

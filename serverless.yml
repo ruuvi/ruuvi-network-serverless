@@ -202,6 +202,7 @@ functions:
       DATA_TTL: ${self:custom.rawDataTTL}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
       EMAIL_QUEUE: { Ref: EmailQueue }
+      WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
 
   writeToSparseDatabase:
     handler: GatewayApi/writeToDatabase.handler

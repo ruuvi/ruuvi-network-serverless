@@ -129,6 +129,17 @@ const validateAlphaNumeric = (str) => {
 };
 
 /**
+ * Validates that string is alphanumeric filename with or without extensions. Accepts empty string.
+ *
+ * @param {string} str String to validate
+ */
+ const validateFilename = (str) => {
+    if (typeof str !== 'string') { return false; }
+    const reg = /^[a-zA-Z0-9\.\-\_]+$/;
+    return reg.test(str);
+};
+
+/**
  * Validates that string is compatible with settings name - alphanumeric with set of special characters
  *
  * @param {string} str String to validate
@@ -179,5 +190,6 @@ module.exports = {
     validateMacAddress,
     validateSettingName,
     validateEnum,
+    validateFilename,
     now
 };

@@ -90,9 +90,6 @@ const fetchSingle = async (field, value, table) => {
             values: [value]
         });
 
-        console.log(`SELECT COUNT(*) AS count FROM ${table} WHERE ${field} = ?`);
-        console.log(result[0]);
-
         if (result.length === 1) {
             return parseInt(result[0].count);
         }

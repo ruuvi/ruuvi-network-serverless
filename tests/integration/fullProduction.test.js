@@ -185,6 +185,24 @@ describe('Full integration tests', () => {
 		expect(claimResult.statusText).toBe('OK');
 	});
 
+	itif(RI)('`claim` on already claimed returns 409 Conflict', async () => {
+		let caught = false;
+		try {
+			const claimResult = await post('claim', {
+				sensor: newSensorMac
+			}, secondaryHttp);
+		} catch (e) {
+			expect(e.message).toMatch(/Request failed with status code 409/);
+
+			const maskEmail = require('../../Helpers/emailHelper').maskEmail;
+			const maskedEmail = maskEmail(primaryEmail);
+
+			expect(e.response.data.error).toBe(`Sensor already claimed by ${maskedEmail}.`);
+			caught = true;
+		}
+		expect(caught).toBe(true);
+	});
+
 	// This might fail if Kinesis processing above is slow
 	itif(RI)('`get` returns dense sensor data', async () => {
 		// NOTICE! The data might take a little bit to go through the stream so we retry a couple of times
@@ -218,6 +236,7 @@ describe('Full integration tests', () => {
 	
 	itif(RI)('`update` updates sensor data', async () => {
 		const testName = 'awesome test sensor';
+		const pictureName = 'kek.default.file';
 		const updateResult = await post('update', {
 			sensor: newSensorMac,
 			name: testName,
@@ -225,6 +244,7 @@ describe('Full integration tests', () => {
 			offsetTemperature: 2,
 			offsetHumidity: 3,
 			offsetPressure: 4,
+			picture: pictureName
 		});
 
 		expect(updateResult.status).toBe(200);
@@ -234,6 +254,7 @@ describe('Full integration tests', () => {
 		expect(updateResult.data.data.offsetTemperature).toBe(2);
 		expect(updateResult.data.data.offsetHumidity).toBe(3);
 		expect(updateResult.data.data.offsetPressure).toBe(4);
+		expect(updateResult.data.data.picture).toBe(pictureName);
 
 		// Test successful update
 		const updatedSensorData = await get('get', { sensor: newSensorMac });
@@ -242,6 +263,7 @@ describe('Full integration tests', () => {
 		expect(updatedSensorData.data.data.offsetTemperature).toBe(2);
 		expect(updatedSensorData.data.data.offsetHumidity).toBe(3);
 		expect(updatedSensorData.data.data.offsetPressure).toBe(4);
+		expect(updatedSensorData.data.data.picture).toBe(pictureName);
 	});
 
 	itif(RI)('`update` updating sensor public flag', async () => {
