@@ -62,18 +62,18 @@ CREATE TABLE sensors (
 
 -- Sensor Profiles (per user)
 CREATE TABLE sensor_profiles (
-  id bigint(20) NOT NULL AUTO_INCREMENT,
-  sensor_id varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
-  user_id int(11) NOT NULL,
-  name varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  picture varchar(2083) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  is_active tinyint(1) NOT NULL DEFAULT '1',
-  updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  -- Only one user can own a sensor profile
-  UNIQUE KEY sensor_user_idx (user_id,sensor_id),
-  CONSTRAINT sensor_profiles_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (id)
+        id bigint(20) NOT NULL AUTO_INCREMENT,
+        sensor_id varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+        user_id int(11) NOT NULL,
+        name varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+        picture varchar(2083) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+        is_active tinyint(1) NOT NULL DEFAULT '1',
+        updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        -- Only one user can own a sensor profile
+        UNIQUE KEY sensor_user_idx (user_id,sensor_id),
+        CONSTRAINT sensor_profiles_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (id)
 ) ENGINE=InnoDB AUTO_INCREMENT=4732 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 
 -- Pending shares to unregistered emails

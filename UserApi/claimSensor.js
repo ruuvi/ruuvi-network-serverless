@@ -4,6 +4,7 @@ const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const errorCodes = require('../Helpers/errorCodes');
 const sqlHelper = require('../Helpers/sqlHelper');
+const emailHelper = require('../Helpers/emailHelper');
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -62,7 +63,11 @@ exports.handler = async (event, context) => {
         await mysql.end();
 
         if (results.code === 'ER_DUP_ENTRY') {
-            return gatewayHelper.errorResponse(HTTPCodes.CONFLICT, "Sensor already claimed.", errorCodes.ER_SENSOR_ALREADY_CLAIMED);
+            const claimerRes = await sqlHelper.fetchSingle('sensor_id', sensor, 'sensors');
+            const claimerUserRes = await sqlHelper.fetchSingle('id', claimerRes.owner_id, 'users');
+            const maskedEmail = emailHelper.maskEmail(claimerUserRes.email);
+
+            return gatewayHelper.errorResponse(HTTPCodes.CONFLICT, `Sensor already claimed by ${maskedEmail}.`, errorCodes.ER_SENSOR_ALREADY_CLAIMED);
         } else {
             console.error('Error inserting sensor', results);
             return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);

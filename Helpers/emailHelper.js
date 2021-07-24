@@ -216,11 +216,31 @@ const sendShareRemovedNotification = async (email, sensorName, shareRecipient) =
     return await sendEmail(email, `${shareRecipient} removed a Ruuvi sensor you had shared`, htmlBody);
 };
 
+/**
+ * Masks an e-mail to format "x****.****y@z****w.com"
+ * 
+ * @param {string} email 
+ * @returns 
+ */
+const maskEmail = (email) => {
+    function mask(str) {
+        var strLen = str.length;
+        if (strLen > 4) {
+            return str.substr(0, 1) + str.substr(1, strLen - 2).replace(/\w/g, '*') + str.substr(-1,1);
+        } 
+        return str.replace(/\w/g, '*');
+    }
+    return email.replace(/([\w.]+)@([\w.]+)(\.[\w.]+)/g, function (m, p1, p2, p3) {      
+        return mask(p1) + '@' + mask(p2) + p3;
+    });
+}
+
 module.exports = {
     sendEmailVerification,
     sendResetEmail,
     sendShareNotification,
     sendShareRemovedNotification,
     sendAlertEmail,
-    sendEmailInvitation
+    sendEmailInvitation,
+    maskEmail
 };

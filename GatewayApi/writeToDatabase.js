@@ -6,6 +6,7 @@ const throttleHelper = require('../Helpers/throttleHelper');
 const kinesisHelper = require('../Helpers/kinesisHelper');
 
 exports.handler = async (event) => {
+    const whitelistTableName = process.env.WHITELIST_TABLE_NAME;
     const interval = parseInt(process.env.MAXIMUM_STORAGE_INTERVAL);
     const dataTTL = parseInt(process.env.DATA_TTL);
     const now = validator.now();
@@ -95,6 +96,27 @@ exports.handler = async (event) => {
         uploadBatchPromises.push(sendBatch(flattenedData));
         uploadedBatches ++;
         uploadedRecords += flattenedData.length;
+    }
+
+    // Log the last seen for all gateways
+    if (loggedGateways.length > 0) {
+        for (let gwmac of loggedGateways) {
+            var params = {
+                TableName: whitelistTableName,
+                Item: {
+                    "GatewayId": { "S": gwmac },
+                    "Latest": { "N": now.toString() }
+                }
+            };
+            
+            var updateLatest = dynamo.putItem(params, function(err, data) {
+                if (err) {
+                    console.log("Error", err);
+                }
+            });    
+
+            uploadBatchPromises.push(updateLatest);
+        }
     }
 
     // Note: async's in Lambdas should always be awaited as exiting the function

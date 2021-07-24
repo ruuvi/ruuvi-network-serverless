@@ -25,7 +25,7 @@ exports.handler = async (event, context) => {
 
     let data = {};
     try {
-        data = dynamoHelper.fetch(tableName, 'GatewayId', gateway, ['GatewayId', 'Whitelisted', 'FirstUpdate', 'LastUpdate']);
+        data = dynamoHelper.fetch(tableName, 'GatewayId', gateway, ['GatewayId', 'Whitelisted', 'Connected', 'Latest']);
     } catch (e) {
         console.error('Error fetching Dynamo Data', e);
         return gatewayHelper.internal();

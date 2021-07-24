@@ -83,6 +83,7 @@ exports.handler = async (event, context) => {
         offsetTemperature: null,
         offsetHumidity: null,
         offsetPressure: null,
+        picture: null,
         measurements: [],
         total: 0
     };
@@ -93,9 +94,10 @@ exports.handler = async (event, context) => {
                     sensors.id,
                     sensor_profiles.name AS name,
                     sensors.public AS public,
-                    sensors.offset_temperature as offsetTemperature,
-                    sensors.offset_humidity as offsetHumidity,
-                    sensors.offset_pressure as offsetPressure
+                    sensors.offset_temperature AS offsetTemperature,
+                    sensors.offset_humidity AS offsetHumidity,
+                    sensors.offset_pressure AS offsetPressure,
+                    sensor_profiles.picture AS picture
                 FROM sensors
                 LEFT JOIN sensor_profiles ON
                     sensor_profiles.sensor_id = sensors.sensor_id
