@@ -121,7 +121,7 @@ exports.handler = async (event) => {
 
             // If first time we actually accept, store timestamp.
             const gwData = await dynamoHelper.getGatewayData(gwmac, ['Connected']);
-            if (!gwData.Connected) {
+            if (gwData.length === 0 || !parseInt(gwData[0].Connected)) {
                 params.ExpressionAttributeNames['#N'] = 'Connected';
                 params.ExpressionAttributeValues[':n'] = { "N": now.toString() };
                 params.UpdateExpression += ', #N = :n';

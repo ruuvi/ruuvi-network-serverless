@@ -16,6 +16,8 @@ const {
     
 	internalHttp,
 	secondaryHttp,
+	httpWithInvalidSignature,
+
     primaryEmail,
     secondaryEmail,
     unregisteredEmail,
@@ -55,30 +57,78 @@ describe('Full integration tests', () => {
 
 	itif(RI)('`whitelist` with internal token succeeds', async () => {
 		const newGwMac = randomMac();
+
+		let tags = {};
+		tags[newSensorMac] = {
+			"rssi":	-76,
+			"timestamp": Date.now() - 50,
+			"data":	testData
+		};
+
+		let rejected = false;
+		try {
+			await post('record', {
+				"data":	{
+					"coordinates": "",
+					"timestamp": Date.now(),
+					"gw_mac": newGwMac,
+					"tags":	tags
+				}
+			}, httpWithInvalidSignature);
+		} catch (e) {
+			rejected = true;
+		}
+		expect(rejected).toBe(true, 'rejected signature');
+
+		await sleep(1000);
+
 		const result = await post('whitelist', {
 			macAddress: newGwMac,
 			secret: randomHex(64)
 		}, internalHttp);
+
 		expect(result.status).toBe(200);
 		expect(result.data.data.gateway.macAddress).toBe(newGwMac);
 	});
 
-	itif(RI)('`gwinfo` returns data for whitelisted gateway', async () => {
-		const newGWMac = randomMac();
-		const whitelistResult = await post('whitelist', {
-			macAddress: newGWMac,
-			secret: randomHex(64)
-		}, internalHttp);
-		expect(whitelistResult.status).toBe(200, 'successfully whitelisted');
+	itif(RI)('`whitelist` on unseen gateway fails', async () => {
+		const newGwMac = randomMac();
 
-		const gwinfoResult = await get('gwinfo', {
-			gateway: newGWMac
-		}, internalHttp);
+		let thrown = false;
 
-		expect(gwinfoResult.status).toBe(200);
-		expect(gwinfoResult.data.data.gateway.GatewayId).toBe(newGWMac);
-		expect(gwinfoResult.data.data.gateway.InvalidSignatureTimestamp).toBeNull();
+		try {
+			const result = await post('whitelist', {
+				macAddress: newGwMac,
+				secret: randomHex(64)
+			}, internalHttp);
+		} catch (e) {	
+			expect(e.response.status).toBe(400);		
+			thrown = true;
+		}
+		expect(thrown).toBe(true);
 	});
+
+//	itif(RI)('`gwinfo` returns data for whitelisted gateway', async () => {
+//		const newGWMac = randomMac();
+//		const whitelistResult = await post('whitelist', {
+//			macAddress: newGWMac,
+//			secret: randomHex(64)
+//		}, internalHttp);
+//		expect(whitelistResult.status).toBe(200, 'successfully whitelisted');
+//
+//      TODO: SEND UPDATE FROM GW
+//
+//		const gwinfoResult = await get('gwinfo', {
+//			gateway: newGWMac
+//		}, internalHttp);
+//
+//		expect(gwinfoResult.status).toBe(200);
+//		expect(gwinfoResult.data.data.gateway.GatewayId).toBe(newGWMac);
+//		expect(gwinfoResult.data.data.gateway.InvalidSignatureTimestamp).toBe(0);
+//		expect(gwinfoResult.data.data.gateway.Connected).toBe(0);
+//		expect(gwinfoResult.data.data.gateway.Latest).toBe(0);
+//		expect(gwinfoResult.data.data.gateway.Whitelisted).toBe(0);
+//	});
 
 	// USER
 	itif(RI)('`register` returns 200 OK', async () => {
