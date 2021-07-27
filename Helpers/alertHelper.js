@@ -28,7 +28,7 @@ const refreshAlertCache = async (sensor, data = null) => {
     
     let active = [];
     data.forEach((alert) => {
-        if (!alert.triggered) {
+        if (alert.enabled) {
             active.push(alert);
         }
     });
@@ -70,7 +70,7 @@ const getAlerts = async (sensor, userId = null, useCache = false, returnRaw = fa
  */
 const formatAlerts = (raw) => {
     let formatted = [];
-    raw.forEach((alert) => {
+    for (const alert of raw) {
         formatted.push({
             userId: alert.user_id,
             sensorId: alert.sensor_id,
@@ -86,7 +86,7 @@ const formatAlerts = (raw) => {
             triggered: alert.triggered ? true : false,
             triggeredAt: alert.triggered_at
         });
-    });
+    }
     return formatted;
 }
 
@@ -124,13 +124,13 @@ const putAlert = async (userId, sensor, type, min = Number.MIN_VALUE, max = Numb
  * @param {object} sensorData Sensor info
  * @param {string} triggerType over / under
  */
-const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled = false) => {
+const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled = false, sendEmail = true) => {
     if (!overrideEnabled && !alertData.enabled) {
         return;
     }
 
     const nowDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    var updateResult = await sqlHelper.updateValues('sensor_alerts', ['triggered = ?', 'triggered_at = ?'], [1, nowDate], ['sensor_id = ?', 'user_id = ?', 'alert_type = ?'], [alertData.sensorId, alertData.userId, alertData.type]);
+    const updateResult = await sqlHelper.updateValues('sensor_alerts', ['triggered = ?', 'triggered_at = ?'], [1, nowDate], ['sensor_id = ?', 'user_id = ?', 'alert_type = ?'], [alertData.sensorId, alertData.userId, alertData.type]);
     if (updateResult === 1) {
         console.log('Sending Alert Email to user: ' + alertData.userId);
         const userHelper = require('../Helpers/userHelper');
@@ -153,25 +153,54 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
             previousValue = alertData.max;
         } else {
             previousValue = alertData.counter;
+            await sqlHelper.updateValues(
+                'sensor_alerts',
+                [
+                    'counter = ?',
+                    'triggered_at = ?'
+                ], [
+                    parseInt(sensorData['movementCounter']),
+                    nowDate
+                ], [
+                    'sensor_id = ?',
+                    'user_id = ?',
+                    'alert_type = ?'
+                ], [
+                    alertData.sensorId,
+                    alertData.userId,
+                    'movement'
+                ]
+            );
         }
 
-        try {
-            await emailHelper.sendAlertEmail(
-                user.email,
-                name,
-                sensorData.sensor_id,
-                alertData.type,
-                triggerType,
-                sensorData[alertData.type],
-                previousValue,
-                alertData.description
-            );
-        } catch (e) {
-            console.error(e);
+        if (sendEmail) {
+            try {
+                await emailHelper.sendAlertEmail(
+                    user.email,
+                    name,
+                    sensorData.sensor_id,
+                    alertData.type,
+                    triggerType,
+                    sensorData[alertData.type],
+                    previousValue,
+                    alertData.description
+                );
+            } catch (e) {
+                console.error(e);
+            }
         }
     }
     
     await refreshAlertCache(sensorData.sensor_id);
+}
+
+const clearAlert = async (alertData) => {
+    try {
+        await sqlHelper.updateValues('sensor_alerts', ['triggered = ?'], [0], ['sensor_id = ?', 'user_id = ?', 'alert_type = ?'], [alertData.sensorId, alertData.userId, alertData.type]);
+        await refreshAlertCache(alertData.sensorId);
+    } catch (e) {
+        console.error('Error clearing alert', e);
+    }
 }
 
 const capitalize = (s) => {
@@ -186,40 +215,58 @@ const capitalize = (s) => {
  * @param {string} data 
  */
 const processAlerts = async (alerts, sensorData) => {
+    const throttleInterval = process.env.ALERT_THROTTLE_INTERVAL ? process.env.ALERT_THROTTLE_INTERVAL : throttleHelper.defaultIntervals.alert;
+
     for (const alert of alerts) {
         if (!alert.enabled) {
             continue;
         }
 
-        // Throttling
-        const throttleAlert = await throttleHelper.throttle(
-            `alert:${alert.userId}:${sensorData.sensor_id}:${alert.type}`,
-            throttleHelper.defaultIntervals.alert
-        );
-        if (throttleAlert) {
-            continue;
-        }
+        let triggered = false;
+        let mode = null;
 
-        // Trigger
         if (alert.type !== 'movement') {
             const offsetKey = 'offset' + capitalize(alert.type);
             const offset = alert.type !== 'signal' ? alert[offsetKey] : 0
 
             if (sensorData[alert.type] + offset > alert.max) {
-                await triggerAlert(alert, sensorData, 'over');
+                mode = 'over';
+                triggered = true;
             }
             if (sensorData[alert.type] + offset < alert.min) {
-                await triggerAlert(alert, sensorData, 'under');
+                mode = 'under';
+                triggered = true;
             }
         } else {
-            if (
-                alert.type === 'movement'
-                && parseInt(sensorData['movementCounter']) !== parseInt(alert.counter)
-            ) {
-                await triggerAlert(alert, sensorData, 'different from');
+            if (parseInt(sensorData['movementCounter']) !== parseInt(alert.counter)) {
+                mode = 'different from';
+                triggered = true;
             }
         }
+
+        if (triggered) {
+            // Throttling
+            const throttleAlert = await throttleHelper.throttle(
+                `alert:${alert.userId}:${sensorData.sensor_id}:${alert.type}`,
+                throttleInterval
+            );
+            if (throttleAlert) {
+                // For movement, we want to update the counters but not send an email when throttled
+                if (alert.type === 'movement') {
+                    await triggerAlert(alert, sensorData, mode, false, false);
+                }
+                continue;
+            }
+
+            await triggerAlert(alert, sensorData, mode);
+        } 
+        
+        // Trigger
+        if (!triggered && alert.triggered) {
+            await clearAlert(alert);
+        }
     };
+    await sqlHelper.disconnect();
 }
 
 /**

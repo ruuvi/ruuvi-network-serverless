@@ -110,9 +110,9 @@ const logAPIError = (code, errorMessage, errorData, internalCode, internalSubCod
 const errorResponse = (code, errorMessage, internalCode, internalSubCode, errorData, headers) => {
     logAPIError(code, errorMessage, errorData, internalCode, internalSubCode);
 
-    if (code === HTTPCodes.OK) {
-        throw new Error("Invalid error state: " + HTTPCodes.OK);
-    }
+    //if (code === HTTPCodes.OK) {
+    //    throw new Error("Invalid error state: " + HTTPCodes.OK);
+    //}
     let errorObject = {
         result: "error",
         error: errorMessage

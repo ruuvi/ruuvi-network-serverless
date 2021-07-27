@@ -4,6 +4,7 @@ const dynamo = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 const validator = require('../Helpers/validator');
 const redis = require('../Helpers/redisHelper').getClient();
 const errorCodes = require('../Helpers/errorCodes');
+const dynamoHelper = require('../Helpers/dynamoHelper');
 
 exports.handler = async (event, context) => {
     console.log('Event', event);
@@ -41,7 +42,44 @@ exports.handler = async (event, context) => {
     batch.RequestItems[tableName] = [];
 
     let gatewaySeen = {};
-    
+
+    // Last seen timestamps
+    let seen = false;
+    try {
+        console.log(`Fetching last invalid signature timestamp for ${macAddress}`);
+        var lastSeen = await redis.get('invalid_signature_' + macAddress.toUpperCase());
+        gatewaySeen = {
+            macAddress: macAddress,
+            blockedAt: lastSeen
+        };
+
+        if (parseInt(lastSeen) > 0) {
+            seen = true;
+        }
+
+        const data = await dynamoHelper.fetch(tableName, 'GatewayId', macAddress, ['GatewayId', 'Whitelisted', 'Connected', 'Latest']);
+        if (data.length > 0) {
+            if (parseInt(data[0].Whitelisted) > 0) {
+                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, 'Gateway already whitelisted', errorCodes.ER_GATEWAY_ALREADY_WHITELISTED);
+            }
+            if (parseInt(data[0].Connected) > 0 || parseInt(data[0].Latest) > 0) {
+                seen = true;
+            }
+        }
+        console.log(`Successfully fetched invalid signature timestamp for ${macAddress}`, lastSeen);
+    } catch (e) {
+        console.error("Error fetching invalid signature timestamp", e);
+        gatewaySeen = {
+            macAddress: macAddress,
+            blockedAt: 0,
+            message: 'Unable to fetch data'
+        };
+    }
+
+    if (!seen) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, 'Request was valid, but gateway has not been seen yet.', errorCodes.ER_GATEWAY_NOT_FOUND);
+    }
+
     batch.RequestItems[tableName].push({
         PutRequest: {
             Item: {
@@ -53,7 +91,7 @@ exports.handler = async (event, context) => {
             }
         }
     });
-
+   
     try {
         await dynamo.batchWriteItem(batch, function(err, data) {
             if (err) {
@@ -62,24 +100,7 @@ exports.handler = async (event, context) => {
         }).promise();
     } catch (e) {
         console.error("Error writing whitelist batch to Dynamo", e);
-    }
-
-    // List seen timestamps
-    try {
-        console.log(`Fetching last invalid signature timestamp for ${macAddress}`);
-        var lastSeen = await redis.get('invalid_signature_' + macAddress.toUpperCase());
-        gatewaySeen = {
-            macAddress: macAddress,
-            blockedAt: lastSeen
-        };
-        console.log(`Successfully fetched invalid signature timestamp for ${macAddress}`, lastSeen);
-    } catch (e) {
-        console.error("Error fetching invalid signature timestamp", e);
-        gatewaySeen = {
-            macAddress: macAddress,
-            blockedAt: 0,
-            message: 'Unable to fetch data'
-        };
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Error storing whitelisted gateway.', errorCodes.INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
     }
 
     console.log('Whitelisted gateway: ', macAddress);

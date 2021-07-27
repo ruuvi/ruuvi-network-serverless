@@ -3,18 +3,11 @@ const dynamoHelper = require('../Helpers/dynamoHelper');
 const validator = require('../Helpers/validator');
 const auth = require('../Helpers/authHelper');
 const errorCodes = require('../Helpers/errorCodes');
+const { wrapper } = require('../Helpers/wrapper');
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD,
-        charset  : 'utf8mb4'
-    }
-});
+exports.handler = async (event, context) => wrapper(executeGetSensorData, event, context);
 
-exports.handler = async (event, context) => {
+const executeGetSensorData = async (event, context, sqlHelper) => {
     // Authorization
     let user = null;
     if (process.env.REQUIRE_LOGIN == 1) {
@@ -34,6 +27,7 @@ exports.handler = async (event, context) => {
         || !validator.validateMacAddress(query.sensor)) {
 
         // Invalid request
+        await sqlHelper.disconnect();
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid request format.', errorCodes.ER_INVALID_FORMAT);
     }
 
@@ -41,6 +35,7 @@ exports.handler = async (event, context) => {
         query.hasOwnProperty('sort')
         && !(['asc', 'desc'].includes(query.sort))
     ) {
+        await sqlHelper.disconnect();
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid sort argument.', errorCodes.ER_INVALID_SORT_MODE);
     }
 
@@ -48,6 +43,7 @@ exports.handler = async (event, context) => {
         query.hasOwnProperty('mode')
         && !(['dense', 'sparse', 'mixed'].includes(query.mode))
     ) {
+        await sqlHelper.disconnect();
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid mode argument.', errorCodes.ER_INVALID_DENSITY_MODE);
     }
 
@@ -89,27 +85,40 @@ exports.handler = async (event, context) => {
     };
     
     try {
-        const hasClaim = await mysql.query({
+        const hasClaim = await sqlHelper.query({
             sql: `SELECT
                     sensors.id,
-                    sensor_profiles.name AS name,
+                    IF (
+                        current_profile.name IS NOT NULL
+                        AND current_profile.name != "",
+                        current_profile.name,
+                        COALESCE(owner_profile.name, "")
+                    ) AS name,
+                    IF (
+                        current_profile.picture IS NOT NULL
+                        AND current_profile.picture != "",
+                        current_profile.picture,
+                        COALESCE(owner_profile.picture, "")
+                    ) AS picture,
                     sensors.public AS public,
                     sensors.offset_temperature AS offsetTemperature,
                     sensors.offset_humidity AS offsetHumidity,
-                    sensors.offset_pressure AS offsetPressure,
-                    sensor_profiles.picture AS picture
+                    sensors.offset_pressure AS offsetPressure
                 FROM sensors
-                LEFT JOIN sensor_profiles ON
-                    sensor_profiles.sensor_id = sensors.sensor_id
+                LEFT JOIN sensor_profiles current_profile ON
+                    current_profile.sensor_id = sensors.sensor_id
+                LEFT JOIN sensor_profiles owner_profile ON 
+                    owner_profile.sensor_id = sensors.sensor_id
+                    AND owner_profile.user_id = sensors.owner_id
                 WHERE
                     sensors.sensor_id = ?
                     AND (
                         (
-                            sensor_profiles.user_id = ?
-                            AND sensor_profiles.is_active = 1
+                            current_profile.user_id = ?
+                            AND current_profile.is_active = 1
                         ) OR (
                             sensors.public = 1
-                            AND sensor_profiles.user_id = sensors.owner_id
+                            AND current_profile.user_id = sensors.owner_id
                         )
                     )`,
             timeout: 1000,
@@ -131,9 +140,6 @@ exports.handler = async (event, context) => {
         console.error(e);
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Internal server error.', errorCodes.ER_INTERNAL);
     }
-
-    // Close MySQL connection
-    await mysql.end();
 
     // Fetch from long term storage if requested for longer than TTL
     let dataPoints = [];

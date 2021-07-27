@@ -3,20 +3,12 @@ const { HTTPCodes } = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const errorCodes = require('../Helpers/errorCodes');
-const sqlHelper = require('../Helpers/sqlHelper');
 const emailHelper = require('../Helpers/emailHelper');
+const wrapper = require('../Helpers/wrapper').wrapper;
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD,
-        charset  : 'utf8mb4'
-    }
-});
+exports.handler = async (event, context) => wrapper(executeClaim, event, context);
 
-exports.handler = async (event, context) => {
+const executeClaim = async (event, context, sqlHelper) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
         return gatewayHelper.unauthorizedResponse();
@@ -37,12 +29,11 @@ exports.handler = async (event, context) => {
     const maxClaims = parseInt(subscription.max_claims);
     const currentClaims = await sqlHelper.fetchCount('owner_id', user.id, 'sensors');
     if (currentClaims < 0) {
-        await mysql.end();
+        console.error('Current claims under 0');
         return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
     }
 
     if (currentClaims >= maxClaims) {
-        await mysql.end();
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Maximum claims for subscription reached.', errorCodes.ER_CLAIM_COUNT_REACHED);
     }
 
@@ -60,8 +51,6 @@ exports.handler = async (event, context) => {
     if (!results) {
         return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL);
     } else if (results.code) {
-        await mysql.end();
-
         if (results.code === 'ER_DUP_ENTRY') {
             const claimerRes = await sqlHelper.fetchSingle('sensor_id', sensor, 'sensors');
             const claimerUserRes = await sqlHelper.fetchSingle('id', claimerRes.owner_id, 'users');
@@ -82,15 +71,12 @@ exports.handler = async (event, context) => {
     }, 'sensor_profiles');
 
     if (!profileResults || profileResults.code) {
-        await mysql.end();
-
         console.error('Error inserting sensor_profile', profileResults);
+        
         return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
     }
 
     // Run clean up function
-    await mysql.end();
-
     return gatewayHelper.successResponse({
         sensor: sensor
     });

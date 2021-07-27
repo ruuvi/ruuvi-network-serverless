@@ -2,12 +2,15 @@ const gatewayHelper = require('../Helpers/gatewayHelper');
 const validator = require('../Helpers/validator');
 const jwtHelper = require('../Helpers/JWTHelper');
 const userHelper = require('../Helpers/userHelper');
-const sqlHelper = require('../Helpers/sqlHelper');
 const errorCodes = require('../Helpers/errorCodes');
 
 const dateFormat = require( 'dateformat' );
 
-exports.handler = async (event, context) => {
+const wrapper = require('../Helpers/wrapper').wrapper;
+
+exports.handler = async (event, context) => wrapper(executeVerifyUser, event, context);
+
+const executeVerifyUser = async (event, context, sqlHelper) => {
     if (
         !validator.hasKeys(event.queryStringParameters, ['token'])
         || !validator.validateAlphaNumeric(event.queryStringParameters.token)

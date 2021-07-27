@@ -1,15 +1,5 @@
 const mysqlHelper = require('../Helpers/sqlHelper');
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD,
-        charset  : 'utf8mb4'
-    }
-});
-
 /**
  * Fetches a user by e-mail
  *
@@ -101,7 +91,7 @@ const updateLastAccessed = async (tokenId) => {
     }
 
     try {
-        results = await mysql.query({
+        results = await mysqlHelper.query({
             sql: `UPDATE user_tokens SET last_accessed = CURRENT_TIMESTAMP WHERE id = ?;`,
             timeout: 1000,
             values: [idInt]

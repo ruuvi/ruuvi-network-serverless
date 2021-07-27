@@ -38,6 +38,7 @@ const authorizedUser = async (headers) => {
     // Fetch hashed version
     const tokenResult = await sqlHelper.fetchAll('user_id', parsed.userId, 'user_tokens');
     if (!tokenResult || tokenResult.length === 0) {
+        await sqlHelper.disconnect();
         return null;
     }
 

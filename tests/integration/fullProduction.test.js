@@ -14,71 +14,23 @@ const {
 
 	RI,
     
-	internalHttp,
 	secondaryHttp,
+
     primaryEmail,
-    secondaryEmail,
     unregisteredEmail,
 
 	sleep
 } = require('./common');
-const { randomMac, randomHex } = require('./integrationHelpers');
+const { randomMac } = require('./integrationHelpers');
 
 // Set up some defaults
 const newSensorMac = utils.randomMac();
 const newGatewayMac = utils.randomMac();
 const testData = utils.randomHex(32);
 
-// Verifiable test e-mail here would be best
-const newEmail = utils.randomHex(8) + '@' + utils.randomHex(8) + '.com';
-let registrationToken = null;
-
 const maxClaims = 25;
 
-describe('Full integration tests', () => {
-	// INTERNAL
-	itif(RI)('`whitelist` without internal token fails', async () => {
-
-		// toThrow failed for some reason [temporary workaround]
-		let threw = false;
-		try {
-			await post('whitelist', {
-				macAddress: "ab:ba:cd:ba:ca:ba",
-				secret: "1234"
-			});
-		} catch (e) {
-			expect(e.message).toMatch(/Request failed with status code 403/);
-			threw = true;
-		}
-		expect(threw).toBe(true);
-	});
-
-	itif(RI)('`whitelist` with internal token succeeds', async () => {
-		const newGwMac = randomMac();
-		const result = await post('whitelist', {
-			macAddress: newGwMac,
-			secret: randomHex(64)
-		}, internalHttp);
-		expect(result.status).toBe(200);
-		expect(result.data.data.gateway.macAddress).toBe(newGwMac);
-	});
-
-	itif(RI)('`gwinfo` returns data for whitelisted gateway', async () => {
-		const newGWMac = randomMac();
-		const whitelistResult = await post('whitelist', {
-			macAddress: newGWMac,
-			secret: randomHex(64)
-		}, internalHttp);
-		expect(whitelistResult.status).toBe(200, 'successfully whitelisted');
-
-		const gwinfoResult = await get('gwinfo', {
-			gateway: newGWMac
-		}, internalHttp);
-
-		expect(gwinfoResult.status).toBe(200);
-		expect(gwinfoResult.data.data.gateway.GatewayId).toBe(newGWMac);
-		expect(gwinfoResult.data.data.gateway.InvalidSignatureTimestamp).toBeNull();
-	});
+describe('[LEGACY] Remaining uncategorized tests', () => {
 
 	// USER
 	itif(RI)('`register` returns 200 OK', async () => {
@@ -327,101 +279,6 @@ describe('Full integration tests', () => {
 		expect(uploadLinkResult.data.data.uploadURL).toBe('');
 	});
 
-	itif(RI)('`shared` returns an empty array of sensors', async () => {
-		const sensorData = await get('shared');
-		expect(sensorData.data.data.sensors.length).toBe(0);
-	});
-
-	itif(RI)('`share` is successful', async () => {
-		const shareResult = await post('share', {
-			sensor: newSensorMac,
-			user: secondaryEmail
-		});
-
-		expect(shareResult.status).toBe(200);
-		expect(shareResult.statusText).toBe('OK');
-		expect(shareResult.data.result).toBe('success');
-
-		expect(shareResult.data.data.sensor).toBe(newSensorMac);
-
-		// Verify share being found
-		const userShareData = await get('shared');
-		expect(userShareData.data.data.sensors.length).toBeGreaterThan(0);
-
-		const sharedSensorData = userShareData.data.data.sensors[0];
-		expect(sharedSensorData.sensor).toBe(newSensorMac);
-		expect(sharedSensorData.public).toBe(false);
-		expect(sharedSensorData.sharedTo).toBe(secondaryEmail);
-	});
-
-	itif(RI)('`sensors` returns the proper response with shared and unshared sensors', async () => {
-		const sensorData = await get('sensors');
-
-		expect(sensorData.data.data.sensors).not.toBeNull();
-		const newSensor = sensorData.data.data.sensors.find(s => s.sensor === newSensorMac);
-		expect(newSensor.sharedTo.length).toBe(1);
-
-	});
-
-	itif(RI)('`sensors` works filtered to a single sensor', async () => {
-		const sensorData = await get('sensors', {
-			sensor: newSensorMac
-		});
-		
-		const newSensor = sensorData.data.data.sensors.find(s => s.sensor === newSensorMac);
-		expect(newSensor).not.toBeNull();
-		expect(newSensor.sharedTo.length).toBe(1);
-		expect(newSensor.sharedTo[0]).toBe(secondaryEmail);
-	});
-
-	// DEPENDENT ON THE ABOVE
-	itif(RI)('`unshare` is successful', async () => {
-		const unshareResult = await post('unshare', {
-			sensor: newSensorMac,
-			user: secondaryEmail
-		});
-
-		expect(unshareResult.status).toBe(200);
-		expect(unshareResult.statusText).toBe('OK');
-		expect(unshareResult.data.result).toBe('success');
-
-		const userShareData = await get('shared');
-		expect(userShareData.data.data.sensors.length).toBe(0);
-	});
-
-	itif(RI)('`share` to unregistered is successful', async () => {
-		const shareResult = await post('share', {
-			sensor: newSensorMac,
-			user: unregisteredEmail
-		});
-
-		expect(shareResult.status).toBe(200);
-		expect(shareResult.statusText).toBe('OK');
-		expect(shareResult.data.result).toBe('success');
-
-		expect(shareResult.data.data.sensor).toBe(newSensorMac);
-	});
-
-	itif(RI)('`unshare` by sharee is successful', async () => {
-		const shareResult = await post('share', {
-			sensor: newSensorMac,
-			user: secondaryEmail
-		});
-
-		expect(shareResult.status).toBe(200, 'Share step');
-
-		const unshareResult = await post('unshare', {
-			sensor: newSensorMac
-		}, secondaryHttp);
-
-		expect(unshareResult.status).toBe(200);
-		expect(unshareResult.statusText).toBe('OK');
-		expect(unshareResult.data.result).toBe('success');
-
-		const userShareData = await get('shared');
-		expect(userShareData.data.data.sensors.length).toBe(0);
-	});
-
 	itif(RI)('`unclaim` returns 200 OK', async () => {
 		const claimResult = await post('unclaim', {
 			sensor: newSensorMac
@@ -472,7 +329,6 @@ describe('Full integration tests', () => {
 			});
 		} catch (e) {
 			claimResult = e.response.status;
-			//console.log(e);
 		}
 
 		// Clean up
@@ -492,61 +348,6 @@ describe('Full integration tests', () => {
 		}
 
 		expect(claimResult).toBe(400);
-	});
-
-	itif(RI)('`settings` insert is successful', async () => {
-		const randomKey = utils.randomHex(16);
-		const randomValue = utils.randomHex(16);
-
-		const settingsResult = await post('settings', {
-			name: randomKey,
-			value: randomValue
-		});
-
-		expect(settingsResult.status).toBe(200, 'Insert step');
-		expect(settingsResult.data.data.action).toBe('added');
-	});
-
-	itif(RI)('`settings` read is successful', async () => {
-		// Create a new key
-		const randomKey = utils.randomHex(16);
-		const randomValue = utils.randomHex(16);
-
-		const settingsResult = await post('settings', {
-			name: randomKey,
-			value: randomValue
-		});
-		expect(settingsResult.status).toBe(200, 'Insert step');
-
-		// Read new key
-		const getSettingsResult = await get('settings');
-		expect(getSettingsResult.status).toBe(200, 'Read step');
-		expect(getSettingsResult.data.data.settings[randomKey]).toBe(randomValue);
-	});
-
-	itif(RI)('`settings` update is successful', async () => {
-		// Create a new key
-		const randomKey = utils.randomHex(16);
-		const randomValue = utils.randomHex(16);
-
-		const settingsResult = await post('settings', {
-			name: randomKey,
-			value: randomValue
-		});
-		expect(settingsResult.status).toBe(200, 'Insert step');
-
-		// Update new key
-		const updatedRandomValue = utils.randomHex(16);
-
-		const updateSettingsResult = await post('settings', {
-			name: randomKey,
-			value: updatedRandomValue
-		});
-		expect(updateSettingsResult.status).toBe(200, 'Update step');
-
-		const getUpdatedSettingsResult = await get('settings');
-		expect(getUpdatedSettingsResult.status).toBe(200, 'Read step');
-		expect(getUpdatedSettingsResult.data.data.settings[randomKey]).toBe(updatedRandomValue);
 	});
 });
 

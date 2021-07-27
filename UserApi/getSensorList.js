@@ -1,18 +1,10 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
-const sqlHelper = require('../Helpers/sqlHelper');
 const validator = require('../Helpers/validator');
 const dynamoHelper = require('../Helpers/dynamoHelper');
+const { wrapper } = require('../Helpers/wrapper');
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD,
-        charset  : 'utf8mb4'
-    }
-});
+exports.handler = async (event, context) => wrapper(executeGetSensorList, event, context);
 
 /**
  * Fetches list of tags the user has shared.
@@ -20,7 +12,7 @@ const mysql = require('serverless-mysql')({
  * @param {object} event
  * @param {object} context
  */
-exports.handler = async (event, context) => {
+const executeGetSensorList = async (event, context, sqlHelper) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
         return gatewayHelper.unauthorizedResponse();
@@ -40,7 +32,7 @@ exports.handler = async (event, context) => {
         queryArguments.push(filteredSensorId);
     }
 
-    const sensors = await mysql.query({
+    const sensors = await sqlHelper.query({
         sql: `SELECT
                 sensors.sensor_id AS sensor,
                 sensor_profiles.name AS name,
@@ -76,7 +68,7 @@ exports.handler = async (event, context) => {
     }
 
     // Fetch Shares
-    const sharedSensors = await mysql.query({
+    const sharedSensors = await sqlHelper.query({
         sql: `SELECT
                 sensor_profiles.sensor_id AS sensor,
                 users.email AS sharedTo
@@ -96,7 +88,7 @@ exports.handler = async (event, context) => {
         
         // Broken reference
         if (found === -1) {
-            console.log('Not found');
+            console.log('Not found', sensor);
             continue;
         }
 
@@ -111,9 +103,35 @@ exports.handler = async (event, context) => {
         formatted[found].sharedTo.push(sensor.sharedTo);
     }
 
-    await sqlHelper.disconnect();
+    // Fetch Shared to Me
+    const sensorsSharedToMe = await sqlHelper.query({
+        sql: `SELECT
+                sensors.sensor_id AS sensor,
+                sensor_profiles.name AS name,
+                sensor_profiles.picture AS picture,
+                sensors.public AS public,
+                sensors.can_share AS canShare
+            FROM sensor_profiles
+            INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
+            WHERE
+                sensors.owner_id != ?
+                AND sensor_profiles.is_active = 1
+                AND sensor_profiles.user_id = ?
+                ${sensorFilter}`,
+        timeout: 1000,
+        values: queryArguments
+    });
+
+    let formattedSharedToMe = [];
+
+    for (let sensor of sensorsSharedToMe) {
+        sensor.public = sensor.public ? true : false;
+        sensor.canShare = false;
+        formattedSharedToMe.push(JSON.parse(JSON.stringify(sensor)));
+    }
 
     return gatewayHelper.successResponse({
-        sensors: formatted
+        sensors: formatted,
+        sharedToMe: formattedSharedToMe
     });
 }

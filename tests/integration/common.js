@@ -22,6 +22,7 @@ const internalKey = stageConfig[stage]['internalKey'];
 
 // Release test
 const RI = process.env.IS_INTEGRATION_TEST;
+const PRODUCTION = process.env.STAGE == 'prod';
 
 /**
  * HTTP Client with Authorization set up
@@ -42,6 +43,18 @@ const secondaryHttp = axios.create({
     timeout: 10000,
     headers: {
         Authorization: `Bearer ${secondaryToken}`
+    }
+});
+
+/**
+ * HTTP Client without signature
+ */
+const httpWithInvalidSignature = axios.create({
+    baseURL: baseURL,
+    timeout: 10000,
+    headers: {
+        Authorization: `Bearer ${primaryToken}`,
+        'Ruuvi-HMAC-SHA256': 'invalidsignature'
     }
 });
 
@@ -88,6 +101,7 @@ module.exports = {
     utils,
 
     RI,
+    PRODUCTION,
 
     itif,
     get,
@@ -95,6 +109,7 @@ module.exports = {
 
     internalHttp,
     secondaryHttp,
+    httpWithInvalidSignature,
     primaryEmail,
     secondaryEmail,
     unregisteredEmail,

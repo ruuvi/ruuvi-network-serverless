@@ -5,6 +5,12 @@ const defaultIntervals = {
     alert: 3600
 }
 
+const clearThrottle = async (throttleKey, interval) => {
+    const fullThrottleKey = "throttle_" + interval + "_" + throttleKey;
+    await redis.del(fullThrottleKey);
+    return true;
+}
+
 /**
  * If throttled, returns true. Otherwise, refreshes latest value and returns false.
  * 
@@ -38,6 +44,7 @@ const defaultIntervals = {
  */
 module.exports = {
     throttle,
+    clearThrottle,
 
     defaultIntervals
 };

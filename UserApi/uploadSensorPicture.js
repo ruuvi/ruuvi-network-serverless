@@ -8,15 +8,9 @@ const errorCodes = require('../Helpers/errorCodes');
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD,
-        charset  : 'utf8mb4'
-    }
-});
+const wrapper = require('../Helpers/wrapper').wrapper;
+
+exports.handler = async (event, context) => wrapper(executeUploadSensorPicture, event, context);
 
 /**
  * Gets a signed profile image upload URL
@@ -24,7 +18,7 @@ const mysql = require('serverless-mysql')({
  * @param {object} event
  * @param {object} context
  */
-exports.handler = async (event, context) => {
+const executeUploadSensorPicture = async (event, context, sqlHelper) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
         return gatewayHelper.unauthorizedResponse();
@@ -44,7 +38,7 @@ exports.handler = async (event, context) => {
     const action = validator.hasKeys(eventBody, ['action']) ? eventBody.action : 'upload';
     if (action === 'reset') {
         try {
-            results = await mysql.query({
+            results = await sqlHelper.query({
                 sql: `UPDATE sensor_profiles
                         SET
                         picture = '',
@@ -59,7 +53,6 @@ exports.handler = async (event, context) => {
             if (results.affectedRows !== 1) {
                 return gatewayHelper.errorResponse(HTTPCodes.NOT_FOUND, 'Sensor not owned or found.', errorCodes.ER_SENSOR_NOT_FOUND);
             }
-            await mysql.end();
         } catch (e) {
             if (results.affectedRows && results.affectedRows === 1) {
                 return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error closing connection.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
@@ -99,10 +92,10 @@ exports.handler = async (event, context) => {
     const name = pictureGuid + ext;
 
     var s3Params = {
-      Bucket: process.env.BUCKET_NAME,
-      Key: name,
-      ContentType: fileType,
-      ACL: 'public-read',
+        Bucket: process.env.BUCKET_NAME,
+        Key: name,
+        ContentType: fileType,
+        ACL: 'public-read',
     };
 
     // Signed S3 upload URL
@@ -114,7 +107,7 @@ exports.handler = async (event, context) => {
     let results = null;
 
     try {
-        results = await mysql.query({
+        results = await sqlHelper.query({
             sql: `UPDATE sensor_profiles
                   SET
                     picture = ?,
@@ -129,7 +122,6 @@ exports.handler = async (event, context) => {
 		if (results.affectedRows !== 1) {
             return gatewayHelper.errorResponse(HTTPCodes.NOT_FOUND, 'Sensor not owned or found.', errorCodes.ER_SENSOR_NOT_FOUND);
 		}
-        await mysql.end();
     } catch (e) {
 		if (results.affectedRows && results.affectedRows === 1) {
             return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error closing connection.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);

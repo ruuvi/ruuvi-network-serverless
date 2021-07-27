@@ -39,6 +39,9 @@ custom:
   gatewayEnforceSignature: 0       # 1 for ENABLED
   gatewayRequestTTL: 10000         # ms - how long is the request valid?
 
+  dev-throttle-interval: 1
+  prod-throttle-interval: 3600
+
   # Dynamo Auto-Scaling Configuration
   capacities:
     - table: DynamoSensorData  # Resource
@@ -127,8 +130,7 @@ provider:
       Resource: { 'Fn::Join': [':', ['arn:aws:dynamodb', { Ref: 'AWS::Region' }, { Ref: 'AWS::AccountId' }, 'table/*']] }
     - Effect: "Allow"
       Action:
-        - "ses:SendEmail"
-        - "ses:SendRawEmail"
+        - "ses:SendTemplatedEmail"
       Resource: "*"
     - Effect: "Allow"
       Action:
@@ -177,6 +179,7 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNATURE_HEADER_NAME: 'Ruuvi-HMAC-SHA256'
+      ALERT_THROTTLE_INTERVAL: ${self:custom.${self:custom.stage}-throttle-interval}
 
   writeToDatabase:
     handler: GatewayApi/writeToDatabase.handler
@@ -368,6 +371,7 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
+      EMAIL_QUEUE: { Ref: EmailQueue }
 
   shareSensor:
     handler: UserApi/shareSensor.handler
@@ -494,6 +498,7 @@ functions:
       TABLE_NAME: ${self:custom.dynamoSensorData}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+      ALERT_THROTTLE_INTERVAL: ${self:custom.${self:custom.stage}-throttle-interval}
 
   getAlert:
     handler: UserApi/getAlerts.handler
@@ -524,6 +529,11 @@ functions:
     environment:
       SOURCE_EMAIL: ${self:custom.sourceEmail}
       SOURCE_DOMAIN: ${self:custom.sourceDomain}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+
 
   # NOTE: Workaround for CORS preflight requests
   corsOptions:
@@ -584,6 +594,18 @@ functions:
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
+  blacklist:
+    handler: InternalApi/blacklist.handler
+    events:
+      - httpApi:
+          method: POST
+          path: /blacklist
+    environment:
+      INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key}
+      WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+
+
   gatewayInfo:
     handler: InternalApi/gatewayInfo.handler
     events:
@@ -618,6 +640,21 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       MAX_TOKEN_AGE: 180 # Days
+
+  alertCacheCleaner:
+    handler: services/alertCacheCleaner.handler
+    events:
+      - schedule:
+          name: ${self:custom.stage}-Alert-Cache-Clean-Up-Timer
+          description: 'Triggers alert cache refresh periodically.'
+          rate: rate(1 hour)
+    environment:
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+
 
 # Resources (queues, databases, etc.)
 resources:

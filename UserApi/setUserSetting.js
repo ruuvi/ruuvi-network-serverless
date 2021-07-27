@@ -3,17 +3,11 @@ const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const errorCodes = require('../Helpers/errorCodes.js');
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD,
-        charset  : 'utf8mb4'
-    }
-});
+const { wrapper } = require('../Helpers/wrapper');
 
-exports.handler = async (event, context) => {
+exports.handler = async (event, context) => wrapper(executeSetUserSetting, event, context);
+
+const executeSetUserSetting = async (event, context, sqlHelper) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
         return gatewayHelper.unauthorizedResponse();
@@ -31,7 +25,7 @@ exports.handler = async (event, context) => {
 
     let settings = null;
     try {
-        settings = await mysql.query({
+        settings = await sqlHelper.query({
             sql: 
                 `INSERT INTO user_settings (\`user_id\`, \`key\`, \`value\`)
                 VALUES (?, ?, ?)
@@ -41,7 +35,6 @@ exports.handler = async (event, context) => {
             timeout: 10000,
             values: [user.id, eventBody.name, eventBody.value]
         });
-        await mysql.end();
     } catch (e) {
 		if (results.affectedRows && results.affectedRows === 1) {
             return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error closing connection.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
