@@ -46,6 +46,18 @@ const secondaryHttp = axios.create({
 });
 
 /**
+ * HTTP Client without signature
+ */
+const httpWithInvalidSignature = axios.create({
+    baseURL: baseURL,
+    timeout: 10000,
+    headers: {
+        Authorization: `Bearer ${primaryToken}`,
+        'Ruuvi-HMAC-SHA256': 'invalidsignature'
+    }
+});
+
+/**
  * HTTP Client with Authorization set up
  */
  const internalHttp = axios.create({
@@ -95,6 +107,7 @@ module.exports = {
 
     internalHttp,
     secondaryHttp,
+    httpWithInvalidSignature,
     primaryEmail,
     secondaryEmail,
     unregisteredEmail,

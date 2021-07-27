@@ -20,25 +20,41 @@ exports.handler = async (event, context) => {
         return gatewayHelper.invalid();
     }
 
-    
+    let invalidSignatureTimestamp = 0;
+    try {
+        invalidSignatureTimestamp = await redis.get('invalid_signature_' + gateway.toUpperCase());
+        if (invalidSignatureTimestamp === null) {
+            invalidSignatureTimestamp = 0;
+        }
+    } catch (e) {
+        console.error('Error fetching invalid signature timestamp.');
+        return gatewayHelper.internal();
+    }
+
+    let returnData = {
+        'GatewayId': gateway,
+        'Whitelisted': 0,
+        'Connected': 0,
+        'Latest': 0,
+        'InvalidSignatureTimestamp': invalidSignatureTimestamp
+    };
+
     const tableName = process.env.WHITELIST_TABLE_NAME;
 
-    let data = {};
     try {
-        data = dynamoHelper.fetch(tableName, 'GatewayId', gateway, ['GatewayId', 'Whitelisted', 'Connected', 'Latest']);
+        const data = dynamoHelper.fetch(tableName, 'GatewayId', gateway, ['GatewayId', 'Whitelisted', 'Connected', 'Latest']);
+        if (data.length > 0) {
+            returnData = {
+                ...returnData,
+                ...data[0]
+            };
+        }
     } catch (e) {
         console.error('Error fetching Dynamo Data', e);
         return gatewayHelper.internal();
     }
 
-    if (!data.GatewayId) {
-        data = { "GatewayId": gateway };
-    }
-
-    const invalidSignatureTimestamp = await redis.get('invalid_signature_' + gateway.toUpperCase());
-    data.InvalidSignatureTimestamp = invalidSignatureTimestamp;
-
     return gatewayHelper.successResponse({
-        gateway: data
+        gateway: returnData
     });
 };
