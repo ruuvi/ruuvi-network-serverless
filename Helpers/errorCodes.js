@@ -8,7 +8,8 @@ const errorCodes = {
     ER_SENSOR_NOT_FOUND: 'ER_SENSOR_NOT_FOUND', // Sensor not found (or no access)
     ER_TOKEN_EXPIRED: 'ER_TOKEN_EXPIRED', // Access token expired (f.ex. User verification tokens)
     ER_THROTTLED: 'ER_THROTTLED', // Throttled request due to too high call frequency
-    ER_GATEWAY_NOT_FOUND: 'ER_GATEWAY_NOT_FOUND',
+    ER_GATEWAY_NOT_FOUND: 'ER_GATEWAY_NOT_FOUND', // Gateway not found
+    ER_GATEWAY_ALREADY_WHITELISTED: 'ER_GATEWAY_ALREADY_WHITELISTED', // Gateway already whitelisted
 
     // Subscriptions and Sharing
     ER_SUBSCRIPTION_NOT_FOUND: 'ER_SUBSCRIPTION_NOT_FOUND', // Thrown when action requires a subscription but it is not found

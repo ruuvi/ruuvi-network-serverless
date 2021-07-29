@@ -57,10 +57,10 @@ exports.handler = async (event, context) => {
             seen = true;
         }
 
-        const data = dynamoHelper.fetch(tableName, 'GatewayId', macAddress, ['GatewayId', 'Whitelisted', 'Connected', 'Latest']);
+        const data = await dynamoHelper.fetch(tableName, 'GatewayId', macAddress, ['GatewayId', 'Whitelisted', 'Connected', 'Latest']);
         if (data.length > 0) {
             if (parseInt(data[0].Whitelisted) > 0) {
-                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, 'Gateway already whitelisted');
+                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, 'Gateway already whitelisted', errorCodes.ER_GATEWAY_ALREADY_WHITELISTED);
             }
             if (parseInt(data[0].Connected) > 0 || parseInt(data[0].Latest) > 0) {
                 seen = true;
@@ -77,7 +77,7 @@ exports.handler = async (event, context) => {
     }
 
     if (!seen) {
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Gateway has not been seen yet.', errorCodes.ER_GATEWAY_NOT_FOUND);
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.CONFLICT, 'Request was valid, but gateway has not been seen yet.', errorCodes.ER_GATEWAY_NOT_FOUND);
     }
 
     batch.RequestItems[tableName].push({
@@ -100,6 +100,7 @@ exports.handler = async (event, context) => {
         }).promise();
     } catch (e) {
         console.error("Error writing whitelist batch to Dynamo", e);
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Error storing whitelisted gateway.', errorCodes.INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
     }
 
     console.log('Whitelisted gateway: ', macAddress);

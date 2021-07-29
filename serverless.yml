@@ -584,6 +584,18 @@ functions:
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
+  blacklist:
+    handler: InternalApi/blacklist.handler
+    events:
+      - httpApi:
+          method: POST
+          path: /blacklist
+    environment:
+      INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key}
+      WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+
+
   gatewayInfo:
     handler: InternalApi/gatewayInfo.handler
     events:

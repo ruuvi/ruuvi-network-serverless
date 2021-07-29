@@ -25,6 +25,7 @@ const {
 	sleep
 } = require('./common');
 const { randomMac, randomHex } = require('./integrationHelpers');
+const errorCodes = require('../../Helpers/errorCodes.js');
 
 // Set up some defaults
 const newSensorMac = utils.randomMac();
@@ -89,6 +90,63 @@ describe('Full integration tests', () => {
 
 		expect(result.status).toBe(200);
 		expect(result.data.data.gateway.macAddress).toBe(newGwMac);
+
+		// Attempt to blacklist
+		const blacklistResult = await post('blacklist', {
+			macAddress: newGwMac
+		}, internalHttp);
+
+		expect(blacklistResult.status).toBe(200);
+		expect(blacklistResult.data.data.gateway).toBe(newGwMac);
+		console.log(blacklistResult.data.data.gateway);
+	});
+
+	itif(RI)('`whitelist` with already whitelisted fails', async () => {
+		const newGwMac = randomMac();
+
+		let tags = {};
+		tags[newSensorMac] = {
+			"rssi":	-76,
+			"timestamp": Date.now() - 50,
+			"data":	testData
+		};
+
+		let rejected = false;
+		try {
+			await post('record', {
+				"data":	{
+					"coordinates": "",
+					"timestamp": Date.now(),
+					"gw_mac": newGwMac,
+					"tags":	tags
+				}
+			}, httpWithInvalidSignature);
+		} catch (e) {
+			rejected = true;
+		}
+
+		await sleep(1000);
+
+		const result = await post('whitelist', {
+			macAddress: newGwMac,
+			secret: randomHex(64)
+		}, internalHttp);
+
+		expect(result.status).toBe(200);
+		expect(result.data.data.gateway.macAddress).toBe(newGwMac);
+
+		let thrown = false;
+		try {
+			const result = await post('whitelist', {
+				macAddress: newGwMac,
+				secret: randomHex(64)
+			}, internalHttp);
+		} catch (e) {
+			expect(e.response.status).toBe(409);
+			expect(e.response.data.code).toBe(errorCodes.ER_GATEWAY_ALREADY_WHITELISTED);
+			thrown = true;
+		}
+		expect(thrown).toBe(true);
 	});
 
 	itif(RI)('`whitelist` on unseen gateway fails', async () => {
@@ -101,8 +159,11 @@ describe('Full integration tests', () => {
 				macAddress: newGwMac,
 				secret: randomHex(64)
 			}, internalHttp);
-		} catch (e) {	
-			expect(e.response.status).toBe(400);		
+		} catch (e) {
+			expect(e.response.status).toBe(409);
+			expect(e.response.data.result).toBe('error');
+			expect(e.response.data.code).toBe(errorCodes.ER_GATEWAY_NOT_FOUND);
+			expect(e.response.data.error).toBe('Request was valid, but gateway has not been seen yet.');
 			thrown = true;
 		}
 		expect(thrown).toBe(true);
