@@ -36,8 +36,6 @@ exports.handler = async (event, context) => {
     const timestamp = data.timestamp;
 
     if (signature !== null || parseInt(process.env.ENFORCE_SIGNATURE) === 1) {
-        console.log('Signed Update', event.headers, event.body, event);
-
         const validationResult = await auth.validateGatewaySignature(
             signature,
             event.body,

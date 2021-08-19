@@ -29,11 +29,13 @@ exports.handler = async (event) => {
         // Verify that e-mails are not disabled
         const user = await sqlHelper.fetchSingle('email', email, 'users');
         if (user !== null) {
-            const userSettings = await sqlHelper.fetchAll('key', 'disable_emails', 'user_settings');
-            const disabledSetting = userSettings.find(setting => parseInt(setting.user_id) == parseInt(user.id));
-            if (parseInt(disabledSetting.value) === 1) {
-                console.log(`Email not sent to ${email} because emails are disabled.`);
-                continue;
+            const userSettings = await sqlHelper.fetchAll('`key`', 'disable_emails', 'user_settings');
+            if (userSettings.length > 0) {
+                const disabledSetting = userSettings.find(setting => parseInt(setting.user_id) == parseInt(user.id));
+                if (parseInt(disabledSetting.value) === 1) {
+                    console.log(`Email not sent to ${email} because emails are disabled.`);
+                    continue;
+                }
             }
         }
 

@@ -2,11 +2,12 @@ const validator = require('../Helpers/validator');
 
 const mysql = require('serverless-mysql')({
     config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD,
-        charset  : 'utf8mb4'
+        host            : process.env.DATABASE_ENDPOINT,
+        database        : process.env.DATABASE_NAME,
+        user            : process.env.DATABASE_USERNAME,
+        password        : process.env.DATABASE_PASSWORD,
+        charset         : 'utf8mb4',
+        zombieMaxTimeout: 30
     }
 });
 
@@ -352,30 +353,43 @@ const shareSensor = async (userId, ownerId, sensor) => {
 const fetchSensorsForUser = async (userId, sensorId = null) => {
     const userIdInt = parseInt(userId);
 
-    let values = [userIdInt];
+    let values = [userIdInt, userIdInt];
     let filter = '';
 
     if (sensorId !== null) {
-        filter = 'AND sensor_profiles.sensor_id = ?';
+        filter = 'AND current_profile.sensor_id = ?';
         values.push(sensorId);
     }
 
     const sensors = await mysql.query({
         sql: `SELECT
                 sensors.sensor_id AS sensor,
-                COALESCE(sensor_profiles.name, '') AS name,
+                IF (
+                    current_profile.name IS NOT NULL
+                    AND current_profile.name != "",
+                    current_profile.name,
+                    COALESCE(owner_profile.name, "<<Unknown>>")
+                ) AS name,
+                IF (
+                    current_profile.picture IS NOT NULL
+                    AND current_profile.picture != "",
+                    current_profile.picture,
+                    COALESCE(owner_profile.picture, "<<Unknown>>")
+                ) AS picture,
                 owner.email AS owner,
-                COALESCE(sensor_profiles.picture, '') AS picture,
                 sensors.public AS public,
                 sensors.offset_humidity AS offsetHumidity,
                 sensors.offset_temperature AS offsetTemperature,
                 sensors.offset_pressure AS offsetPressure
-            FROM sensor_profiles
-            INNER JOIN sensors ON sensor_profiles.sensor_id = sensors.sensor_id
+            FROM sensor_profiles current_profile
+            INNER JOIN sensors ON current_profile.sensor_id = sensors.sensor_id
+            LEFT JOIN sensor_profiles owner_profile ON 
+                owner_profile.sensor_id = sensors.sensor_id
+                AND sensors.owner_id = ?
             INNER JOIN users owner ON owner.id = sensors.owner_id
             WHERE
-                sensor_profiles.user_id = ?
-                AND sensor_profiles.is_active = 1
+                current_profile.user_id = ?
+                AND current_profile.is_active = 1
                 ${filter}`,
         timeout: 1000,
         values: values
