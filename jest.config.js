@@ -2,7 +2,7 @@
 /** @type {import('@jest/types').Config.InitialOptions} */
 const config = {
   //verbose: true,
-  testTimeout: 60000,
+  testTimeout: 90000,
   testEnvironment: 'node'
 };
 

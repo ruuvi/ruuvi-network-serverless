@@ -89,7 +89,7 @@ exports.handler = async (event, context) => {
     }
 
     // Run clean up function
-    await mysql.end();
+    await sqlHelper.disconnect();
 
     return gatewayHelper.successResponse({
         sensor: sensor

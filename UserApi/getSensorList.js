@@ -96,7 +96,7 @@ exports.handler = async (event, context) => {
         
         // Broken reference
         if (found === -1) {
-            console.log('Not found');
+            console.log('Not found', sensor);
             continue;
         }
 

@@ -28,7 +28,7 @@ const refreshAlertCache = async (sensor, data = null) => {
     
     let active = [];
     data.forEach((alert) => {
-        if (!alert.triggered) {
+        if (alert.enabled) {
             active.push(alert);
         }
     });
@@ -70,7 +70,7 @@ const getAlerts = async (sensor, userId = null, useCache = false, returnRaw = fa
  */
 const formatAlerts = (raw) => {
     let formatted = [];
-    raw.forEach((alert) => {
+    for (const alert of raw) {
         formatted.push({
             userId: alert.user_id,
             sensorId: alert.sensor_id,
@@ -86,7 +86,7 @@ const formatAlerts = (raw) => {
             triggered: alert.triggered ? true : false,
             triggeredAt: alert.triggered_at
         });
-    });
+    }
     return formatted;
 }
 
@@ -130,7 +130,7 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
     }
 
     const nowDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    var updateResult = await sqlHelper.updateValues('sensor_alerts', ['triggered = ?', 'triggered_at = ?'], [1, nowDate], ['sensor_id = ?', 'user_id = ?', 'alert_type = ?'], [alertData.sensorId, alertData.userId, alertData.type]);
+    const updateResult = await sqlHelper.updateValues('sensor_alerts', ['triggered = ?', 'triggered_at = ?'], [1, nowDate], ['sensor_id = ?', 'user_id = ?', 'alert_type = ?'], [alertData.sensorId, alertData.userId, alertData.type]);
     if (updateResult === 1) {
         console.log('Sending Alert Email to user: ' + alertData.userId);
         const userHelper = require('../Helpers/userHelper');
@@ -153,6 +153,23 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
             previousValue = alertData.max;
         } else {
             previousValue = alertData.counter;
+            await sqlHelper.updateValues(
+                'sensor_alerts',
+                [
+                    'counter = ?',
+                    'triggered_at = ?'
+                ], [
+                    parseInt(alertData.counter) + 1 % 255,
+                    nowDate
+                ], [
+                    'sensor_id = ?',
+                    'user_id = ?',
+                    'alert_type = ?'
+                ], [
+                    alertData.sensorId,
+                    alertData.userId,
+                    'movement'
+                ]);
         }
 
         try {
@@ -174,6 +191,15 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
     await refreshAlertCache(sensorData.sensor_id);
 }
 
+const clearAlert = async (alertData) => {
+    try {
+        await sqlHelper.updateValues('sensor_alerts', ['triggered = ?'], [0], ['sensor_id = ?', 'user_id = ?', 'alert_type = ?'], [alertData.sensorId, alertData.userId, alertData.type]);
+        await refreshAlertCache(alertData.sensorId);
+    } catch (e) {
+        console.error('Error clearing alert', e);
+    }
+}
+
 const capitalize = (s) => {
     if (typeof s !== 'string') return ''
     return s.charAt(0).toUpperCase() + s.slice(1)
@@ -186,6 +212,8 @@ const capitalize = (s) => {
  * @param {string} data 
  */
 const processAlerts = async (alerts, sensorData) => {
+    const throttleInterval = process.env.ALERT_THROTTLE_INTERVAL ? process.env.ALERT_THROTTLE_INTERVAL : throttleHelper.defaultIntervals.alert;
+
     for (const alert of alerts) {
         if (!alert.enabled) {
             continue;
@@ -194,32 +222,39 @@ const processAlerts = async (alerts, sensorData) => {
         // Throttling
         const throttleAlert = await throttleHelper.throttle(
             `alert:${alert.userId}:${sensorData.sensor_id}:${alert.type}`,
-            throttleHelper.defaultIntervals.alert
+            throttleInterval
         );
         if (throttleAlert) {
             continue;
         }
 
         // Trigger
+        let triggered = false;
+
         if (alert.type !== 'movement') {
             const offsetKey = 'offset' + capitalize(alert.type);
             const offset = alert.type !== 'signal' ? alert[offsetKey] : 0
 
             if (sensorData[alert.type] + offset > alert.max) {
                 await triggerAlert(alert, sensorData, 'over');
+                triggered = true;
             }
             if (sensorData[alert.type] + offset < alert.min) {
                 await triggerAlert(alert, sensorData, 'under');
+                triggered = true;
             }
         } else {
-            if (
-                alert.type === 'movement'
-                && parseInt(sensorData['movementCounter']) !== parseInt(alert.counter)
-            ) {
+            if (parseInt(sensorData['movementCounter']) !== parseInt(alert.counter)) {
                 await triggerAlert(alert, sensorData, 'different from');
+                triggered = true;
             }
         }
+
+        if (!triggered && alert.triggered) {
+            await clearAlert(alert);
+        }
     };
+    sqlHelper.disconnect();
 }
 
 /**

@@ -9,11 +9,13 @@
     post,
 
 	RI,
+    PRODUCTION,
     
 	secondaryHttp,
     primaryEmail,
     secondaryEmail,
-    unregisteredEmail
+    unregisteredEmail,
+    sleep
 } = require('./common');
 
 const newSensorMac = utils.randomMac();
@@ -372,6 +374,7 @@ describe('Alerts integration test suite', () => {
                     description: testCase.description
                 });
             } catch (e) {
+                console.log(e);
                 expect(true).toBe(false, 'Failed to create alert');
             }
 
@@ -507,7 +510,6 @@ describe('Alerts integration test suite', () => {
 				sensor: alertSensorMac
 			});
 
-			// Set offset to 30 to push the test humidity over the edge (to 66.325)
 			await post('update', {
 				sensor: alertSensorMac,
 				name: 'sensor for movement'
@@ -548,7 +550,7 @@ describe('Alerts integration test suite', () => {
 		}
 
 		// Validate alert
-		const readResult = await get('alerts', {
+		let readResult = await get('alerts', {
 			sensor: alertSensorMac
 		});
 
@@ -558,6 +560,44 @@ describe('Alerts integration test suite', () => {
 		expect(alertSensor.alerts[0].triggered).toBe(true);
 		expect(alertSensor.alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
 
+        const triggeredFirst = alertSensor.alerts[0].triggeredAt;
+
+        // MOVEMENT CAN BE RETRIGGERED // Test that
+        if (PRODUCTION) return;
+
+        tags[alertSensorMac].data = '0201061BFF99040511D74955CDDEFFE800000408B776B93020EF544AE71D9E';
+
+        // Well this officially shucks. :D
+        await sleep(60000);
+
+        tags[alertSensorMac].timestamp = Date.now();
+        try {
+			await post('record', {
+				"data":	{
+					"coordinates":	"",
+					"timestamp": Date.now(),
+					"gw_mac": alertGatewayMac,
+					"tags":	tags
+				}
+			});
+		} catch (e) {
+			console.log(e);
+			expect(true).toBe(false, 'Failed to post data for triggering alert');
+		}
+
+        await sleep(1000);
+
+		readResult = await get('alerts', {
+			sensor: alertSensorMac
+		});
+
+        const alertSensorRefreshed = readResult.data.data.sensors.find(s => s.sensor === alertSensorMac);
+		expect(alertSensorRefreshed.alerts.length).toBe(1);
+		expect(alertSensorRefreshed.alerts[0].triggered).toBe(true);
+		expect(alertSensorRefreshed.alerts[0].triggeredAt).toMatch(/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:(T [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?/);
+        expect(alertSensorRefreshed.alerts[0].triggeredAt).not.toBe(triggeredFirst);
+
+        // CLEAN UP
         try {
             await post('unclaim', {
                 sensor: alertSensorMac
