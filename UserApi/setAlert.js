@@ -5,6 +5,7 @@ const alertHelper = require('../Helpers/alertHelper');
 const errorCodes = require('../Helpers/errorCodes.js');
 const dynamoHelper = require('../Helpers/dynamoHelper');
 const sensorDataHelper = require('../Helpers/sensorDataHelper');
+const throttleHelper = require('../Helpers/throttleHelper');
 
 const { wrapper } = require('../Helpers/wrapper');
 
@@ -63,6 +64,11 @@ const executeSetAlert = async (event, context, sqlHelper) => {
     let putResult = null;
     try {
         putResult = await alertHelper.putAlert(user.id, sensor, type, min, max, counter, enabled, description);
+
+        // Clear Throttle
+        const throttleKey = `alert:${user.id}:${sensor}:${type}`;
+        const throttleInterval = process.env.ALERT_THROTTLE_INTERVAL ? process.env.ALERT_THROTTLE_INTERVAL : throttleHelper.defaultIntervals.alert;
+        await throttleHelper.clearThrottle(throttleKey, throttleInterval);
     } catch (e) {
         console.error(e);
         res = 'failed';
