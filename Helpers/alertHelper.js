@@ -174,6 +174,12 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
         }
 
         if (sendEmail) {
+            let currentValue = sensorData[alertData.type];
+            let thresholdValue = previousValue;
+            if (alertData.type === 'pressure') {
+                currentValue = parseInt(currentValue) / 100;
+                thresholdValue = parseInt(thresholdValue) / 100;
+            }
             try {
                 await emailHelper.sendAlertEmail(
                     user.email,
@@ -181,8 +187,8 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
                     sensorData.sensor_id,
                     alertData.type,
                     triggerType,
-                    sensorData[alertData.type],
-                    previousValue,
+                    currentValue,
+                    thresholdValue,
                     alertData.description
                 );
             } catch (e) {
