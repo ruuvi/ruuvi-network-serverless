@@ -70,3 +70,8 @@ test('dumdidum', () => {
 	let result = dataHelper.parseData('0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E', 5);
 	result =     dataHelper.parseData('0201061BFF99040511D74955CDDEFFE800000408B776B93020EF544AE71D9E', 5);
 });
+
+test('didid', () => {
+	let result = dataHelper.parseData('0201061BFF99040511C059CDC4AF0258FCB800109BB69BC8D4CAE7DD09ABF9');
+	console.log(result);
+})

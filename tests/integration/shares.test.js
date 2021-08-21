@@ -138,6 +138,21 @@ describe('Shares test suite', () => {
 		expect(sharedSensorData.sharedTo).toBe(secondaryEmail);
 	});
 
+	itif(RI)('`getSensorList` shows `sharedToMe`', async () => {
+        let userShareData = null;
+        try {
+            userShareData = await get('sensors', {}, secondaryHttp);
+        } catch (e) {
+            console.error('Failed to fetch user data', e.response.data);
+        }
+		expect(userShareData).not.toBeNull();
+		expect(userShareData.data.data.sharedToMe.length).toBeGreaterThan(0);
+
+        const sharedSensorData = userShareData.data.data.sharedToMe.find(s => s.sensor === newSensorMac);
+		expect(sharedSensorData.sensor).toBe(newSensorMac);
+		expect(sharedSensorData.public).toBe(false);
+	});
+
 	itif(RI)('`share` is successful and shows original name', async () => {
 		const sharedWithNameGatewayMac = randomMac();
 		const sharedWithNameMac = randomMac();

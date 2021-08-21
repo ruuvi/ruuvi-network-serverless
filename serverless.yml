@@ -40,7 +40,7 @@ custom:
   gatewayRequestTTL: 10000         # ms - how long is the request valid?
 
   dev-throttle-interval: 1
-  prod-throttle-interval: 600
+  prod-throttle-interval: 3600
 
   # Dynamo Auto-Scaling Configuration
   capacities:
@@ -372,6 +372,7 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
+      EMAIL_QUEUE: { Ref: EmailQueue }
 
   shareSensor:
     handler: UserApi/shareSensor.handler

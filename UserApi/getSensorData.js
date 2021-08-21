@@ -96,13 +96,13 @@ exports.handler = async (event, context) => {
                         current_profile.name IS NOT NULL
                         AND current_profile.name != "",
                         current_profile.name,
-                        COALESCE(owner_profile.name, "<<Unknown>>")
+                        COALESCE(owner_profile.name, "")
                     ) AS name,
                     IF (
                         current_profile.picture IS NOT NULL
                         AND current_profile.picture != "",
                         current_profile.picture,
-                        COALESCE(owner_profile.picture, "<<Unknown>>")
+                        COALESCE(owner_profile.picture, "")
                     ) AS picture,
                     sensors.public AS public,
                     sensors.offset_temperature AS offsetTemperature,

@@ -11,7 +11,7 @@ var sqs = new AWS.SQS({apiVersion: '2012-11-05'});
  * @param {string} body email body
  * @returns 
  */
-const sendEmail = async (email, title, body) => {
+ const sendTemplatedEmail = async (email, template, templateData) => {
     if (!process.env.EMAIL_QUEUE) {
         console.error("EMAIL_QUEUE variable not set!");
         return null;
@@ -23,12 +23,12 @@ const sendEmail = async (email, title, body) => {
                 DataType: "String",
                 StringValue: email
             },
-            "Title": {
+            "Template": {
                 DataType: "String",
-                StringValue: title
+                StringValue: template
             }
         },
-        MessageBody: body,
+        MessageBody: JSON.stringify(templateData),
 
         QueueUrl: process.env.EMAIL_QUEUE,
         DelaySeconds: 1
@@ -37,161 +37,100 @@ const sendEmail = async (email, title, body) => {
     return sqs.sendMessage(params).promise();
 };
 
-const sendEmailVerification = async (email, token, sourceDomain = null) => {
+/**
+ * Get the domain if given, otherwise return default.
+ * 
+ * @param {*} sourceDomain Domain, if any - will return base otherwise
+ * @returns 
+ */
+const getDomain = (sourceDomain = null) => {
     let domain = process.env.BASE_API_URL;
     if (sourceDomain) {
         domain = sourceDomain;
     }
+    return domain;
+}
+
+/**
+ * Sends account verification to the target email
+ * 
+ * @param {*} email 
+ * @param {*} token 
+ * @param {*} sourceDomain 
+ * @returns 
+ */
+const sendEmailVerification = async (email, token, sourceDomain = null) => {
+    const domain = getDomain(sourceDomain);
     const link = `${domain}/verify?token=${token}`;
 
-    // TODO: This would be nicer to maintain by SES templates
-    const htmlBody = `
-      <!DOCTYPE html>
-      <html>
-        <head></head>
-        <body>
-            <h1>Confirm your Ruuvi account e-mail!</h1>
-            <p>
-                Please enter the code to your mobile application to complete the registration:
-                <div style="width:200px;text-align:center;">
-                    <h2 style="border:1px solid;padding:5px;">${token}</h2>
-                </div>
-            </p>
-            <p>
-            (...or follow <a href="${link}">this link</a>)
-            </p>
-        </body>
-      </html>
-    `;
+    return await sendTemplatedEmail(email,
+        'AccountVerification',
+        {
+            'token': token,
+            'link': link
+        }
+    );
+}
 
-    return await sendEmail(email, "Ruuvi Account E-mail Confirmation", htmlBody);
-};
-
-const sendEmailInvitation = async (email, fromEmail, sensorName, sourceDomain = null) => {
-    let domain = process.env.BASE_API_URL;
-    if (sourceDomain) {
-        domain = sourceDomain;
-    }
-
-    const androidLink = 'https://play.google.com/store/apps/details?id=com.ruuvi.station';
-    const iosLink = 'https://itunes.apple.com/app/ruuvi-station/id1384475885';
-
-    // TODO: This would be nicer to maintain by SES templates
-    const htmlBody = `
-      <!DOCTYPE html>
-      <html>
-        <head></head>
-        <body>
-            <h1>User shared a Ruuvi sensor with you!</h1>
-            <p>
-                User ${fromEmail} shared access to a sensor (${sensorName}) with you.
-            </p>
-            <p>
-                Create a Ruuvi account with the same email to view the data in the Mobile App:<br>
-                <a href="${androidLink}">Android</a><br>
-                <a href="${iosLink}">iOS</a>
-            </p>
-        </body>
-      </html>
-    `;
-
-    return await sendEmail(email, "Ruuvi sensor was shared with you. Create an account to view it!", htmlBody);
-};
+/**
+ * Sends account invitation to the target email
+ * 
+ * @param {*} email 
+ * @param {*} token 
+ * @param {*} sourceDomain 
+ * @returns 
+ */
+ const sendEmailInvitation = async (email, fromEmail, sensorName, sourceDomain = null) => {
+    return await sendTemplatedEmail(email,
+        'AccountInvite',
+        {
+            'from': fromEmail,
+            'sensor': sensorName
+        }
+    );
+}
 
 const sendResetEmail = async (email, token, sourceDomain) => {
-    let domain = process.env.BASE_API_URL;
-    if (sourceDomain) {
-        domain = sourceDomain;
-    }
+    const domain = getDomain(sourceDomain);
     const link = `${domain}/verify?token=${token}`;
 
-    // TODO: This would be nicer to maintain by SES templates
-    const htmlBody = `
-      <!DOCTYPE html>
-      <html>
-        <head></head>
-        <body>
-            <h1>Reset your Ruuvi credentials!</h1>
-            <p>
-                Please enter the code to your mobile application to complete the reset:
-                <div style="width:200px;text-align:center;">
-                    <h2 style="border:1px solid;padding:5px;">${token}</h2>
-                </div>
-            </p>
-            <p>
-                (...or follow <a href="${link}">this link</a>)
-            </p>
-        </body>
-      </html>
-    `;
-
-    return await sendEmail(email, "Ruuvi Account Reset Confirmation", htmlBody);
-};
+    return await sendTemplatedEmail(email,
+        'ResetCredentials',
+        {
+            'token': token,
+            'link': link
+        }
+    );
+}
 
 const sendAlertEmail = async (email, sensorName, sensor, alertType, violationType, value, threshold, description) => {
-    // TODO: This would be nicer to maintain by SES templates
     if (!sensorName) {
         sensorName = 'Unnamed sensor';
     }
-    let descriptionParagraph = '';
-    if (description !== '') {
-        descriptionParagraph = `<p>${description}</p>`;
-    }
 
-    const htmlBody = `
-      <!DOCTYPE html>
-      <html>
-        <head></head>
-        <body>
-            <h1>Sensor '${sensorName}' triggered an alert for ${alertType}!</h1>
-            <p>
-                ${sensorName} (${sensor}) reported a value of ${value} for ${alertType} which is ${violationType} the threshold of ${threshold}!
-            </p>
-            ${descriptionParagraph}
-        </body>
-      </html>
-    `;
-
-    return await sendEmail(email, `Sensor '${sensorName}' triggered an alert for ${alertType}!`, htmlBody);
-};
-
-const sendShareNotification = async (email, sensorName, sharerName) => {
-    let sensorNameString = '';
-    if (sensorName) {
-        sensorNameString = `sensor "${sensorName}"`;
-    } else {
-        sensorNameString = `a sensor`;
-    }
-
-    // TODO: This would be nicer to maintain by SES templates
-    const htmlBody = `
-      <!DOCTYPE html>
-      <html>
-        <head></head>
-        <body>
-            <h1>Ruuvi sensor was shared with you</h1>
-            <p>
-                Ruuvi Network user ${sharerName} shared "${sensorNameString}" with you.
-            </p>
-            <p>
-                Log in to the mobile application to view it!
-            </p>
-        </body>
-      </html>
-    `;
-
-    return await sendEmail(email, `${sharerName} shared a Ruuvi sensor with you`, htmlBody);
-};
+    return await sendTemplatedEmail(email,
+        'AlertTriggered',
+        {
+            'sensor': sensorName,
+            'sensorMac': sensor,
+            'type': alertType,
+            'violation': violationType,
+            'value': value,
+            'threshold': threshold,
+            'description': description
+        }
+    );
+}
 
 /**
- * Sends a notification when a sensor the user shared is removed
- *
- * @param {string} email
- * @param {string} sensorName
- * @param {string} shareRecipient
- * @param {string} sourceDomain
+ * Sends account verification to the target email
+ * 
+ * @param {*} email 
+ * @param {*} token 
+ * @param {*} sourceDomain 
+ * @returns 
  */
-const sendShareRemovedNotification = async (email, sensorName, shareRecipient) => {
+ const sendShareNotification = async (email, sensorName, sharerName) => {
     let sensorNameString = '';
     if (sensorName) {
         sensorNameString = `sensor "${sensorName}"`;
@@ -199,22 +138,31 @@ const sendShareRemovedNotification = async (email, sensorName, shareRecipient) =
         sensorNameString = `a sensor`;
     }
 
-    // TODO: This would be nicer to maintain by SES templates
-    const htmlBody = `
-      <!DOCTYPE html>
-      <html>
-        <head></head>
-        <body>
-            <h1>Ruuvi sensor share was removed by user</h1>
-            <p>
-                Ruuvi Network user ${shareRecipient} removed shared ${sensorNameString}.
-            </p>
-        </body>
-      </html>
-    `;
+    return await sendTemplatedEmail(email,
+        'ShareNotification',
+        {
+            'sharer': sharerName,
+            'sensor': sensorNameString
+        }
+    );
+}
 
-    return await sendEmail(email, `${shareRecipient} removed a Ruuvi sensor you had shared`, htmlBody);
-};
+const sendShareRemovedNotification = async (email, sensorName, sharer) => {
+    let sensorNameString = '';
+    if (sensorName) {
+        sensorNameString = `sensor "${sensorName}"`;
+    } else {
+        sensorNameString = `a sensor`;
+    }
+
+    return await sendTemplatedEmail(email,
+        'UnshareNotification',
+        {
+            'sharer': sharerName,
+            'sensor': sensorNameString
+        }
+    );
+}
 
 /**
  * Masks an e-mail to format "x****.****y@z****w.com"

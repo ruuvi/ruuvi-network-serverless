@@ -368,13 +368,13 @@ const fetchSensorsForUser = async (userId, sensorId = null) => {
                     current_profile.name IS NOT NULL
                     AND current_profile.name != "",
                     current_profile.name,
-                    COALESCE(owner_profile.name, "<<Unknown>>")
+                    COALESCE(owner_profile.name, "")
                 ) AS name,
                 IF (
                     current_profile.picture IS NOT NULL
                     AND current_profile.picture != "",
                     current_profile.picture,
-                    COALESCE(owner_profile.picture, "<<Unknown>>")
+                    COALESCE(owner_profile.picture, "")
                 ) AS picture,
                 owner.email AS owner,
                 sensors.public AS public,
@@ -390,7 +390,8 @@ const fetchSensorsForUser = async (userId, sensorId = null) => {
             WHERE
                 current_profile.user_id = ?
                 AND current_profile.is_active = 1
-                ${filter}`,
+                ${filter}
+            GROUP BY sensors.sensor_id`,
         timeout: 1000,
         values: values
     });

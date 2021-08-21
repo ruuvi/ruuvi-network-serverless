@@ -111,9 +111,37 @@ exports.handler = async (event, context) => {
         formatted[found].sharedTo.push(sensor.sharedTo);
     }
 
+    // Fetch Shared to Me
+    const sensorsSharedToMe = await mysql.query({
+        sql: `SELECT
+                sensors.sensor_id AS sensor,
+                sensor_profiles.name AS name,
+                sensor_profiles.picture AS picture,
+                sensors.public AS public,
+                sensors.can_share AS canShare
+            FROM sensor_profiles
+            INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
+            WHERE
+                sensors.owner_id != ?
+                AND sensor_profiles.is_active = 1
+                AND sensor_profiles.user_id = ?
+                ${sensorFilter}`,
+        timeout: 1000,
+        values: queryArguments
+    });
+
+    let formattedSharedToMe = [];
+
+    for (let sensor of sensorsSharedToMe) {
+        sensor.public = sensor.public ? true : false;
+        sensor.canShare = false;
+        formattedSharedToMe.push(JSON.parse(JSON.stringify(sensor)));
+    }
+
     await sqlHelper.disconnect();
 
     return gatewayHelper.successResponse({
-        sensors: formatted
+        sensors: formatted,
+        sharedToMe: formattedSharedToMe
     });
 }

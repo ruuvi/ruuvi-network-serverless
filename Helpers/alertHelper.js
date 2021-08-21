@@ -159,7 +159,7 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
                     'counter = ?',
                     'triggered_at = ?'
                 ], [
-                    parseInt(alertData.counter) + 1 % 255,
+                    parseInt(sensorData['movementCounter']),
                     nowDate
                 ], [
                     'sensor_id = ?',
@@ -219,37 +219,42 @@ const processAlerts = async (alerts, sensorData) => {
             continue;
         }
 
-        // Throttling
-        const throttleAlert = await throttleHelper.throttle(
-            `alert:${alert.userId}:${sensorData.sensor_id}:${alert.type}`,
-            throttleInterval
-        );
-        if (throttleAlert) {
-            continue;
-        }
-
-        // Trigger
         let triggered = false;
+        let mode = null;
 
         if (alert.type !== 'movement') {
             const offsetKey = 'offset' + capitalize(alert.type);
             const offset = alert.type !== 'signal' ? alert[offsetKey] : 0
 
             if (sensorData[alert.type] + offset > alert.max) {
-                await triggerAlert(alert, sensorData, 'over');
+                mode = 'over';
                 triggered = true;
             }
             if (sensorData[alert.type] + offset < alert.min) {
-                await triggerAlert(alert, sensorData, 'under');
+                mode = 'under';
                 triggered = true;
             }
         } else {
             if (parseInt(sensorData['movementCounter']) !== parseInt(alert.counter)) {
-                await triggerAlert(alert, sensorData, 'different from');
+                mode = 'different from';
                 triggered = true;
             }
         }
 
+        if (triggered) {
+            // Throttling
+            const throttleAlert = await throttleHelper.throttle(
+                `alert:${alert.userId}:${sensorData.sensor_id}:${alert.type}`,
+                throttleInterval
+            );
+            if (throttleAlert) {
+                continue;
+            }
+
+            await triggerAlert(alert, sensorData, mode);
+        } 
+        
+        // Trigger
         if (!triggered && alert.triggered) {
             await clearAlert(alert);
         }
