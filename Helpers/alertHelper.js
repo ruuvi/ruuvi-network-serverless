@@ -124,7 +124,7 @@ const putAlert = async (userId, sensor, type, min = Number.MIN_VALUE, max = Numb
  * @param {object} sensorData Sensor info
  * @param {string} triggerType over / under
  */
-const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled = false) => {
+const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled = false, sendEmail = true) => {
     if (!overrideEnabled && !alertData.enabled) {
         return;
     }
@@ -169,22 +169,25 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
                     alertData.sensorId,
                     alertData.userId,
                     'movement'
-                ]);
+                ]
+            );
         }
 
-        try {
-            await emailHelper.sendAlertEmail(
-                user.email,
-                name,
-                sensorData.sensor_id,
-                alertData.type,
-                triggerType,
-                sensorData[alertData.type],
-                previousValue,
-                alertData.description
-            );
-        } catch (e) {
-            console.error(e);
+        if (sendEmail) {
+            try {
+                await emailHelper.sendAlertEmail(
+                    user.email,
+                    name,
+                    sensorData.sensor_id,
+                    alertData.type,
+                    triggerType,
+                    sensorData[alertData.type],
+                    previousValue,
+                    alertData.description
+                );
+            } catch (e) {
+                console.error(e);
+            }
         }
     }
     
@@ -248,6 +251,10 @@ const processAlerts = async (alerts, sensorData) => {
                 throttleInterval
             );
             if (throttleAlert) {
+                // For movement, we want to update the counters but not send an email when throttled
+                if (alert.type === 'movement') {
+                    await triggerAlert(alert, sensorData, mode, false, false);
+                }
                 continue;
             }
 
