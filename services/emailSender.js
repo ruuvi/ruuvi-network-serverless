@@ -1,7 +1,3 @@
-const aws = require('aws-sdk');
-const ses = new aws.SES({
-    region: 'eu-central-1'
-});
 const validator = require('../Helpers/validator');
 const sqlHelper = require('../Helpers/sqlHelper');
 const sesHelper = require('../Helpers/sesHelper');
@@ -46,7 +42,8 @@ exports.handler = async (event) => {
                 await sesHelper.sendTemplated(
                     email,
                     messageAttributes.Template.stringValue,
-                    body
+                    body,
+                    from
                 );
                 success++;
             } catch (e) {
@@ -59,7 +56,7 @@ exports.handler = async (event) => {
         }
     }
 
-    sqlHelper.disconnect();
+    await sqlHelper.disconnect();
 
-    return `Sent out ${emails} emails, ${error} failed.`;
+    return `Sent out ${success} emails, ${error} failed.`;
 };

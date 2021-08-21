@@ -28,6 +28,8 @@ exports.handler = async (event, context) => {
 		};
 	}
 
+	await mysql.end();
+
 	return {
 		result: 'Action performed.'
 	};

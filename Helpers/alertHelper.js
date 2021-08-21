@@ -259,7 +259,7 @@ const processAlerts = async (alerts, sensorData) => {
             await clearAlert(alert);
         }
     };
-    sqlHelper.disconnect();
+    await sqlHelper.disconnect();
 }
 
 /**

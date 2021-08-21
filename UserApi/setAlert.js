@@ -3,11 +3,14 @@ const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const alertHelper = require('../Helpers/alertHelper');
 const errorCodes = require('../Helpers/errorCodes.js');
-const mysqlHelper = require('../Helpers/sqlHelper');
 const dynamoHelper = require('../Helpers/dynamoHelper');
 const sensorDataHelper = require('../Helpers/sensorDataHelper');
 
-exports.handler = async (event, context) => {
+const { wrapper } = require('../Helpers/wrapper');
+
+exports.handler = async (event, context) => wrapper(executeSetAlert, event, context);
+
+const executeSetAlert = async (event, context, sqlHelper) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
         return gatewayHelper.unauthorizedResponse();
@@ -45,7 +48,7 @@ exports.handler = async (event, context) => {
 
     const sensor = eventBody.sensor;
 
-    const isReadable = await mysqlHelper.canReadSensor(user.id, sensor);
+    const isReadable = await sqlHelper.canReadSensor(user.id, sensor);
     if (!isReadable) {
         return gatewayHelper.forbiddenResponse();
     }
@@ -65,8 +68,6 @@ exports.handler = async (event, context) => {
         res = 'failed';
     }
 
-    await mysqlHelper.disconnect();
-    
     return gatewayHelper.successResponse({
         action: res
     });

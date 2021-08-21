@@ -530,6 +530,9 @@ const canReadSensor = async (userId, sensorId) => {
     return true;
 }
 
+const query = async (queryObject) => {
+    return mysql.query(queryObject);
+}
 
 /**
  * Exports
@@ -549,6 +552,7 @@ module.exports = {
     createPendingShare,
     getPendingShares,
     claimPendingShare,
+    query,
     disconnect,
 
     canReadSensor,

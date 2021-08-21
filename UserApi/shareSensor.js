@@ -3,9 +3,9 @@ const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const userHelper = require('../Helpers/userHelper');
 const emailHelper = require('../Helpers/emailHelper');
-const sqlHelper = require('../Helpers/sqlHelper');
 const dynamoHelper = require('../Helpers/dynamoHelper');
 const errorCodes = require('../Helpers/errorCodes');
+const wrapper = require('../Helpers/wrapper').wrapper;
 
 const mysql = require('serverless-mysql')({
     config: {
@@ -17,7 +17,9 @@ const mysql = require('serverless-mysql')({
     }
 });
 
-exports.handler = async (event, context) => {
+exports.handler = async (event, context) => wrapper(executeShare, event, context);
+
+const executeShare = async (event, context, sqlHelper) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
         return gatewayHelper.unauthorizedResponse();
@@ -52,7 +54,7 @@ exports.handler = async (event, context) => {
         const maxShares = parseInt(subscription.max_shares);
         const maxSharesPerSensor = parseInt(subscription.max_shares_per_sensor);
 
-        const currentShares = await mysql.query({
+        const currentShares = await sqlHelper.query({
             sql: `SELECT
                     COUNT(*) AS sensor_count,
                     SUM(IF(sensors.sensor_id = ?, 1, 0)) AS single_sensor_shares
@@ -110,7 +112,7 @@ exports.handler = async (event, context) => {
     // Sharing was successful, send notification e-mail
     try {
         console.log(user.id + ' creating e-mail notification for sensor ' + sensor + ' to ' + targetUserId);
-        const sensorData = await mysql.query({
+        const sensorData = await sqlHelper.query({
             sql: `SELECT name
                 FROM sensor_profiles
                 INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
@@ -141,7 +143,6 @@ exports.handler = async (event, context) => {
 
     // Run clean up function
     console.log(user.id + ' shared sensor ' + sensor + ' successfully to ' + targetUserId);
-    await mysql.end();
 
     return gatewayHelper.successResponse({
         sensor: sensor

@@ -1,15 +1,8 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
+const { wrapper } = require('../Helpers/wrapper');
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD,
-        charset  : 'utf8mb4'
-    }
-});
+exports.handler = async (event, context) => wrapper(executeGetShared, event, context);
 
 /**
  * Fetches list of tags the user has shared.
@@ -17,13 +10,13 @@ const mysql = require('serverless-mysql')({
  * @param {object} event
  * @param {object} context
  */
-exports.handler = async (event, context) => {
+const executeGetShared = async (event, context, sqlHelper) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
         return gatewayHelper.unauthorizedResponse();
     }
 
-    const sensors = await mysql.query({
+    const sensors = await sqlHelper.query({
         sql: `SELECT
                 sensors.sensor_id AS sensor,
                 sensor_profiles.name AS name,
@@ -47,9 +40,6 @@ exports.handler = async (event, context) => {
         sensor.public = sensor.public ? true : false;
         formatted.push(sensor);
     });
-
-    // Run clean up function
-    await mysql.end();
 
     return gatewayHelper.successResponse({
         sensors: formatted

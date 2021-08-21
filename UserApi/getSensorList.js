@@ -1,18 +1,10 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
-const sqlHelper = require('../Helpers/sqlHelper');
 const validator = require('../Helpers/validator');
 const dynamoHelper = require('../Helpers/dynamoHelper');
+const { wrapper } = require('../Helpers/wrapper');
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD,
-        charset  : 'utf8mb4'
-    }
-});
+exports.handler = async (event, context) => wrapper(executeGetSensorList, event, context);
 
 /**
  * Fetches list of tags the user has shared.
@@ -20,7 +12,7 @@ const mysql = require('serverless-mysql')({
  * @param {object} event
  * @param {object} context
  */
-exports.handler = async (event, context) => {
+const executeGetSensorList = async (event, context, sqlHelper) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
         return gatewayHelper.unauthorizedResponse();
@@ -40,7 +32,7 @@ exports.handler = async (event, context) => {
         queryArguments.push(filteredSensorId);
     }
 
-    const sensors = await mysql.query({
+    const sensors = await sqlHelper.query({
         sql: `SELECT
                 sensors.sensor_id AS sensor,
                 sensor_profiles.name AS name,
@@ -76,7 +68,7 @@ exports.handler = async (event, context) => {
     }
 
     // Fetch Shares
-    const sharedSensors = await mysql.query({
+    const sharedSensors = await sqlHelper.query({
         sql: `SELECT
                 sensor_profiles.sensor_id AS sensor,
                 users.email AS sharedTo
@@ -112,7 +104,7 @@ exports.handler = async (event, context) => {
     }
 
     // Fetch Shared to Me
-    const sensorsSharedToMe = await mysql.query({
+    const sensorsSharedToMe = await sqlHelper.query({
         sql: `SELECT
                 sensors.sensor_id AS sensor,
                 sensor_profiles.name AS name,
@@ -137,8 +129,6 @@ exports.handler = async (event, context) => {
         sensor.canShare = false;
         formattedSharedToMe.push(JSON.parse(JSON.stringify(sensor)));
     }
-
-    await sqlHelper.disconnect();
 
     return gatewayHelper.successResponse({
         sensors: formatted,

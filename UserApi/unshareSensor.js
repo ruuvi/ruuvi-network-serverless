@@ -3,20 +3,13 @@ const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const userHelper = require('../Helpers/userHelper');
 const emailHelper = require('../Helpers/emailHelper');
-const sqlHelper = require('../Helpers/sqlHelper');
 const errorCodes = require('../Helpers/errorCodes');
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD,
-        charset  : 'utf8mb4'
-    }
-});
+const wrapper = require('../Helpers/wrapper').wrapper;
 
-exports.handler = async (event, context) => {
+exports.handler = async (event, context) => wrapper(executeUnshareSensor, event, context);
+
+const executeUnshareSensor = async (event, context, sqlHelper) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
         return gatewayHelper.unauthorizedResponse();
@@ -66,7 +59,7 @@ exports.handler = async (event, context) => {
 
         if (targetUser !== null && user.id === owner) {
             // Remove sensor you shared
-            results = await mysql.query({
+            results = await sqlHelper.query({
                 sql: `DELETE sensor_profiles
                     FROM sensor_profiles
                     INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
@@ -93,7 +86,7 @@ exports.handler = async (event, context) => {
             }
         } else {
             // Remove sensor shared to you
-            results = await mysql.query({
+            results = await sqlHelper.query({
                 sql: `DELETE sensor_profiles
                     FROM sensor_profiles
                     INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
@@ -128,9 +121,6 @@ exports.handler = async (event, context) => {
         if (!wasRemoved) {
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No access to sensor or sensor not shared.", errorCodes.ER_FORBIDDEN);
         }
-
-        // Run clean up function
-        await mysql.end();
     } catch (e) {
         console.error(e);
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL);

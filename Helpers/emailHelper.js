@@ -90,6 +90,14 @@ const sendEmailVerification = async (email, token, sourceDomain = null) => {
     );
 }
 
+/**
+ * Reset credentials email
+ * 
+ * @param {*} email 
+ * @param {*} token 
+ * @param {*} sourceDomain 
+ * @returns 
+ */
 const sendResetEmail = async (email, token, sourceDomain) => {
     const domain = getDomain(sourceDomain);
     const link = `${domain}/verify?token=${token}`;
@@ -103,6 +111,19 @@ const sendResetEmail = async (email, token, sourceDomain) => {
     );
 }
 
+/**
+ * Send alert email
+ * 
+ * @param {*} email 
+ * @param {*} sensorName 
+ * @param {*} sensor 
+ * @param {*} alertType 
+ * @param {*} violationType 
+ * @param {*} value 
+ * @param {*} threshold 
+ * @param {*} description 
+ * @returns 
+ */
 const sendAlertEmail = async (email, sensorName, sensor, alertType, violationType, value, threshold, description) => {
     if (!sensorName) {
         sensorName = 'Unnamed sensor';
@@ -147,7 +168,15 @@ const sendAlertEmail = async (email, sensorName, sensor, alertType, violationTyp
     );
 }
 
-const sendShareRemovedNotification = async (email, sensorName, sharer) => {
+/**
+ * Send notification of a share being removed.
+ * 
+ * @param {*} email 
+ * @param {*} sensorName 
+ * @param {*} sharerName 
+ * @returns 
+ */
+const sendShareRemovedNotification = async (email, sensorName, sharerName) => {
     let sensorNameString = '';
     if (sensorName) {
         sensorNameString = `sensor "${sensorName}"`;

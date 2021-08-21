@@ -2,7 +2,6 @@ const sqlHelper = require('../Helpers/sqlHelper');
 const alertHelper = require('../Helpers/alertHelper');
 
 exports.handler = async (event) => {
-    
     const enabledAlerts = await sqlHelper.fetchAll('`enabled`', '1', 'sensor_alerts');
     let refreshedAlerts = 0;
 
@@ -17,6 +16,7 @@ exports.handler = async (event) => {
         }
     }
 
+    await sqlHelper.disconnect();
 
     return `Refreshed ${refreshedAlerts} alerts.`;
 };

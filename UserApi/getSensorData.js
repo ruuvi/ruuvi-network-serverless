@@ -3,18 +3,11 @@ const dynamoHelper = require('../Helpers/dynamoHelper');
 const validator = require('../Helpers/validator');
 const auth = require('../Helpers/authHelper');
 const errorCodes = require('../Helpers/errorCodes');
+const { wrapper } = require('../Helpers/wrapper');
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD,
-        charset  : 'utf8mb4'
-    }
-});
+exports.handler = async (event, context) => wrapper(executeGetSensorData, event, context);
 
-exports.handler = async (event, context) => {
+const executeGetSensorData = async (event, context, sqlHelper) => {
     // Authorization
     let user = null;
     if (process.env.REQUIRE_LOGIN == 1) {
@@ -34,6 +27,7 @@ exports.handler = async (event, context) => {
         || !validator.validateMacAddress(query.sensor)) {
 
         // Invalid request
+        await sqlHelper.disconnect();
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid request format.', errorCodes.ER_INVALID_FORMAT);
     }
 
@@ -41,6 +35,7 @@ exports.handler = async (event, context) => {
         query.hasOwnProperty('sort')
         && !(['asc', 'desc'].includes(query.sort))
     ) {
+        await sqlHelper.disconnect();
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid sort argument.', errorCodes.ER_INVALID_SORT_MODE);
     }
 
@@ -48,6 +43,7 @@ exports.handler = async (event, context) => {
         query.hasOwnProperty('mode')
         && !(['dense', 'sparse', 'mixed'].includes(query.mode))
     ) {
+        await sqlHelper.disconnect();
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid mode argument.', errorCodes.ER_INVALID_DENSITY_MODE);
     }
 
@@ -89,7 +85,7 @@ exports.handler = async (event, context) => {
     };
     
     try {
-        const hasClaim = await mysql.query({
+        const hasClaim = await sqlHelper.query({
             sql: `SELECT
                     sensors.id,
                     IF (
@@ -144,9 +140,6 @@ exports.handler = async (event, context) => {
         console.error(e);
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Internal server error.', errorCodes.ER_INTERNAL);
     }
-
-    // Close MySQL connection
-    await mysql.end();
 
     // Fetch from long term storage if requested for longer than TTL
     let dataPoints = [];

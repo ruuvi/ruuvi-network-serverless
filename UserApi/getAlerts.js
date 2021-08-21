@@ -2,9 +2,11 @@ const gatewayHelper = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const alertHelper = require('../Helpers/alertHelper');
-const sqlHelper = require('../Helpers/sqlHelper');
+const { wrapper } = require('../Helpers/wrapper');
 
-exports.handler = async (event, context) => {
+exports.handler = async (event, context) => wrapper(executeGetAlerts, event, context);
+
+const executeGetAlerts = async (event, context, sqlHelper) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
         return gatewayHelper.unauthorizedResponse();
@@ -52,8 +54,6 @@ exports.handler = async (event, context) => {
             alerts: formattedAlertData
         });
     };
-
-    await sqlHelper.disconnect();
 
     return gatewayHelper.successResponse(result);
 }

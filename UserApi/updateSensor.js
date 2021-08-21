@@ -1,19 +1,11 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
-const { HTTPCodes } = require('../Helpers/gatewayHelper');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
-const sqlHelper = require('../Helpers/sqlHelper');
 const errorCodes = require('../Helpers/errorCodes');
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD,
-        charset  : 'utf8mb4'
-    }
-});
+const wrapper = require('../Helpers/wrapper').wrapper;
+
+exports.handler = async (event, context) => wrapper(executeUpdateSensor, event, context);
 
 /**
  * Updates sensor profile (currently name)
@@ -21,7 +13,7 @@ const mysql = require('serverless-mysql')({
  * @param {object} event
  * @param {object} context
  */
-exports.handler = async (event, context) => {
+const executeUpdateSensor = async (event, context, sqlHelper) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
         return gatewayHelper.unauthorizedResponse();
@@ -113,7 +105,6 @@ exports.handler = async (event, context) => {
                 return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not claimed or found. Data not updated.", errorCodes.ER_SENSOR_NOT_FOUND);
             }    
         }
-        await mysql.end();
     } catch (e) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
     }
