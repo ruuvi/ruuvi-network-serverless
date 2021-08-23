@@ -132,7 +132,7 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
     const nowDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const updateResult = await sqlHelper.updateValues('sensor_alerts', ['triggered = ?', 'triggered_at = ?'], [1, nowDate], ['sensor_id = ?', 'user_id = ?', 'alert_type = ?'], [alertData.sensorId, alertData.userId, alertData.type]);
     if (updateResult === 1) {
-        console.log('Sending Alert Email to user: ' + alertData.userId);
+        console.log(`Updated ${alertData.type} Alert ('${triggerType}' for ${sensorData.sensor_id}) for user: ${alertData.userId}`);
         const userHelper = require('../Helpers/userHelper');
         const user = await userHelper.getById(alertData.userId);
         const sensorProfile = await sqlHelper.fetchSensorsForUser(alertData.userId, sensorData.sensor_id);
@@ -174,7 +174,8 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
         }
 
         if (sendEmail) {
-            let currentValue = sensorData[alertData.type];
+            console.log(`Sending email for ${alertData.type} Alert (${triggerType} for ${sensorData.sensor_id}) to user: ${alertData.userId}`);
+            let currentValue = alertData.type === 'movement' ? sensorData.movementCounter : sensorData[alertData.type];
             let thresholdValue = previousValue;
             if (alertData.type === 'pressure') {
                 currentValue = parseInt(currentValue) / 100;
@@ -259,6 +260,7 @@ const processAlerts = async (alerts, sensorData) => {
             if (throttleAlert) {
                 // For movement, we want to update the counters but not send an email when throttled
                 if (alert.type === 'movement') {
+                    console.log(`Triggered movement while throttled for ${sensorData.sensor_id} with value ${sensorData.movementCounter} (in alert: ${alert.counter}). Skipping e-mail.`);
                     await triggerAlert(alert, sensorData, mode, false, false);
                 }
                 continue;

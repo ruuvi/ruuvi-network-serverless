@@ -88,18 +88,8 @@ const executeGetSensorData = async (event, context, sqlHelper) => {
         const hasClaim = await sqlHelper.query({
             sql: `SELECT
                     sensors.id,
-                    IF (
-                        current_profile.name IS NOT NULL
-                        AND current_profile.name != "",
-                        current_profile.name,
-                        COALESCE(owner_profile.name, "")
-                    ) AS name,
-                    IF (
-                        current_profile.picture IS NOT NULL
-                        AND current_profile.picture != "",
-                        current_profile.picture,
-                        COALESCE(owner_profile.picture, "")
-                    ) AS picture,
+                    current_profile.name AS name,
+                    current_profile.picture AS picture,
                     sensors.public AS public,
                     sensors.offset_temperature AS offsetTemperature,
                     sensors.offset_humidity AS offsetHumidity,
@@ -107,9 +97,6 @@ const executeGetSensorData = async (event, context, sqlHelper) => {
                 FROM sensors
                 LEFT JOIN sensor_profiles current_profile ON
                     current_profile.sensor_id = sensors.sensor_id
-                LEFT JOIN sensor_profiles owner_profile ON 
-                    owner_profile.sensor_id = sensors.sensor_id
-                    AND owner_profile.user_id = sensors.owner_id
                 WHERE
                     sensors.sensor_id = ?
                     AND (

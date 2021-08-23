@@ -107,16 +107,17 @@ const executeGetSensorList = async (event, context, sqlHelper) => {
     const sensorsSharedToMe = await sqlHelper.query({
         sql: `SELECT
                 sensors.sensor_id AS sensor,
-                sensor_profiles.name AS name,
-                sensor_profiles.picture AS picture,
+                current_profile.name AS name,
+                current_profile.picture AS picture,
                 sensors.public AS public,
                 sensors.can_share AS canShare
-            FROM sensor_profiles
-            INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
+            FROM sensors
+            LEFT JOIN sensor_profiles current_profile ON
+                current_profile.sensor_id = sensors.sensor_id
             WHERE
                 sensors.owner_id != ?
-                AND sensor_profiles.is_active = 1
-                AND sensor_profiles.user_id = ?
+                AND current_profile.is_active = 1
+                AND current_profile.user_id = ?
                 ${sensorFilter}`,
         timeout: 1000,
         values: queryArguments

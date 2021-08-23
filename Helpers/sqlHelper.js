@@ -321,10 +321,13 @@ const shareSensor = async (userId, ownerId, sensor) => {
                 picture
             ) SELECT
                 ?,
-                sensor_id,
-                '',
-                ''
+                sensors.sensor_id,
+                COALESCE(sp.name, ''),
+                COALESCE(sp.picture, '')
             FROM sensors
+            LEFT JOIN sensor_profiles sp ON 
+                sp.sensor_id = sensors.sensor_id
+                AND sp.user_id = sensors.owner_id
             WHERE
                 sensors.owner_id = ?
                 AND sensors.owner_id != ?
@@ -353,7 +356,7 @@ const shareSensor = async (userId, ownerId, sensor) => {
 const fetchSensorsForUser = async (userId, sensorId = null) => {
     const userIdInt = parseInt(userId);
 
-    let values = [userIdInt, userIdInt];
+    let values = [userIdInt];
     let filter = '';
 
     if (sensorId !== null) {
@@ -364,18 +367,8 @@ const fetchSensorsForUser = async (userId, sensorId = null) => {
     const sensors = await mysql.query({
         sql: `SELECT
                 sensors.sensor_id AS sensor,
-                IF (
-                    current_profile.name IS NOT NULL
-                    AND current_profile.name != "",
-                    current_profile.name,
-                    COALESCE(owner_profile.name, "")
-                ) AS name,
-                IF (
-                    current_profile.picture IS NOT NULL
-                    AND current_profile.picture != "",
-                    current_profile.picture,
-                    COALESCE(owner_profile.picture, "")
-                ) AS picture,
+                current_profile.name AS name,
+                current_profile.picture AS picture,
                 owner.email AS owner,
                 sensors.public AS public,
                 sensors.offset_humidity AS offsetHumidity,
@@ -383,9 +376,6 @@ const fetchSensorsForUser = async (userId, sensorId = null) => {
                 sensors.offset_pressure AS offsetPressure
             FROM sensor_profiles current_profile
             INNER JOIN sensors ON current_profile.sensor_id = sensors.sensor_id
-            LEFT JOIN sensor_profiles owner_profile ON 
-                owner_profile.sensor_id = sensors.sensor_id
-                AND sensors.owner_id = ?
             INNER JOIN users owner ON owner.id = sensors.owner_id
             WHERE
                 current_profile.user_id = ?

@@ -37,14 +37,17 @@ exports.handler = async (event) => {
         }
 
         // Check for SES flow
+        console.log(`Sending email to ${email} from ${from} template ${messageAttributes.Template.stringValue}`);
+        console.log(`Message body variables`, body);
         if (validator.hasKeys(messageAttributes, ['Template'])) {
             try {
-                await sesHelper.sendTemplated(
+                var result = await sesHelper.sendTemplated(
                     email,
                     messageAttributes.Template.stringValue,
                     body,
                     from
                 );
+                console.log(`Email result for ${email}`, result);
                 success++;
             } catch (e) {
                 console.error('Error sending templated email', e);
@@ -57,6 +60,8 @@ exports.handler = async (event) => {
     }
 
     await sqlHelper.disconnect();
+
+    console.log(`Sent out ${success} emails, ${error} failed.`);
 
     return `Sent out ${success} emails, ${error} failed.`;
 };

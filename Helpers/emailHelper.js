@@ -2,6 +2,7 @@ var AWS = require('aws-sdk');
 AWS.config.update({region: 'eu-central-1'});
 
 var sqs = new AWS.SQS({apiVersion: '2012-11-05'});
+const validator = require('../Helpers/validator');
 
 /**
  * Queues the email for the service.
@@ -127,6 +128,23 @@ const sendResetEmail = async (email, token, sourceDomain) => {
 const sendAlertEmail = async (email, sensorName, sensor, alertType, violationType, value, threshold, description) => {
     if (!sensorName) {
         sensorName = 'Unnamed sensor';
+    }
+    if (!description) {
+        description = "";
+    }
+
+    if (!email || !sensor || !alertType || !violationType || !value || !threshold) {
+        console.error('Missing argument for email:', {
+            email: email,
+            sensorName: sensorName,
+            sensor: sensor,
+            alertType: alertType,
+            violationType: violationType,
+            value: value,
+            threshold: threshold,
+            description: description
+        });
+        throw new Error("Invalid input for sendAlertEmail");
     }
 
     return await sendTemplatedEmail(email,
