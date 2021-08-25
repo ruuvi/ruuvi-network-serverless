@@ -58,21 +58,52 @@ const mysql = require('serverless-mysql')({
  * @returns {object} First result or null if none
  */
 const fetchSingle = async (field, value, table) => {
+    const single = await fetchMultiCondition([field], [value], table, 1);
+    if (single === null || single.length === 0) {
+        return null;
+    }
+    return single[0];
+}
+
+/**
+ * 
+ * @param {*} fields 
+ * @param {*} values 
+ * @param {*} table 
+ * @returns 
+ */
+const fetchMultiCondition = async (fields, values, table, limit = 1) => {
+    if (fields.length <= 0) {
+        console.error('No fields defined for fetchMultiCondition.');
+        return null;
+    }
+    if (fields.length != values.length) {
+        console.error('Field count does not match value count.');
+        return null;
+    }
+    if (table === null || table === '' || !validator.validateTableName(table)) {
+        console.error('Invalid table name: ' + table);
+        return null;
+    }
+
+    const fieldCondition = fields.map((f, i) => `${f} = ?`).join(' AND ');
     try {
-        const result = await mysql.query({
-            sql: `SELECT * FROM ${table} WHERE ${field} = ? LIMIT 1`,
+        const results = await mysql.query({
+            sql:
+                `SELECT *
+                FROM ${table}
+                WHERE
+                    ${fieldCondition}
+                LIMIT ${limit}`,
             timeout: 1000,
-            values: [value]
+            values: values
         });
 
-        if (result.length === 1) {
-            return result[0];
-        }
+        return results;
     } catch (err) {
         console.error(err);
         return null;
     }
-    return null;
 }
 
 /**
@@ -520,6 +551,141 @@ const canReadSensor = async (userId, sensorId) => {
     return true;
 }
 
+
+/**
+ * Fetches the shares for a sensor (excluding profiles from owner id)
+ * 
+ * @param {*} sensor 
+ * @param {*} ownerId 
+ * @returns 
+ */
+const getShares = async (sensor) => {
+    let existingShares = [];
+	try {
+        // Notify any sharees
+        existingShares = await mysql.query({
+            sql: `SELECT
+                    sensor_profiles.user_id AS user_id,
+                    users.email AS email,
+                    sensor_profiles.name AS name
+                  FROM sensor_profiles
+                  INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
+                  INNER JOIN users ON users.id = sensor_profiles.user_id
+                  WHERE
+                        sensor_profiles.sensor_id = ?
+                        AND sensor_profiles.user_id != sensors.owner_id`,
+            timeout: 1000,
+            values: [sensor]
+        });
+    } catch (e) {
+        console.error('Failed to fetch sensor shares', e);
+        return [];
+    }
+    return existingShares;
+}
+
+/**
+ * Removes sensor profiles for a sensor
+ * 
+ * @param {*} sensor 
+ * @param {*} ownerId Optionally scope to owner for extra security
+ * @returns Returns the amount of profiles removed
+ */
+const removeSensorProfiles = async (sensor, ownerId = null) => {
+    let userClause = '';
+    let sqlValues = [sensor];
+    if (ownerId !== null) {
+        userClause = "AND sensors.owner_id = ?"
+        sqlValues.push(ownerId);
+    }
+
+    // Remove profiles
+    let profileResult = { affectedRows: 0 };
+    try {
+        profileResult = await mysql.query({
+            sql: `DELETE sensor_profiles
+                FROM sensor_profiles
+                INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
+                WHERE
+                    sensor_profiles.sensor_id = ?
+                    ${userClause}`,
+            timeout: 1000,
+            values: sqlValues
+        });
+    } catch (e) {
+        console.error('Failed to delete sensor profiles', e);
+        return -1;
+    }
+
+    return profileResult.affectedRows;
+}
+
+/**
+ * Removes a single sensor profile for a non-owner user
+ * 
+ * @param {*} sensor 
+ * @param {*} userId User ID (not same as owner) of the sensor
+ * @param {*} ownerId Owner ID of the sensor
+ * @returns Returns the amount of profiles removed
+ */
+ const removeSensorProfileForUser = async (sensor, userId, ownerId) => {
+    // Remove profile
+    let profileResult = { affectedRows: 0 };
+    try {
+        profileResult = await mysql.query({
+            sql: `DELETE sensor_profiles
+                FROM sensor_profiles
+                INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
+                WHERE
+                    sensor_profiles.user_id = ?
+                    AND sensor_profiles.is_active = 1
+                    AND sensors.owner_id = ?
+                    AND sensors.owner_id != ?
+                    AND sensors.sensor_id = ?`,
+            timeout: 1000,
+            values: [userId, ownerId, userId, sensor]
+        });
+    } catch (e) {
+        console.error('Failed to delete sensor profiles', e);
+        return -1;
+    }
+
+    return profileResult.affectedRows;
+}
+
+/**
+ * (Hard) Deletes a sensor
+ * 
+ * @param {*} sensor 
+ * @param {*} ownerId 
+ * @returns Amount of sensors removed [0, 1]
+ */
+const removeSensor = async (sensor, ownerId = null) => {
+    let userClause = '';
+    let sqlValues = [sensor];
+    if (ownerId !== null) {
+        userClause = "AND sensors.owner_id = ?"
+        sqlValues.push(ownerId);
+    }
+
+    let results = { affectedRows: 0 };
+    try {
+        results = await mysql.query({
+            sql: `DELETE FROM sensors
+                WHERE
+                    sensor_id = ?
+                    ${userClause}`,
+            timeout: 1000,
+            values: [sensor]
+        });
+    } catch (e) {
+        console.error('Failed to delete sensors', e);
+        return -1;
+    }
+
+    return results.affectedRows;
+}
+
 const query = async (queryObject) => {
     return mysql.query(queryObject);
 }
@@ -530,6 +696,7 @@ const query = async (queryObject) => {
 module.exports = {
 	fetchAll,
     fetchSingle,
+    fetchMultiCondition,
     deleteSingle,
     insertSingle,
     fetchCount,
@@ -542,6 +709,10 @@ module.exports = {
     createPendingShare,
     getPendingShares,
     claimPendingShare,
+    getShares,
+    removeSensorProfiles,
+    removeSensorProfileForUser,
+    removeSensor,
     query,
     disconnect,
 

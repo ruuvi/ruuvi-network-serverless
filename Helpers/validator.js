@@ -129,6 +129,17 @@ const validateAlphaNumeric = (str) => {
 };
 
 /**
+ * Validates that string is alphanumeric with underscore for db tables. Accepts empty string.
+ *
+ * @param {string} str String to validate
+ */
+ const validateTableName = (str) => {
+    if (typeof str !== 'string') { return false; }
+    const reg = /^[a-zA-Z0-9\_]+$/;
+    return reg.test(str);
+};
+
+/**
  * Validates that string is alphanumeric filename with or without extensions. Accepts empty string.
  *
  * @param {string} str String to validate
@@ -191,5 +202,6 @@ module.exports = {
     validateSettingName,
     validateEnum,
     validateFilename,
+    validateTableName,
     now
 };
