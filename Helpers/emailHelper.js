@@ -172,9 +172,9 @@ const sendAlertEmail = async (email, sensorName, sensor, alertType, violationTyp
  const sendShareNotification = async (email, sensorName, sharerName) => {
     let sensorNameString = '';
     if (sensorName) {
-        sensorNameString = `sensor "${sensorName}"`;
+        sensorNameString = `${sensorName}`;
     } else {
-        sensorNameString = `a sensor`;
+        sensorNameString = `unnamed`;
     }
 
     return await sendTemplatedEmail(email,
@@ -194,16 +194,20 @@ const sendAlertEmail = async (email, sensorName, sensor, alertType, violationTyp
  * @param {*} sharerName 
  * @returns 
  */
-const sendShareRemovedNotification = async (email, sensorName, sharerName) => {
+const sendShareRemovedNotification = async (email, sensorName, sharerName, template = null) => {
+    if (template === null || template === '') {
+        template = 'UnshareNotification';
+    }
+
     let sensorNameString = '';
     if (sensorName) {
-        sensorNameString = `sensor "${sensorName}"`;
+        sensorNameString = `${sensorName}`;
     } else {
-        sensorNameString = `a sensor`;
+        sensorNameString = `unnamed`;
     }
 
     return await sendTemplatedEmail(email,
-        'UnshareNotification',
+        template,
         {
             'sharer': sharerName,
             'sensor': sensorNameString

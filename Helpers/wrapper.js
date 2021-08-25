@@ -15,6 +15,7 @@ const wrapper = async (func, event, context) => {
     try {
         result = await func(event, context, sqlHelper);
     } catch (e) {
+        console.error('Unknown error in handler', e);
         result = gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Very Unknown error occurred.", errorCodes.ER_INTERNAL);
     }
 

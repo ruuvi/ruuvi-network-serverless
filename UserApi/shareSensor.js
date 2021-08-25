@@ -5,17 +5,8 @@ const userHelper = require('../Helpers/userHelper');
 const emailHelper = require('../Helpers/emailHelper');
 const dynamoHelper = require('../Helpers/dynamoHelper');
 const errorCodes = require('../Helpers/errorCodes');
-const wrapper = require('../Helpers/wrapper').wrapper;
 
-const mysql = require('serverless-mysql')({
-    config: {
-        host     : process.env.DATABASE_ENDPOINT,
-        database : process.env.DATABASE_NAME,
-        user     : process.env.DATABASE_USERNAME,
-        password : process.env.DATABASE_PASSWORD,
-        charset  : 'utf8mb4'
-    }
-});
+const wrapper = require('../Helpers/wrapper').wrapper;
 
 exports.handler = async (event, context) => wrapper(executeShare, event, context);
 

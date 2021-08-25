@@ -73,5 +73,5 @@ test('dumdidum', () => {
 
 test('didid', () => {
 	let result = dataHelper.parseData('0201061BFF99040511C059CDC4AF0258FCB800109BB69BC8D4CAE7DD09ABF9');
-	console.log(result);
+	//console.log(result);
 })
