@@ -7,7 +7,10 @@ const errorCodes = require('../Helpers/errorCodes');
 
 const wrapper = require('../Helpers/wrapper').wrapper;
 
-exports.handler = async (event, context) => wrapper(executeUnshareSensor, event, context);
+exports = {
+    handler: async (event, context) => wrapper(executeUnshareSensor, event, context),
+    executeUnshareSensor
+};
 
 const getSensorName = async (sensor, userId, sqlHelper) => {
     const sensorProfiles = await sqlHelper.fetchMultiCondition(['sensor_id', 'user_id'], [sensor, userId], 'sensor_profiles');
@@ -38,12 +41,7 @@ const getUserByEmail = async (email) => {
     return ret;
 }
 
-const executeUnshareSensor = async (event, context, sqlHelper) => {
-    const user = await auth.authorizedUser(event.headers);
-    if (!user) {
-        return gatewayHelper.unauthorizedResponse();
-    }
-
+const executeUnshareSensor = async (event, context, sqlHelper, user) => {
     const eventBody = JSON.parse(event.body);
 
     if (!eventBody || !validator.hasKeys(eventBody, ['sensor'])) {

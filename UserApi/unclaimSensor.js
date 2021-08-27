@@ -8,7 +8,6 @@ const wrapper = require('../Helpers/wrapper').wrapper;
 
 exports.handler = async (event, context) => wrapper(executeUnclaimSensor, event, context);
 
-
 /**
  * Unclaims a sensor.
  *
@@ -31,6 +30,21 @@ const executeUnclaimSensor = async (event, context, sqlHelper) => {
 
     // Cache shares
     let existingShares = [];
+
+    // ------------------------------------------------------------------------
+    // DEPRECATED: BACKWARDS COMPATIBILITY FOR UNCLAIMING WORKING FOR UNSHARING
+    // ------------------------------------------------------------------------
+    var sensorData = await sqlHelper.fetchSingle('sensor_id', sensor, 'sensors');
+    if (parseInt(sensorData.owner_id) !== user.id) {
+        const unshareEndpoint = require('../UserApi/unshareSensor');
+        let unshareEvent = {
+            ...event,
+            body: JSON.stringify({ sensor: sensor })
+        };
+
+        return await unshareEndpoint.executeUnshareSensor(unshareEvent, null, sqlHelper, user);
+    }
+    // ------------------------------------------------------------------------
 
     // Get sharees to notify
     existingShares = await sqlHelper.getShares(sensor);
