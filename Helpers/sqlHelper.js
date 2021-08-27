@@ -645,14 +645,6 @@ const removeSensorProfiles = async (sensor, ownerId = null) => {
  const removeSensorProfileForUser = async (sensor, userId) => {
     // Remove profile
     let profileResult = { affectedRows: 0 };
-    console.log(`DELETE sensor_profiles
-    FROM sensor_profiles
-    INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
-    WHERE
-        sensor_profiles.user_id = ?
-        AND sensors.owner_id != sensor_profiles.user_id
-        AND sensor_profiles.is_active = 1
-        AND sensors.sensor_id = ?`);
     try {
         profileResult = await mysql.query({
             sql: `DELETE sensor_profiles
