@@ -59,8 +59,8 @@ const executeUnshareSensor = async (event, context, sqlHelper) => {
         if (targetUser !== null && user.id === owner) {
             // Remove sensor you shared
             const sensorProfiles = await sqlHelper.fetchMultiCondition(['sensor_id', 'user_id'], [sensor, targetUserId], 'sensor_profiles');
-            let sensorName = sensor;
-            if (sensorProfiles !== null && sensorProfiles.length === 1 && sensorProfiles[0] !== null && sensorProfiles[0] !== '') {
+            let sensorName = emailHelper.getDefaultSensorName(sensor);
+            if (sensorProfiles !== null && sensorProfiles.length === 1 && sensorProfiles[0] !== null && sensorProfiles[0].name !== '') {
                 sensorName = sensorProfiles[0].name;
             }
             wasRemoved = await sqlHelper.removeSensorProfileForUser(sensor, targetUserId, user.id);
@@ -79,8 +79,8 @@ const executeUnshareSensor = async (event, context, sqlHelper) => {
         } else {
             // Remove sensor shared to you
             const sensorProfiles = await sqlHelper.fetchMultiCondition(['sensor_id', 'user_id'], [sensor, user.id], 'sensor_profiles');
-            let sensorName = sensor;
-            if (sensorProfiles !== null && sensorProfiles.length === 1 && sensorProfiles[0] !== null) {
+            let sensorName = emailHelper.getDefaultSensorName(sensor);
+            if (sensorProfiles !== null && sensorProfiles.length === 1 && sensorProfiles[0] !== null && sensorProfiles[0].name !== '') {
                 sensorName = sensorProfiles[0].name;
             }
             wasRemoved = await sqlHelper.removeSensorProfileForUser(sensor, user.id, owner);

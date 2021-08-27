@@ -147,7 +147,7 @@ const sendAlertEmail = async (
 ) => {
 
     if (!sensorName) {
-        sensorName = 'Unnamed sensor';
+        sensorName = getDefaultSensorName(sensor);
     }
     if (!description) {
         description = "";
@@ -196,7 +196,7 @@ const sendAlertEmail = async (
     if (sensorName) {
         sensorNameString = `${sensorName}`;
     } else {
-        sensorNameString = `unnamed`;
+        sensorNameString = `<<unnamed>>`;
     }
 
     return await sendTemplatedEmail(email,
@@ -224,7 +224,7 @@ const sendShareRemovedNotification = async (email, sensorName, sharerName, share
     }
 
     let data = {
-        sensor: sensorName !== '' && sensorName !== null ? `${sensorName}` : 'unnamed'
+        sensor: (sensorName !== '' && sensorName !== null) ? `${sensorName}` : '<<unnamed>>'
     }
 
     if (sharerName !== null) {
@@ -235,6 +235,10 @@ const sendShareRemovedNotification = async (email, sensorName, sharerName, share
     }
 
     return await sendTemplatedEmail(email, template, data);
+}
+
+const getDefaultSensorName = (sensor) => {
+    return 'Ruuvi ' + sensor.substr(sensor.length - 5, 2) + sensor.substr(sensor.length - 2, 2);
 }
 
 /**
@@ -263,5 +267,6 @@ module.exports = {
     sendShareRemovedNotification,
     sendAlertEmail,
     sendEmailInvitation,
+    getDefaultSensorName,
     maskEmail
 };

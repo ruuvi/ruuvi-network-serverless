@@ -122,7 +122,7 @@ const sendInvitation = async (toEmail, fromEmail, sensor) => {
     const short = await jwtHelper.createRegistrationJWT(toEmail, 'register', day, [sensor]);*/
 
     const emailHelper = require('../Helpers/emailHelper');
-    return await emailHelper.sendEmailInvitation(toEmail, fromEmail, sensor);
+    return await emailHelper.sendEmailInvitation(toEmail, fromEmail, emailHelper.getDefaultSensorName(sensor));
 }
 
 /**
