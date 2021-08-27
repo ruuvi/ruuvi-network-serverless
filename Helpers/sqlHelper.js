@@ -640,10 +640,9 @@ const removeSensorProfiles = async (sensor, ownerId = null) => {
  * 
  * @param {*} sensor 
  * @param {*} userId User ID (not same as owner) of the sensor
- * @param {*} ownerId Owner ID of the sensor
  * @returns Returns the amount of profiles removed
  */
- const removeSensorProfileForUser = async (sensor, userId, ownerId) => {
+ const removeSensorProfileForUser = async (sensor, userId) => {
     // Remove profile
     let profileResult = { affectedRows: 0 };
     try {
@@ -653,12 +652,11 @@ const removeSensorProfiles = async (sensor, ownerId = null) => {
                 INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
                 WHERE
                     sensor_profiles.user_id = ?
+                    AND sensors.owner_id != sensor_profiles.user_id
                     AND sensor_profiles.is_active = 1
-                    AND sensors.owner_id = ?
-                    AND sensors.owner_id != ?
                     AND sensors.sensor_id = ?`,
             timeout: 1000,
-            values: [userId, ownerId, userId, sensor]
+            values: [userId, sensor]
         });
     } catch (e) {
         console.error('Failed to delete sensor profiles', e);
