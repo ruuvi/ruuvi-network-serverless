@@ -77,6 +77,7 @@ const executeUnshareSensor = async (event, context, sqlHelper) => {
             // Remove sensor shared to you
             const sensorProfiles = await sqlHelper.fetchMultiCondition(['sensor_id', 'user_id'], [sensor, user.id], 'sensor_profiles');
             let sensorName = sensor;
+            console.log(sensorProfiles);
             if (sensorProfiles !== null && sensorProfiles.length === 1 && sensorProfiles[0] !== null && sensorProfiles[0] !== '') {
                 sensorName = sensorProfiles[0].name;
             }
@@ -92,6 +93,7 @@ const executeUnshareSensor = async (event, context, sqlHelper) => {
                 await emailHelper.sendShareRemovedNotification(
                     ownerUser.email,
                     sensorName,
+                    null,
                     user.email,
                     'UnshareByShareeNotification'
                 );

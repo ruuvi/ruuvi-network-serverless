@@ -117,6 +117,33 @@ const putAlert = async (userId, sensor, type, min = Number.MIN_VALUE, max = Numb
 }
 
 /**
+ * Gets the unit alert per type.
+ * 
+ * @param {*} alertType 
+ * @returns 
+ */
+const getUnit = (alertType, userId) => {
+    switch (alertType) {
+        case 'movement':
+            return 'movements';
+        case 'humidity':
+            return '%';
+        case 'signal':
+            return 'RSSI';
+        case 'pressure':
+            return 'hPa';
+        case 'temperature':
+            const userSetting = await sqlHelper.fetchUserSetting(userId, 'UNIT_TEMPERATURE');
+            if (userSetting === 'F') {
+                return '°F';
+            }
+            return '°C';
+        default:
+            return null;
+    }
+}
+
+/**
  * Will set the alert triggered and proceed with any alerting actions such
  * as sending e-mails.
  * 
@@ -181,6 +208,13 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
                 currentValue = parseInt(currentValue) / 100;
                 thresholdValue = parseInt(thresholdValue) / 100;
             }
+
+            var alertUnit = await getUnit(alertData.type, alertData.userId);
+            if (alertUnit === null) {
+                console.error(`Unable to resolve alert type for alert ${alertData.alert_id} of type ${alertData.type} for user ${alertData.userId}`);
+                return;
+            }
+
             try {
                 await emailHelper.sendAlertEmail(
                     user.email,
@@ -190,6 +224,7 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
                     triggerType,
                     currentValue,
                     thresholdValue,
+                    alertUnit,
                     alertData.description
                 );
             } catch (e) {

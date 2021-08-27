@@ -107,6 +107,21 @@ const fetchMultiCondition = async (fields, values, table, limit = 1) => {
 }
 
 /**
+ * Fetches the value of a single user setting.
+ * 
+ * @param {*} userId 
+ * @param {*} settingName 
+ * @returns 
+ */
+const fetchUserSetting = async (userId, settingName) => {
+    const result = await fetchMultiCondition(['user_id', '`key`'], [userId, settingName], 'user_settings', 1);
+    if (result !== null && results.length > 0) {
+        return results[0].key;
+    }
+    return null;
+}
+
+/**
  * Fetches a count by id column
  *
  * @param {string} field Field name to use for filtering
@@ -697,6 +712,7 @@ module.exports = {
 	fetchAll,
     fetchSingle,
     fetchMultiCondition,
+    fetchUserSetting,
     deleteSingle,
     insertSingle,
     fetchCount,
