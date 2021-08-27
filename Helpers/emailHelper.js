@@ -224,7 +224,7 @@ const sendShareRemovedNotification = async (email, sensorName, sharerName, share
     }
 
     let data = {
-        sensor: sensorName !== '' && sensorName !== null ? `${sensorName}` : 'unnamed'
+        sensor: (sensorName !== '' && sensorName !== null) ? `${sensorName}` : '<<unnamed>>'
     }
 
     if (sharerName !== null) {
@@ -238,7 +238,7 @@ const sendShareRemovedNotification = async (email, sensorName, sharerName, share
 }
 
 const getDefaultSensorName = (sensor) => {
-    return 'Ruuvi ' + sensor.substring(0, 2) + sensor.substring(3, 5);
+    return 'Ruuvi ' + sensor.substr(sensor.length - 5, 2) + sensor.substr(sensor.length - 2, 2);
 }
 
 /**
