@@ -147,7 +147,7 @@ const sendAlertEmail = async (
 ) => {
 
     if (!sensorName) {
-        sensorName = 'Unnamed sensor';
+        sensorName = getDefaultSensorName(sensor);
     }
     if (!description) {
         description = "";
@@ -196,7 +196,7 @@ const sendAlertEmail = async (
     if (sensorName) {
         sensorNameString = `${sensorName}`;
     } else {
-        sensorNameString = `unnamed`;
+        sensorNameString = `<<unnamed>>`;
     }
 
     return await sendTemplatedEmail(email,
@@ -237,6 +237,10 @@ const sendShareRemovedNotification = async (email, sensorName, sharerName, share
     return await sendTemplatedEmail(email, template, data);
 }
 
+const getDefaultSensorName = (sensor) => {
+    return 'Ruuvi ' + sensor.substring(0, 2) + sensor.substring(3, 5);
+}
+
 /**
  * Masks an e-mail to format "x****.****y@z****w.com"
  * 
@@ -263,5 +267,6 @@ module.exports = {
     sendShareRemovedNotification,
     sendAlertEmail,
     sendEmailInvitation,
+    getDefaultSensorName,
     maskEmail
 };
