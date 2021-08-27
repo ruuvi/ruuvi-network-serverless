@@ -96,7 +96,6 @@ const executeGetSensorList = async (event, context, sqlHelper) => {
         if (filteredSensorId !== null) {
             const filteredShared = sharedSensors.filter(s => s.sensor === filteredSensorId);
             if (filteredShared.length === 0) {
-                console.log('filtered shared ' + filteredSensorId + ' ' + s.sensor);
                 continue;
             }
         }

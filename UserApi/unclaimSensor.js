@@ -54,10 +54,10 @@ const executeUnclaimSensor = async (event, context, sqlHelper) => {
 
     // Notify about the removal of existing shares
     for (const share of existingShares) {
-        console.log('Sending share remove notification for sensor ' + share.sensor_name + ' to ' + share.email + ' from ' + user.email);
+        console.log('Sending share remove notification for sensor ' + share.name + ' to ' + share.email + ' from ' + user.email);
         await emailHelper.sendShareRemovedNotification(
             share.email,
-            share.sensor_name,
+            share.name,
             user.email
         );
     }

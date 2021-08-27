@@ -102,7 +102,7 @@ const executeShare = async (event, context, sqlHelper) => {
 
     // Sharing was successful, send notification e-mail
     try {
-        console.log(user.id + ' creating e-mail notification for sensor ' + sensor + ' to ' + targetUserId);
+        console.log(`User ${user.id} creating e-mail notification for sensor ${sensor} to ${targetUserId}`);
         const sensorData = await sqlHelper.query({
             sql: `SELECT name
                 FROM sensor_profiles
@@ -121,7 +121,7 @@ const executeShare = async (event, context, sqlHelper) => {
 
         const sensorName = sensorData[0].name ? sensorData[0].name : 'unnamed';
 
-        console.log(user.id + ' sending e-mail notification for sensor ' + sensor + ' to ' + targetUserId);
+        console.log(`User ${user.id} sending e-mail notification for sensor ${sensor} to ${targetUserId}`);
         await emailHelper.sendShareNotification(
             targetUserEmail,
             sensorName,
@@ -133,7 +133,7 @@ const executeShare = async (event, context, sqlHelper) => {
     }
 
     // Run clean up function
-    console.log(user.id + ' shared sensor ' + sensor + ' successfully to ' + targetUserId);
+    console.log(`User ${user.id} shared sensor ${sensor} successfully to ${targetUserId}`);
 
     return gatewayHelper.successResponse({
         sensor: sensor

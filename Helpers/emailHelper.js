@@ -2,7 +2,6 @@ var AWS = require('aws-sdk');
 AWS.config.update({region: 'eu-central-1'});
 
 var sqs = new AWS.SQS({apiVersion: '2012-11-05'});
-const validator = require('../Helpers/validator');
 
 /**
  * Queues the email for the service.
@@ -113,6 +112,16 @@ const sendResetEmail = async (email, token, sourceDomain) => {
 }
 
 /**
+ * Accurately rounds to two decimals.
+ * 
+ * @param {*} number 
+ * @returns
+ */
+const accurateRound = (number) => {
+    return Math.round((number + Number.EPSILON) * 100) / 100
+}
+
+/**
  * Send alert email
  * 
  * @param {*} email 
@@ -125,7 +134,18 @@ const sendResetEmail = async (email, token, sourceDomain) => {
  * @param {*} description 
  * @returns 
  */
-const sendAlertEmail = async (email, sensorName, sensor, alertType, violationType, value, threshold, description) => {
+const sendAlertEmail = async (
+    email,
+    sensorName,
+    sensor,
+    alertType,
+    violationType,
+    value,
+    threshold,
+    alertUnit,
+    description
+) => {
+
     if (!sensorName) {
         sensorName = 'Unnamed sensor';
     }
@@ -133,15 +153,16 @@ const sendAlertEmail = async (email, sensorName, sensor, alertType, violationTyp
         description = "";
     }
 
-    if (!email || !sensor || !alertType || !violationType || !value || !threshold) {
+    if (!email || !sensor || !alertType || !violationType || !value || !threshold || !alertUnit) {
         console.error('Missing argument for email:', {
             email: email,
             sensorName: sensorName,
             sensor: sensor,
             alertType: alertType,
             violationType: violationType,
-            value: value,
-            threshold: threshold,
+            value: accurateRound(value),
+            threshold: accurateRound(threshold),
+            unit: alertUnit,
             description: description
         });
         throw new Error("Invalid input for sendAlertEmail");
@@ -154,8 +175,9 @@ const sendAlertEmail = async (email, sensorName, sensor, alertType, violationTyp
             'sensorMac': sensor,
             'type': alertType,
             'violation': violationType,
-            'value': value,
-            'threshold': threshold,
+            'value': accurateRound(value),
+            'threshold': accurateRound(threshold),
+            'unit': alertUnit,
             'description': description
         }
     );
@@ -192,27 +214,27 @@ const sendAlertEmail = async (email, sensorName, sensor, alertType, violationTyp
  * @param {*} email 
  * @param {*} sensorName 
  * @param {*} sharerName 
+ * @param {*} shareeName
+ * @param {*} template
  * @returns 
  */
-const sendShareRemovedNotification = async (email, sensorName, sharerName, template = null) => {
+const sendShareRemovedNotification = async (email, sensorName, sharerName, shareeName = null, template = null) => {
     if (template === null || template === '') {
         template = 'UnshareNotification';
     }
 
-    let sensorNameString = '';
-    if (sensorName) {
-        sensorNameString = `${sensorName}`;
-    } else {
-        sensorNameString = `unnamed`;
+    let data = {
+        sensor: sensorName !== '' && sensorName !== null ? `${sensorName}` : 'unnamed'
     }
 
-    return await sendTemplatedEmail(email,
-        template,
-        {
-            'sharer': sharerName,
-            'sensor': sensorNameString
-        }
-    );
+    if (sharerName !== null) {
+        data.sharer = sharerName;
+    }
+    if (shareeName !== null) {
+        data.sharee = shareeName;
+    }
+
+    return await sendTemplatedEmail(email, template, data);
 }
 
 /**
