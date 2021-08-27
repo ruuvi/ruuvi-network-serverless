@@ -122,16 +122,16 @@ const putAlert = async (userId, sensor, type, min = Number.MIN_VALUE, max = Numb
  * @param {*} alertType 
  * @returns 
  */
-const getUnit = (alertType, userId) => {
+const getUnit = async (alertType, userId) => {
     switch (alertType) {
         case 'movement':
-            return 'movements';
-        case 'humidity':
+            return ' movements';
+        case ' humidity':
             return '%';
         case 'signal':
-            return 'RSSI';
+            return ' RSSI';
         case 'pressure':
-            return 'hPa';
+            return ' hPa';
         case 'temperature':
             const userSetting = await sqlHelper.fetchUserSetting(userId, 'UNIT_TEMPERATURE');
             if (userSetting === 'F') {

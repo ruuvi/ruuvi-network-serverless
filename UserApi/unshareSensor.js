@@ -40,6 +40,7 @@ const executeUnshareSensor = async (event, context, sqlHelper) => {
         if (targetUserEmail) {
             targetUser = await userHelper.getByEmail(targetUserEmail);
             if (!targetUser) {
+                console.error("User not found: " + targetUserEmail + " while unsharing " + sensor);
                 return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "User not found.", errorCodes.ER_USER_NOT_FOUND);
             }
             targetUserId = targetUser.id;
@@ -72,13 +73,14 @@ const executeUnshareSensor = async (event, context, sqlHelper) => {
                     sensorName, // We probably want to fetch the localized sensor name for this
                     user.email
                 );
+            } else {
+                console.error(`User ${user.id} tried to unshare a sensor ${sensor} from ${targetUserId} but it was unsuccessful.`);
             }
         } else {
             // Remove sensor shared to you
             const sensorProfiles = await sqlHelper.fetchMultiCondition(['sensor_id', 'user_id'], [sensor, user.id], 'sensor_profiles');
             let sensorName = sensor;
-            console.log(sensorProfiles);
-            if (sensorProfiles !== null && sensorProfiles.length === 1 && sensorProfiles[0] !== null && sensorProfiles[0] !== '') {
+            if (sensorProfiles !== null && sensorProfiles.length === 1 && sensorProfiles[0] !== null) {
                 sensorName = sensorProfiles[0].name;
             }
             wasRemoved = await sqlHelper.removeSensorProfileForUser(sensor, user.id, owner);
@@ -89,7 +91,7 @@ const executeUnshareSensor = async (event, context, sqlHelper) => {
                     return gatewayHelper.errorResponse(gatew.HTTPCodes.INVALID, "Error sending notification to owner.", errorCodes.ER_UNABLE_TO_SEND_EMAIL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
                 }
 
-                console.log(`User ${user.email} (${user.id}) unshared sensor (shared to you) ${sensor} from ${ownerUser.email} (${owner})`);
+                console.log(`User ${user.email} (${user.id}) unshared sensor shared to you: ${sensorName} (${sensor}) from ${ownerUser.email} (${owner})`);
                 await emailHelper.sendShareRemovedNotification(
                     ownerUser.email,
                     sensorName,
@@ -101,10 +103,11 @@ const executeUnshareSensor = async (event, context, sqlHelper) => {
         }
 
         if (wasRemoved <= 0) {
+            console.error(`User ${user.email} (${user.id}) tried to unshare a sensor ${sensor} but it was unsuccessful.`);
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No access to sensor or sensor not shared.", errorCodes.ER_FORBIDDEN);
         }
     } catch (e) {
-        console.error(e);
+        console.error('Internal error unsharing', e);
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL);
     }
 

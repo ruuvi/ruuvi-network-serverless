@@ -118,7 +118,7 @@ const sendResetEmail = async (email, token, sourceDomain) => {
  * @returns
  */
 const accurateRound = (number) => {
-    return Math.round((num + Number.EPSILON) * 100) / 100
+    return Math.round((number + Number.EPSILON) * 100) / 100
 }
 
 /**
@@ -224,14 +224,14 @@ const sendShareRemovedNotification = async (email, sensorName, sharerName, share
     }
 
     let data = {
-        'sensor': sensorName ? `${sensorName}` : 'unnamed'
+        sensor: sensorName !== '' && sensorName !== null ? `${sensorName}` : 'unnamed'
     }
 
     if (sharerName !== null) {
-        data.sharerName = sharerName;
+        data.sharer = sharerName;
     }
     if (shareeName !== null) {
-        data.shareeName = shareeName;
+        data.sharee = shareeName;
     }
 
     return await sendTemplatedEmail(email, template, data);
