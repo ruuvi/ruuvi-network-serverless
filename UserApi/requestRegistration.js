@@ -7,7 +7,7 @@ const errorCodes = require('../Helpers/errorCodes');
 
 const { wrapper } = require('../Helpers/wrapper');
 
-exports.handler = async (event, context) => wrapper(executeRequestRegistration, event, context);
+exports.handler = async (event, context) => wrapper(executeRequestRegistration, event, context, false);
 
 const executeRequestRegistration = async (event, context, sqlHelper) => {
     // TODO: This should no longer be required

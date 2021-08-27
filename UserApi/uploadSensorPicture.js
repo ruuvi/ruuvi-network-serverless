@@ -1,7 +1,6 @@
 const { v4 } = require('uuid');
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const { HTTPCodes } = require('../Helpers/gatewayHelper');
-const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const errorCodes = require('../Helpers/errorCodes');
 
@@ -18,12 +17,7 @@ exports.handler = async (event, context) => wrapper(executeUploadSensorPicture, 
  * @param {object} event
  * @param {object} context
  */
-const executeUploadSensorPicture = async (event, context, sqlHelper) => {
-    const user = await auth.authorizedUser(event.headers);
-    if (!user) {
-        return gatewayHelper.unauthorizedResponse();
-    }
-
+const executeUploadSensorPicture = async (event, context, sqlHelper, user) => {
     const eventBody = JSON.parse(event.body);
     if (!eventBody) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Missing type, action or sensor", errorCodes.ER_MISSING_ARGUMENT);

@@ -1,5 +1,4 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
-const auth = require('../Helpers/authHelper');
 const { wrapper } = require('../Helpers/wrapper');
 
 exports.handler = async (event, context) => wrapper(executeGetShared, event, context);
@@ -10,12 +9,7 @@ exports.handler = async (event, context) => wrapper(executeGetShared, event, con
  * @param {object} event
  * @param {object} context
  */
-const executeGetShared = async (event, context, sqlHelper) => {
-    const user = await auth.authorizedUser(event.headers);
-    if (!user) {
-        return gatewayHelper.unauthorizedResponse();
-    }
-
+const executeGetShared = async (event, context, sqlHelper, user) => {
     const sensors = await sqlHelper.query({
         sql: `SELECT
                 sensors.sensor_id AS sensor,

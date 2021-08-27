@@ -1,16 +1,10 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
-const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const userHelper = require('../Helpers/userHelper');
 const emailHelper = require('../Helpers/emailHelper');
 const errorCodes = require('../Helpers/errorCodes');
 
 const wrapper = require('../Helpers/wrapper').wrapper;
-
-exports = {
-    handler: async (event, context) => wrapper(executeUnshareSensor, event, context),
-    executeUnshareSensor
-};
 
 const getSensorName = async (sensor, userId, sqlHelper) => {
     const sensorProfiles = await sqlHelper.fetchMultiCondition(['sensor_id', 'user_id'], [sensor, userId], 'sensor_profiles');
@@ -120,3 +114,8 @@ const executeUnshareSensor = async (event, context, sqlHelper, user) => {
 
     return gatewayHelper.successResponse();
 }
+
+module.exports = {
+    handler: async (event, context) => wrapper(executeUnshareSensor, event, context),
+    executeUnshareSensor: executeUnshareSensor
+};

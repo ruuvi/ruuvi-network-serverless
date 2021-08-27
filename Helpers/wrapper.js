@@ -1,6 +1,7 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const sqlHelper = require('../Helpers/sqlHelper');
 const errorCodes = require('../Helpers/errorCodes');
+const auth = require('../Helpers/authHelper');
 
 /**
  * Wraps the function to perform connection management in a centralized way.
@@ -10,7 +11,7 @@ const errorCodes = require('../Helpers/errorCodes');
  * @param {*} context Lambda context
  * @returns 
  */
-const wrapper = async (func, event, context, requireAuth = false) => {
+const wrapper = async (func, event, context, requireAuth = true) => {
     // Auth
     let user = null;
     if (requireAuth) {

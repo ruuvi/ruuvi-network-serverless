@@ -1,6 +1,5 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const { HTTPCodes } = require('../Helpers/gatewayHelper');
-const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const errorCodes = require('../Helpers/errorCodes');
 const emailHelper = require('../Helpers/emailHelper');
@@ -8,12 +7,7 @@ const wrapper = require('../Helpers/wrapper').wrapper;
 
 exports.handler = async (event, context) => wrapper(executeClaim, event, context);
 
-const executeClaim = async (event, context, sqlHelper) => {
-    const user = await auth.authorizedUser(event.headers);
-    if (!user) {
-        return gatewayHelper.unauthorizedResponse();
-    }
-
+const executeClaim = async (event, context, sqlHelper, user) => {
     const eventBody = JSON.parse(event.body);
 
     if (!eventBody || !validator.hasKeys(eventBody, ['sensor']) || !validator.validateMacAddress(eventBody.sensor)) {

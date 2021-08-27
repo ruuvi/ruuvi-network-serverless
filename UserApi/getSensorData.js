@@ -1,22 +1,12 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const dynamoHelper = require('../Helpers/dynamoHelper');
 const validator = require('../Helpers/validator');
-const auth = require('../Helpers/authHelper');
 const errorCodes = require('../Helpers/errorCodes');
 const { wrapper } = require('../Helpers/wrapper');
 
 exports.handler = async (event, context) => wrapper(executeGetSensorData, event, context);
 
-const executeGetSensorData = async (event, context, sqlHelper) => {
-    // Authorization
-    let user = null;
-    if (process.env.REQUIRE_LOGIN == 1) {
-        user = await auth.authorizedUser(event.headers);
-        if (!user) {
-            return gatewayHelper.unauthorizedResponse();
-        }
-    }
-
+const executeGetSensorData = async (event, context, sqlHelper, user) => {
     const query = event.queryStringParameters;
     const rawDataTTL = parseInt(process.env.RAW_DATA_TTL);
 

@@ -1,5 +1,4 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
-const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const userHelper = require('../Helpers/userHelper');
 const emailHelper = require('../Helpers/emailHelper');
@@ -10,12 +9,7 @@ const wrapper = require('../Helpers/wrapper').wrapper;
 
 exports.handler = async (event, context) => wrapper(executeShare, event, context);
 
-const executeShare = async (event, context, sqlHelper) => {
-    const user = await auth.authorizedUser(event.headers);
-    if (!user) {
-        return gatewayHelper.unauthorizedResponse();
-    }
-
+const executeShare = async (event, context, sqlHelper, user) => {
     const eventBody = JSON.parse(event.body);
 
     if (!eventBody || !validator.hasKeys(eventBody, ['sensor', 'user'])) {
