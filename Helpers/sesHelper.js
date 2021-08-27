@@ -7,11 +7,17 @@ const ses = new AWS.SES({
 const sendTemplated = async (email, template, templateData, from) => {
     const noReplyAddress = 'noreply@' + from.substring(from.indexOf('@') + 1);
 
+    let fromString = from;
+    if (process.env.SOURCE_EMAIL_NAME) {
+        const fromName = process.env.SOURCE_EMAIL_NAME;
+        fromString = `${fromName} <${from}>`;
+    }
+
     var params = {
         Destination: {
             ToAddresses: [ email ]
         },
-        Source: from, /* required */
+        Source: fromString, /* required */
         Template: template, /* required */
         TemplateData: templateData, /* required */
         ReplyToAddresses: [ noReplyAddress ],

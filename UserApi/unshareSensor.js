@@ -9,6 +9,35 @@ const wrapper = require('../Helpers/wrapper').wrapper;
 
 exports.handler = async (event, context) => wrapper(executeUnshareSensor, event, context);
 
+const getSensorName = async (sensor, userId, sqlHelper) => {
+    const sensorProfiles = await sqlHelper.fetchMultiCondition(['sensor_id', 'user_id'], [sensor, userId], 'sensor_profiles');
+    let sensorName = emailHelper.getDefaultSensorName(sensor);
+    if (sensorProfiles !== null && sensorProfiles.length === 1 && sensorProfiles[0] !== null && sensorProfiles[0].name !== '') {
+        sensorName = sensorProfiles[0].name;
+    }
+    return sensorName;
+}
+
+const getUserByEmail = async (email) => {
+    let targetUser = null;
+    let targetUserId = null;
+
+    let ret = {
+        targetUser: targetUser,
+        targetUserId: targetUserId,
+        targetUserEmail: email
+    };
+
+    if (!email) return ret;
+
+    ret.targetUser = await userHelper.getByEmail(email);
+    if (ret.targetUser) {
+        ret.targetUserId = ret.targetUser.id;    
+    }
+
+    return ret;
+}
+
 const executeUnshareSensor = async (event, context, sqlHelper) => {
     const user = await auth.authorizedUser(event.headers);
     if (!user) {
@@ -22,7 +51,7 @@ const executeUnshareSensor = async (event, context, sqlHelper) => {
     }
 
     const sensor = eventBody.sensor;
-    const targetUserEmail = eventBody.user;
+    let targetUserEmail = eventBody.user;
 
     // Required when owner of the sensor
     if (targetUserEmail && !validator.validateEmail(targetUserEmail)) {
@@ -33,83 +62,63 @@ const executeUnshareSensor = async (event, context, sqlHelper) => {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid sensor ID given.", errorCodes.ER_INVALID_MAC_ADDRESS);
     }
 
-    try {
-        let targetUser = null;
-        let targetUserId = null;
-
-        if (targetUserEmail) {
-            targetUser = await userHelper.getByEmail(targetUserEmail);
-            if (!targetUser) {
-                console.error("User not found: " + targetUserEmail + " while unsharing " + sensor);
-                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "User not found.", errorCodes.ER_USER_NOT_FOUND);
-            }
-            targetUserId = targetUser.id;
-        }
-
-        // Fetch sensor for owner information
-        const ownerInfo = await sqlHelper.fetchSingle('sensor_id', sensor, 'sensors');
-        if (ownerInfo === null) {
-            console.log("Error fetching sensor: " + sensor);
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not found.", errorCodes.ER_SENSOR_NOT_FOUND);
-        }
-
-        const owner = ownerInfo.owner_id;
-        let wasRemoved = false;
-
-        if (targetUser !== null && user.id === owner) {
-            // Remove sensor you shared
-            const sensorProfiles = await sqlHelper.fetchMultiCondition(['sensor_id', 'user_id'], [sensor, targetUserId], 'sensor_profiles');
-            let sensorName = emailHelper.getDefaultSensorName(sensor);
-            if (sensorProfiles !== null && sensorProfiles.length === 1 && sensorProfiles[0] !== null && sensorProfiles[0].name !== '') {
-                sensorName = sensorProfiles[0].name;
-            }
-            wasRemoved = await sqlHelper.removeSensorProfileForUser(sensor, targetUserId, user.id);
-
-            if (wasRemoved > 0) {
-                // Success
-                console.log(`User ${user.id} unshared sensor ${sensor} from ${targetUserId}`);
-                await emailHelper.sendShareRemovedNotification(
-                    targetUserEmail,
-                    sensorName, // We probably want to fetch the localized sensor name for this
-                    user.email
-                );
-            } else {
-                console.error(`User ${user.id} tried to unshare a sensor ${sensor} from ${targetUserId} but it was unsuccessful.`);
-            }
-        } else {
-            // Remove sensor shared to you
-            const sensorProfiles = await sqlHelper.fetchMultiCondition(['sensor_id', 'user_id'], [sensor, user.id], 'sensor_profiles');
-            let sensorName = emailHelper.getDefaultSensorName(sensor);
-            if (sensorProfiles !== null && sensorProfiles.length === 1 && sensorProfiles[0] !== null && sensorProfiles[0].name !== '') {
-                sensorName = sensorProfiles[0].name;
-            }
-            wasRemoved = await sqlHelper.removeSensorProfileForUser(sensor, user.id, owner);
-
-            if (wasRemoved > 0) {
-                const ownerUser = await sqlHelper.fetchSingle('id', owner, 'users');
-                if (ownerUser === null) {
-                    return gatewayHelper.errorResponse(gatew.HTTPCodes.INVALID, "Error sending notification to owner.", errorCodes.ER_UNABLE_TO_SEND_EMAIL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
-                }
-
-                console.log(`User ${user.email} (${user.id}) unshared sensor shared to you: ${sensorName} (${sensor}) from ${ownerUser.email} (${owner})`);
-                await emailHelper.sendShareRemovedNotification(
-                    ownerUser.email,
-                    sensorName,
-                    null,
-                    user.email,
-                    'UnshareByShareeNotification'
-                );
-            }
-        }
-
-        if (wasRemoved <= 0) {
-            console.error(`User ${user.email} (${user.id}) tried to unshare a sensor ${sensor} but it was unsuccessful.`);
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No access to sensor or sensor not shared.", errorCodes.ER_FORBIDDEN);
-        }
-    } catch (e) {
-        console.error('Internal error unsharing', e);
-        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL);
+    // Fetch sensor for owner information
+    const sensorData = await sqlHelper.fetchSingle('sensor_id', sensor, 'sensors');
+    if (sensorData === null) {
+        console.log("Error fetching sensor: " + sensor);
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Sensor not found.", errorCodes.ER_SENSOR_NOT_FOUND);
     }
+
+    const ownerId = sensorData.owner_id;
+    const isOwner = parseInt(ownerId) === parseInt(user.id);
+    const owner = await sqlHelper.fetchSingle('id', ownerId, 'users');
+    if (owner === null) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "Owner not found.", errorCodes.ER_USER_NOT_FOUND);
+    }
+
+    if (isOwner && !targetUserEmail) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "Invalid or no E-mail given.", errorCodes.ER_INVALID_EMAIL_ADDRESS);
+    } else if (!isOwner && targetUserEmail && targetUserEmail !== user.email) {
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "You cannot unshare sensors you do not have access to.", errorCodes.ER_INVALID_EMAIL_ADDRESS);
+    }
+
+    targetUserEmail = isOwner ? targetUserEmail : user.email;
+
+    // Fetch the user to unshare from
+    const { targetUser, targetUserId } = await getUserByEmail(targetUserEmail);
+    if (!targetUser) {
+        console.error("User not found: " + targetUserEmail + " while unsharing " + sensor);
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "User not found.", errorCodes.ER_USER_NOT_FOUND);
+    }
+
+    const sensorName = await getSensorName(sensor, targetUserId, sqlHelper);
+    console.log(`User ${user.email} (${user.id}) attempting to remove ${sensor} from ${targetUserEmail} (${targetUserId})`);
+    const wasRemoved = await sqlHelper.removeSensorProfileForUser(sensor, targetUserId);
+
+    if (wasRemoved <= 0) {
+        console.error(`User ${user.email} (${user.id}) tried to unshare a sensor ${sensor} but it was unsuccessful.`);
+        return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, "No access to sensor or sensor not shared.", errorCodes.ER_FORBIDDEN);
+    }
+
+    console.log(`User ${user.email} unshared sensor ${sensor} from ${targetUserEmail}`);
+    if (isOwner) {
+        console.log(`Sending Unshare notification to ${targetUserEmail} from user ${user.email} for sensor ${sensorName}`);
+        await emailHelper.sendShareRemovedNotification(
+            targetUserEmail,
+            sensorName, // We probably want to fetch the localized sensor name for this
+            user.email
+        );
+    } else {
+        console.log(`Sending UnshareBySharee notification to ${owner.email} from user ${targetUserEmail} for sensor ${sensorName}`);
+        await emailHelper.sendShareRemovedNotification(
+            owner.email,
+            sensorName,
+            null,
+            targetUserEmail,
+            'UnshareByShareeNotification'
+        );
+    }
+
 
     return gatewayHelper.successResponse();
 }

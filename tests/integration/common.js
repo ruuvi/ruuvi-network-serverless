@@ -24,6 +24,8 @@ const internalKey = stageConfig[stage]['internalKey'];
 const RI = process.env.IS_INTEGRATION_TEST;
 const PRODUCTION = process.env.STAGE == 'prod';
 
+const testData = utils.randomHex(32);
+
 /**
  * HTTP Client with Authorization set up
  */
@@ -97,6 +99,71 @@ const sleep = async (ms) => {
     });
 }   
 
+const createSensorWithData = async (macAddress, gatewayMac, data = null, name = null, claim = true) => {
+    let payload = { sensor: macAddress };
+    if (name !== null) {
+        payload.name = name;
+    }
+
+    if (data === null) {
+        data = testData;
+    }
+
+    try {
+        await post('claim', payload);
+    } catch (e) {
+        console.error('claim failed', e);
+        return false;
+    }
+
+    let tags = {};
+    tags[macAddress] = {
+        "rssi":	-76,
+        "timestamp":	Date.now() - 50,
+        "data":	data
+    };
+
+    let recordResult = null;
+    try {
+        recordResult = await post('record', {
+            "data":	{
+                "coordinates":	"",
+                "timestamp":	Date.now(),
+                "gw_mac":	gatewayMac,
+                "tags":	tags
+            }
+        });
+    } catch (e) {
+        console.error('failed to record data', e);
+    }
+
+    // Wait for data to show up
+    let failed = 0;
+    for (let i = 0; i < 10; i++) {
+        try {
+            const readResult = await get('get', { sensor: macAddress });
+            if (!readResult.data || !readResult.data.total) {
+                await sleep(500);
+                continue;
+            }
+            break;
+        } catch (e) {
+            failed++;
+        }
+    }
+    if (failed > 0) {
+        console.log('failed attempts: ' + failed);
+    }
+
+    if (!claim || recordResult === null) {
+        await post('unclaim', {
+			sensor: macAddress
+		});
+    }
+    
+    return true;
+}
+
 module.exports = {
     utils,
 
@@ -113,6 +180,8 @@ module.exports = {
     primaryEmail,
     secondaryEmail,
     unregisteredEmail,
+
+    createSensorWithData,
 
     internalKey,
 

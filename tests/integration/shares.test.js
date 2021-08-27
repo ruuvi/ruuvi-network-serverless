@@ -19,6 +19,8 @@
     secondaryEmail,
     unregisteredEmail,
 
+	createSensorWithData,
+
 	sleep
 } = require('./common');
 const { randomMac } = require('./integrationHelpers');
@@ -27,71 +29,6 @@ const { randomMac } = require('./integrationHelpers');
 const newSensorMac = utils.randomMac();
 const newGatewayMac = utils.randomMac();
 const testData = utils.randomHex(32);
-
-const createSensorWithData = async (macAddress, gatewayMac, data = null, name = null) => {
-    let payload = { sensor: macAddress };
-    if (name !== null) {
-        payload.name = name;
-    }
-
-    if (data === null) {
-        data = testData;
-    }
-
-    try {
-        await post('claim', payload);
-    } catch (e) {
-        console.error('claim failed', e);
-        return false;
-    }
-
-    let tags = {};
-    tags[macAddress] = {
-        "rssi":	-76,
-        "timestamp":	Date.now() - 50,
-        "data":	data
-    };
-
-    let recordResult = null;
-    try {
-        recordResult = await post('record', {
-            "data":	{
-                "coordinates":	"",
-                "timestamp":	Date.now(),
-                "gw_mac":	gatewayMac,
-                "tags":	tags
-            }
-        });
-    } catch (e) {
-        console.error('failed to record data', e);
-    }
-
-    // Wait for data to show up
-    let failed = 0;
-    for (let i = 0; i < 10; i++) {
-        try {
-            const readResult = await get('get', { sensor: macAddress });
-            if (!readResult.data || !readResult.data.total) {
-                await sleep(500);
-                continue;
-            }
-            break;
-        } catch (e) {
-            failed++;
-        }
-    }
-    if (failed > 0) {
-        console.log('failed attempts: ' + failed);
-    }
-
-    if (recordResult === null) {
-        await post('unclaim', {
-			sensor: macAddress
-		});
-    }
-    
-    return true;
-}
 
 describe('Shares test suite', () => {
 	itif(RI)('`claim` and record data is successful (PRE-REQUISITE)', async () => {
@@ -293,6 +230,11 @@ describe('Shares test suite', () => {
 		const userShareData = await get('shared');
         const newSensor = userShareData.data.data.sensors.find(s => s.sensor === newSensorMac);
 		expect(newSensor).not.toBeDefined();
+
+		// Ensure the owner still has the sensor
+		const sensorData = await get('sensors');
+		const sensorCheck = sensorData.data.data.sensors.find(s => s.sensor === newSensorMac);
+		expect(sensorCheck).toBeDefined();
 	});
 
 	itif(RI)('`share` to unregistered is successful', async () => {
