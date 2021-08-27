@@ -19,7 +19,8 @@ const {
     primaryEmail,
     unregisteredEmail,
 
-	sleep
+	sleep,
+	createSensorWithData
 } = require('./common');
 const { randomMac } = require('./integrationHelpers');
 
@@ -72,24 +73,9 @@ describe('[LEGACY] Remaining uncategorized tests', () => {
 	// 	// TODO: We could do remainder of the tests with this user
 	// });
 
-	itif(RI)('`record` returns 200 OK', async () => {
-		let tags = {};
-		tags[newSensorMac] = {
-			"rssi":	-76,
-			"timestamp":	Date.now() - 50,
-			"data":	testData
-		};
-
-		const recordResult = await post('record', {
-			"data":	{
-				"coordinates":	"",
-				"timestamp":	Date.now(),
-				"gw_mac":	newGatewayMac,
-				"tags":	tags
-			}
-		});
-		expect(recordResult.status).toBe(200);
-		expect(recordResult.statusText).toBe('OK');
+	itif(RI)('`record` is successful', async () => {
+		var result = await createSensorWithData(newSensorMac, newGatewayMac, testData, null, false);
+		expect(result).toBe(true);
 	});
 
 	itif(RI)('`record` triggers a throttle when updated with same gateway', async () => {

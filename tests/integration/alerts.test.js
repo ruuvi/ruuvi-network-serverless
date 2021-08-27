@@ -12,9 +12,7 @@
     PRODUCTION,
     
 	secondaryHttp,
-    primaryEmail,
-    secondaryEmail,
-    unregisteredEmail,
+
     sleep
 } = require('./common');
 

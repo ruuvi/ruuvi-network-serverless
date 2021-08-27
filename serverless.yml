@@ -31,6 +31,7 @@ custom:
   rawDataTTL: 86400                 # 10800 = 3h, 86400 = 24h, 7776000 = 3 months
   verificationShortTokenLength: 4   # Length of the short verification token sent in the e-mail
 
+  sourceEmailName: 'Ruuvi'
   sourceEmail: 'noreply@ruuvi.com'
   sourceDomain: 'https://network.ruuvi.com'
   invitationExpirationInterval: 5  # minutes after requested
@@ -527,6 +528,7 @@ functions:
               - Arn
           batchSize: 1
     environment:
+      SOURCE_EMAIL_NAME: ${self:custom.sourceEmailName}
       SOURCE_EMAIL: ${self:custom.sourceEmail}
       SOURCE_DOMAIN: ${self:custom.sourceDomain}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}

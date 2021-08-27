@@ -196,6 +196,7 @@ const sendAlertEmail = async (
     if (sensorName) {
         sensorNameString = `${sensorName}`;
     } else {
+        console.error(`Empty sensor name found! This should not be the case. email:${email} sensor:${sensorName} sharer:${sharerName}`);
         sensorNameString = `<<unnamed>>`;
     }
 
