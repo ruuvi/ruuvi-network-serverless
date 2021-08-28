@@ -58,7 +58,11 @@ const executeUnclaimSensor = async (event, context, sqlHelper, user) => {
     } else if (removedSensors < 0) {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, "Unknown error occurred.", errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
     }
-    console.log(`Removed ${removedSensors} sensor (${sensor})`);
+    console.log(`Removed ${removedSensors} sensor ${sensor}`);
+
+    // Clear alerts for the sensor
+    await sqlHelper.deleteAlertsForSensor(sensor);
+    console.log(`Removed alerts for sensor ${sensor}`);
 
     // Notify about the removal of existing shares
     for (const share of existingShares) {

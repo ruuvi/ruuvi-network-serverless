@@ -33,7 +33,11 @@ const refreshAlertCache = async (sensor, data = null) => {
         }
     });
 
-    await redis.set("alerts_" + sensor, JSON.stringify(active));
+    if (active.length === 0) {
+        await redis.del("alerts_" + sensor);
+    } else {
+        await redis.set("alerts_" + sensor, JSON.stringify(active));
+    }
 }
 
 /**

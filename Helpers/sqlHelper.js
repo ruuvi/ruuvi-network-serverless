@@ -358,6 +358,21 @@ const fetchAlerts = async (sensorId, userId = null) => {
     return res;
 }
 
+const deleteAlertsForSensor = async (sensor) => {
+    try {
+        const result = await mysql.query({
+            sql: `DELETE FROM sensor_alerts WHERE sensor_id = ?`,
+            timeout: 1000,
+            values: [sensor]
+        });
+
+        const alertHelper = require('../Helpers/alertHelper');
+        alertHelper.refreshAlertCache(sensor);
+    } catch (e) {
+        console.error(`Error removing alerts for sensor "${sensor}"`, e);
+    }
+}
+
 const shareSensor = async (userId, ownerId, sensor) => {
     let results = await mysql.query({
         sql: `INSERT INTO sensor_profiles (
@@ -716,8 +731,11 @@ module.exports = {
     fetchCount,
     setValue,
 	updateValues,
+    
     fetchAlerts,
     saveAlert,
+    deleteAlertsForSensor,
+
     shareSensor,
     fetchSensorsForUser,
     createPendingShare,
