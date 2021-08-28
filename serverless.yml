@@ -375,6 +375,7 @@ functions:
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
       EMAIL_QUEUE: { Ref: EmailQueue }
 
   shareSensor:
