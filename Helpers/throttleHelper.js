@@ -30,8 +30,10 @@ const clearThrottle = async (throttleKey, interval) => {
     const throttleVar = await redis.get(fullThrottleKey);
     const itemTimestamp = throttleVar === null ? 0 : parseInt(throttleVar);
 
-    if (itemTimestamp > 0 && now - itemTimestamp < interval) {
-        console.info("Throttled " + fullThrottleKey + " at " + now + " (" + itemTimestamp + ")");
+    const diff = now - itemTimestamp;
+    if (itemTimestamp > 0 && diff < interval) {
+        const roundedDiff = Math.round((diff + Number.EPSILON) * 100) / 100;
+        console.info(`${fullThrottleKey} at ${now} (${roundedDiff}:${interval}:${itemTimestamp})`);
         return true;
     }
 

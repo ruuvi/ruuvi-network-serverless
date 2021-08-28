@@ -12,6 +12,8 @@ plugins:
 custom:
   stage: ${opt:stage, self:provider.stage}
 
+  debugMode: 0 # Increased logging if 1
+
   # Kinesis mode
   #gatewayStream: ${self:custom.stage}-ruuvi-sensor-stream
   gatewayStream: ${self:custom.stage}-ruuvi-sensor-stream
@@ -38,7 +40,7 @@ custom:
   requireLoginForData: 1           # 1 for ENABLED
   gatewaySendRate: 60              # every X seconds
   gatewayEnforceSignature: 0       # 1 for ENABLED
-  gatewayRequestTTL: 10000         # ms - how long is the request valid?
+  gatewayRequestTTL: 60000         # ms - how long is the request valid?
 
   dev-throttle-interval: 1
   prod-throttle-interval: 3600
@@ -166,6 +168,7 @@ functions:
           method: POST
           path: /record
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       STREAM_NAME: ${self:custom.gatewayStream}
       GATEWAY_SEND_RATE: ${self:custom.gatewaySendRate}
       ENFORCE_SIGNATURE: ${self:custom.gatewayEnforceSignature}

@@ -16,6 +16,10 @@ exports.handler = async (event, context) => {
     const eventBody = JSON.parse(event.body);
     const data = eventBody.data;
 
+    if (parseInt(process.env.DEBUG_MODE) === 1) {
+        console.info(eventBody);
+    }
+
     // TODO: This validation is pretty rudimentary
     const MAX_UPLOAD_DELAY = 30 * 24 * 60 * 60 * 1000; // 1 month
 
@@ -41,8 +45,7 @@ exports.handler = async (event, context) => {
             event.body,
             data.gw_mac,
             timestamp,
-            process.env.GATEWAY_REQUEST_TTL,
-            process.env.GATEWAY_SIGNATURE_SECRET
+            process.env.GATEWAY_REQUEST_TTL
         );
 
         if (!validationResult) {
@@ -51,7 +54,7 @@ exports.handler = async (event, context) => {
             // Log Invalid Signature to Redis for Validation
             await redis.set('invalid_signature_' + data.gw_mac.toUpperCase(), validator.now());
 
-            console.error("Invalid signature: " + signature);
+            console.error(`${data.gw_mac} - Invalid signature: ${signature}`);
             return gatewayHelper.unauthorizedResponse();
         }
     }
@@ -81,7 +84,7 @@ exports.handler = async (event, context) => {
         }
 
         // Process throttling
-        const throttleSensor = await throttleHelper.throttle(key, process.env.MINIMUM_SENSOR_THROTTLE_INTERVAL);
+        const throttleSensor = await throttleHelper.throttle(`sensor_${key}`, parseInt(process.env.MINIMUM_SENSOR_THROTTLE_INTERVAL) - 5);
         if (throttleSensor) {
             continue;
         }
@@ -122,7 +125,7 @@ exports.handler = async (event, context) => {
             return gatewayHelper.invalid();
         }
     } catch (e) {
-        console.error(e);
+        console.error(`Write exception for ${data.gw_mac}`, e);
         return gatewayHelper.invalid();
     }
 
