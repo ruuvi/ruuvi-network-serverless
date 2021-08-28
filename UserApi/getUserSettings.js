@@ -1,17 +1,11 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
-const auth = require('../Helpers/authHelper');
 const errorCodes = require('../Helpers/errorCodes.js');
 
 const { wrapper } = require('../Helpers/wrapper');
 
 exports.handler = async (event, context) => wrapper(executeGetUserSettings, event, context);
 
-const executeGetUserSettings = async (event, context, sqlHelper) => {
-    const user = await auth.authorizedUser(event.headers);
-    if (!user) {
-        return gatewayHelper.unauthorizedResponse();
-    }
-
+const executeGetUserSettings = async (event, context, sqlHelper, user) => {
     let settings = null;
     
     try {

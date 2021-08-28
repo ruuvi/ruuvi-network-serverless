@@ -8,7 +8,7 @@ const dateFormat = require( 'dateformat' );
 
 const wrapper = require('../Helpers/wrapper').wrapper;
 
-exports.handler = async (event, context) => wrapper(executeVerifyUser, event, context);
+exports.handler = async (event, context) => wrapper(executeVerifyUser, event, context, false);
 
 const executeVerifyUser = async (event, context, sqlHelper) => {
     if (

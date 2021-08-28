@@ -1,5 +1,4 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
-const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const dynamoHelper = require('../Helpers/dynamoHelper');
 const { wrapper } = require('../Helpers/wrapper');
@@ -12,12 +11,7 @@ exports.handler = async (event, context) => wrapper(executeGetSensorList, event,
  * @param {object} event
  * @param {object} context
  */
-const executeGetSensorList = async (event, context, sqlHelper) => {
-    const user = await auth.authorizedUser(event.headers);
-    if (!user) {
-        return gatewayHelper.unauthorizedResponse();
-    }
-
+const executeGetSensorList = async (event, context, sqlHelper, user) => {
     let queryArguments = [user.id, user.id];
     let sensorFilter = '';
     let filteredSensorId = null;

@@ -1,13 +1,11 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
-const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const errorCodes = require('../Helpers/errorCodes');
 const emailHelper = require('../Helpers/emailHelper');
 
 const wrapper = require('../Helpers/wrapper').wrapper;
 
-exports.handler = async (event, context) => wrapper(executeUnclaimSensor, event, context);
-
+exports.handler = async (event, context) => wrapper(executeUnclaimSensor, event, context, true);
 
 /**
  * Unclaims a sensor.
@@ -15,12 +13,7 @@ exports.handler = async (event, context) => wrapper(executeUnclaimSensor, event,
  * @param {object} event
  * @param {object} context
  */
-const executeUnclaimSensor = async (event, context, sqlHelper) => {
-    const user = await auth.authorizedUser(event.headers);
-    if (!user) {
-        return gatewayHelper.unauthorizedResponse();
-    }
-
+const executeUnclaimSensor = async (event, context, sqlHelper, user) => {
     const eventBody = JSON.parse(event.body);
 
     if (!eventBody || !validator.hasKeys(eventBody, ['sensor'])) {
@@ -31,6 +24,21 @@ const executeUnclaimSensor = async (event, context, sqlHelper) => {
 
     // Cache shares
     let existingShares = [];
+
+    // ------------------------------------------------------------------------
+    // DEPRECATED: BACKWARDS COMPATIBILITY FOR UNCLAIMING WORKING FOR UNSHARING
+    // ------------------------------------------------------------------------
+    var sensorData = await sqlHelper.fetchSingle('sensor_id', sensor, 'sensors');
+    if (parseInt(sensorData.owner_id) !== user.id) {
+        const unshareEndpoint = require('../UserApi/unshareSensor');
+        let unshareEvent = {
+            ...event,
+            body: JSON.stringify({ sensor: sensor })
+        };
+
+        return await unshareEndpoint.executeUnshareSensor(unshareEvent, null, sqlHelper, user);
+    }
+    // ------------------------------------------------------------------------
 
     // Get sharees to notify
     existingShares = await sqlHelper.getShares(sensor);

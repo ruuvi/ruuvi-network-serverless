@@ -7,7 +7,7 @@ const kinesisHelper = require('../Helpers/kinesisHelper');
 
 exports.handler = async (event) => {
     const whitelistTableName = process.env.WHITELIST_TABLE_NAME;
-    const interval = parseInt(process.env.MAXIMUM_STORAGE_INTERVAL);
+    const interval = parseInt(process.env.MAXIMUM_STORAGE_INTERVAL - 5);
     const dataTTL = parseInt(process.env.DATA_TTL);
     const now = validator.now();
 

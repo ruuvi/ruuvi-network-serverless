@@ -1,17 +1,11 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
-const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
 const alertHelper = require('../Helpers/alertHelper');
 const { wrapper } = require('../Helpers/wrapper');
 
 exports.handler = async (event, context) => wrapper(executeGetAlerts, event, context);
 
-const executeGetAlerts = async (event, context, sqlHelper) => {
-    const user = await auth.authorizedUser(event.headers);
-    if (!user) {
-        return gatewayHelper.unauthorizedResponse();
-    }
-
+const executeGetAlerts = async (event, context, sqlHelper, user) => {
     // Fetch either filtered or full list
     let sensors = [];
     if (event.queryStringParameters && validator.hasKeys(event.queryStringParameters, ['sensor'])) {

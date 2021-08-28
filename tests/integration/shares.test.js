@@ -20,8 +20,6 @@
     unregisteredEmail,
 
 	createSensorWithData,
-
-	sleep
 } = require('./common');
 const { randomMac } = require('./integrationHelpers');
 
@@ -98,7 +96,42 @@ describe('Shares test suite', () => {
         const createResult = await createSensorWithData(sharedWithNameMac, sharedWithNameGatewayMac, null, sharedWithNameName);
         expect(createResult).toBe(true);
 
-		await sleep(500);
+		let shareResult = null;
+		try {
+			shareResult = await post('share', {
+				sensor: sharedWithNameMac,
+				user: secondaryEmail
+			});
+		} catch (e) {
+			console.log('share failed', e.response.data);
+		}
+        expect(shareResult).not.toBeNull();
+		expect(shareResult.status).toBe(200, 'share result: ' + shareResult.status);
+		
+		// Verify share being found
+		let sharedSensorData = null;
+		try {
+			sharedSensorData = await get('get', { sensor: sharedWithNameMac }, secondaryHttp);
+		} catch (e) {
+			console.log('get failed', e);
+			expect(false).toBe(true);
+		}
+        expect(sharedSensorData).not.toBeNull();
+		expect(sharedSensorData.data.data.sensor).toBe(sharedWithNameMac);
+		expect(sharedSensorData.data.data.name).toBe(sharedWithNameName);
+
+		await post('unclaim', {
+			sensor: sharedWithNameMac
+		});
+	});
+
+	itif(RI)('`unclaim` (TO BE DEPRECATED) on sharee unshares sensor', async () => {
+		const sharedWithNameGatewayMac = randomMac();
+		const sharedWithNameMac = randomMac();
+		const sharedWithNameName = "TEST-FOR-UNSHARING-VIA-UNCLAIM";
+
+        const createResult = await createSensorWithData(sharedWithNameMac, sharedWithNameGatewayMac, null, sharedWithNameName);
+        expect(createResult).toBe(true);
 
 		let shareResult = null;
 		try {
@@ -124,6 +157,36 @@ describe('Shares test suite', () => {
 		expect(sharedSensorData.data.data.sensor).toBe(sharedWithNameMac);
 		expect(sharedSensorData.data.data.name).toBe(sharedWithNameName);
 
+		const unclaimResult = await post('unclaim', {
+			sensor: sharedWithNameMac
+		}, secondaryHttp);
+		expect(unclaimResult).not.toBeNull();
+		expect(unclaimResult.status).toBe(200, 'unclaim result: ' + unclaimResult.status);
+
+		// Verify that was not unclaimed from owner
+		let originalSensorData = null;
+		try {
+			originalSensorData = await get('get', { sensor: sharedWithNameMac });
+		} catch (e) {
+			console.log('get failed', e);
+			expect(false).toBe(true);
+		}
+		expect(originalSensorData).not.toBeNull();
+		expect(originalSensorData.data.data.sensor).toBe(sharedWithNameMac);
+		expect(originalSensorData.data.data.name).toBe(sharedWithNameName);
+
+		// Verify that sensor share has been removed
+		let sharedSensorDataRetry = null;
+		let threw = false;
+		try {
+			sharedSensorDataRetry = await get('get', { sensor: sharedWithNameMac }, secondaryHttp);
+		} catch (e) {
+			expect(e.response.status).toBe(403);
+			threw = true;
+		}
+		expect(threw).toBe(true, 'expected to fail with 403');
+
+		// CLEAN UP
 		await post('unclaim', {
 			sensor: sharedWithNameMac
 		});

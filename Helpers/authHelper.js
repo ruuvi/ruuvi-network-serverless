@@ -96,9 +96,10 @@ const validateSignature = (givenSignature, data, timestamp, maxAge, secret) => {
     }
 
     const now = Date.now();
-    if (now - (timestamp * 1000) > maxAge) {
-        const diff = now - timestamp;
-        console.error(`Signature expired diff: ${diff}, max-age: ${maxAge}, now: ${now}, ts: ${timestamp}`);
+    const tsMs = timestamp * 1000;
+    if (now - tsMs > maxAge) {
+        const diff = now - tsMs;
+        console.error(`Signature expired; diff:${diff}, max-age:${maxAge}, now:${now}, ts:${tsMs}`);
         return false;
     }
 
