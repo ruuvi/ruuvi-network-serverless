@@ -1,4 +1,7 @@
-const redis = require('../Helpers/redisHelper').getClient();
+let redis = null;
+if (process.env.REDIS_HOST) {
+    redis = require('../Helpers/redisHelper').getClient();
+} 
 const sqlHelper = require('../Helpers/sqlHelper');
 const emailHelper = require('../Helpers/emailHelper');
 const throttleHelper = require('../Helpers/throttleHelper');
@@ -120,31 +123,133 @@ const putAlert = async (userId, sensor, type, min = Number.MIN_VALUE, max = Numb
     return res;
 }
 
+const UNIT_SIGNAL_DBM = 'DBM';
+
+const UNIT_MOVEMENT_TIMES = 'TIMES';
+
+const UNIT_TEMPERATURE_CELCIUS = 'C';
+const UNIT_TEMPERATURE_FAHRENHEIT = 'F';
+const UNIT_TEMPERATURE_KELVIN = 'K';
+
+const UNIT_PRESSURE_PASCAL = '0';
+const UNIT_PRESSURE_HECTOPASCAL = '1';
+const UNIT_PRESSURE_MILLIMETER_OF_MERCURY = '2';
+const UNIT_PRESSURE_INCH_OF_MERCURY = '3';
+
+const UNIT_HUMIDITY_RELATIVE = '0';
+const UNIT_HUMIDITY_ABSOLUTE = '1';
+const UNIT_HUMIDITY_DEW_POINT = '2';
+
+const UNIT_SYMBOLS = {
+    [UNIT_SIGNAL_DBM]: [' ', 'dBm'],
+
+    [UNIT_MOVEMENT_TIMES]: [' ', 'times'],
+
+    [UNIT_TEMPERATURE_CELCIUS]: ['°C'],
+    [UNIT_TEMPERATURE_FAHRENHEIT]: ['°F'],
+    [UNIT_TEMPERATURE_KELVIN]: ['°K'],
+
+    [UNIT_PRESSURE_PASCAL]: [' ', 'Pa'],
+    [UNIT_PRESSURE_HECTOPASCAL]: [' ', 'hPa'],
+    [UNIT_PRESSURE_MILLIMETER_OF_MERCURY]: [' ', 'mmHg'],
+    [UNIT_PRESSURE_INCH_OF_MERCURY]: [' ', 'inHg'],
+
+    ['H_' + UNIT_HUMIDITY_RELATIVE]: ['%'],
+    ['H_' + UNIT_HUMIDITY_ABSOLUTE]: [' ', 'g/m³'],
+    ['H_' + UNIT_HUMIDITY_DEW_POINT]: ['°'],
+    
+}
+
 /**
  * Gets the unit alert per type.
  * 
- * @param {*} alertType 
+ * @param {*} unit 
+ * @param {*} current
+ * @param {*} alertType (for shared constants)
  * @returns 
  */
-const getUnit = async (alertType, userId) => {
-    switch (alertType) {
-        case 'movement':
-            return ' movements';
-        case ' humidity':
-            return '%';
-        case 'signal':
-            return ' RSSI';
-        case 'pressure':
-            return ' hPa';
-        case 'temperature':
-            const userSetting = await sqlHelper.fetchUserSetting(userId, 'UNIT_TEMPERATURE');
-            if (userSetting === 'F') {
-                return '°F';
-            }
-            return '°C';
-        default:
-            return null;
+const convertValue = (unit, current, alertType = null) => {
+    let currentValue = current;
+
+    if (alertType === 'humidity') {
+        unit = 'H_' + unit;
     }
+    const unitSymbol = UNIT_SYMBOLS[unit].join('');
+
+    switch (unit) {
+        // Defaults
+        case UNIT_SIGNAL_DBM:
+        case UNIT_MOVEMENT_TIMES:
+        case UNIT_TEMPERATURE_CELCIUS:
+        case UNIT_PRESSURE_PASCAL:
+        case UNIT_HUMIDITY_RELATIVE:
+            break;
+        
+        // Conversions
+        case UNIT_TEMPERATURE_FAHRENHEIT:
+            currentValue = parseFloat(currentValue) * 1.8 + 32;
+            break;
+
+        case UNIT_TEMPERATURE_KELVIN:
+            currentValue = parseFloat(currentValue) + 273.15;
+            break;
+
+        case UNIT_PRESSURE_HECTOPASCAL:
+            currentValue = parseInt(currentValue) / 100;
+            break;
+        case UNIT_PRESSURE_MILLIMETER_OF_MERCURY:
+            currentValue = parseInt(currentValue) / 133.322;
+            break;
+        case UNIT_PRESSURE_INCH_OF_MERCURY:
+            currentValue = parseInt(currentValue) * 0.0002953;
+            break;
+        
+        case UNIT_HUMIDITY_ABSOLUTE:
+            // TODO
+            break;
+        case UNIT_HUMIDITY_DEW_POINT:
+            // TODO
+            break;
+     
+        default:
+            break;
+    }
+
+    return [unitSymbol, currentValue];
+}
+
+/**
+ * Gets the unit constant based on the user setting.
+ * 
+ * @param {*} alertType Type of the alert
+ * @returns 
+ */
+const getUnitSetting = async (alertType, userId) => {
+    let userSetting = null;
+    switch (alertType) {
+        case 'temperature':
+            userSetting = await sqlHelper.fetchUserSetting(userId, 'UNIT_TEMPERATURE');
+            userSetting = userSetting ? userSetting : UNIT_TEMPERATURE_CELCIUS;
+            break;
+        case 'pressure':
+            userSetting = await sqlHelper.fetchUserSetting(userId, 'UNIT_PRESSURE');
+            userSetting = userSetting ? userSetting : UNIT_PRESSURE_HECTOPASCAL;
+            break;
+        case 'humidity':
+            //userSetting = await sqlHelper.fetchUserSetting(userId, 'UNIT_HUMIDITY');
+            //userSetting = userSetting ? userSetting : UNIT_HUMIDITY_RELATIVE;
+            userSetting = UNIT_HUMIDITY_RELATIVE;
+            break;
+        case 'signal':
+            userSetting = await sqlHelper.fetchUserSetting(userId, 'UNIT_SIGNAL');
+            userSetting = userSetting ? userSetting : UNIT_SIGNAL_DBM;
+            break;
+        case 'movement':
+            userSetting = await sqlHelper.fetchUserSetting(userId, 'UNIT_MOVEMENT');
+            userSetting = userSetting ? userSetting : UNIT_MOVEMENT_TIMES;
+            break;
+    }
+    return userSetting;
 }
 
 /**
@@ -205,19 +310,14 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
         }
 
         if (sendEmail) {
-            console.log(`Sending email for ${alertData.type} Alert (${triggerType} for ${sensorData.sensor_id}) to user: ${alertData.userId}`);
+            console.log(`Sending email for ${alertData.type} Alert (${triggerType} for sensor ${name} [${sensorData.sensor_id}]) to user: ${alertData.userId}`);
             let currentValue = alertData.type === 'movement' ? sensorData.movementCounter : sensorData[alertData.type];
             let thresholdValue = previousValue;
-            if (alertData.type === 'pressure') {
-                currentValue = parseInt(currentValue) / 100;
-                thresholdValue = parseInt(thresholdValue) / 100;
-            }
 
-            var alertUnit = await getUnit(alertData.type, alertData.userId);
-            if (alertUnit === null) {
-                console.error(`Unable to resolve alert type for alert ${alertData.alert_id} of type ${alertData.type} for user ${alertData.userId}`);
-                return;
-            }
+            const unit = await getUnitSetting(alertData.type, alertData.userId);
+
+            [alertUnit, currentValue] = convertValue(unit, currentValue, alertData.type);
+            [alertUnit, thresholdValue] = convertValue(unit, thresholdValue, alertData.type);
 
             try {
                 await emailHelper.sendAlertEmail(
@@ -324,5 +424,7 @@ module.exports = {
     refreshAlertCache,
     putAlert,
     triggerAlert,
-    processAlerts
+    processAlerts,
+
+    convertValue
 };

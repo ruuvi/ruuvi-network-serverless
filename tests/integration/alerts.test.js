@@ -85,7 +85,8 @@ const triggerAlertTestCases = [
         description: 'Temperature test',
         data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
 
-        triggered: false
+        triggered: false,
+        unit: 'C'
     },
     {
         sensorName: 'Temperature Sensor with Offset (max)',
@@ -101,7 +102,8 @@ const triggerAlertTestCases = [
         description: 'Temperature max test with offset',
         data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
 
-        triggered: true
+        triggered: true,
+        unit: 'C'
     },
     {
         sensorName: 'Temperature Sensor with Offset (min)',
@@ -117,7 +119,42 @@ const triggerAlertTestCases = [
         description: 'Temperature min test with offset',
         data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
 
-        triggered: true
+        triggered: true,
+        unit: 'C'
+    },
+    {
+        sensorName: 'Temperature Sensor with Offset (max)',
+        offsetHumidity: 0,
+        offsetTemperature: 30,
+        offsetPressure: 0,
+        signal: -76,
+
+        type: 'temperature',
+        min: 0,
+        max: 50,
+        enabled: true,
+        description: 'Temperature max test with offset - FAHRENHEIT',
+        data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
+
+        triggered: true,
+        unit: 'F'
+    },
+    {
+        sensorName: 'Temperature Sensor with Offset (min) - FAHRENHEIT',
+        offsetHumidity: 0,
+        offsetTemperature: 30,
+        offsetPressure: 0,
+        signal: -76,
+
+        type: 'temperature',
+        min: 52,
+        max: 120,
+        enabled: true,
+        description: 'Temperature min test with offset',
+        data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
+
+        triggered: true,
+        unit: 'F'
     },
 
     // Has pressure of 98606
@@ -351,6 +388,13 @@ describe('Alerts integration test suite', () => {
             const alertGatewayMac = utils.randomMac();
 
             try {
+                if (testCase.unit && testCase.type === 'temperature') {
+                    await post('settings', {
+                        name: 'UNIT_TEMPERATURE',
+                        value: testCase.unit
+                    });
+                }
+
                 await post('claim', {
                     sensor: alertSensorMac,
                     name: testCase.sensorName

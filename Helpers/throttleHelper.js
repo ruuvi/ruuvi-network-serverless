@@ -1,4 +1,3 @@
-const redis = require('../Helpers/redisHelper').getClient();
 const validator = require('../Helpers/validator');
 
 const defaultIntervals = {
@@ -6,6 +5,7 @@ const defaultIntervals = {
 }
 
 const clearThrottle = async (throttleKey, interval) => {
+    const redis = require('../Helpers/redisHelper').getClient();
     const fullThrottleKey = "throttle_" + interval + "_" + throttleKey;
     await redis.del(fullThrottleKey);
     return true;
@@ -27,7 +27,10 @@ const clearThrottle = async (throttleKey, interval) => {
     const fullThrottleKey = "throttle_" + interval + "_" + throttleKey;
 
     const now = validator.now();
+    
+    const redis = require('../Helpers/redisHelper').getClient();
     const throttleVar = await redis.get(fullThrottleKey);
+
     const itemTimestamp = throttleVar === null ? 0 : parseInt(throttleVar);
 
     const diff = now - itemTimestamp;
