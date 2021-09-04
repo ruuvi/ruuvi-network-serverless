@@ -1,4 +1,3 @@
-const redis = require('../Helpers/redisHelper').getClient();
 const sqlHelper = require('../Helpers/sqlHelper');
 const alertHelper = require('../Helpers/alertHelper');
 
@@ -9,7 +8,7 @@ exports.handler = async (event) => {
     if (enabledAlerts.length > 0) {
         for (let alert of enabledAlerts) {
             try {
-                await alertHelper.refreshAlertCache(alert.sensor_id, redis);
+                await alertHelper.refreshAlertCache(alert.sensor_id);
                 refreshedAlerts++;
             } catch (e) {
                 console.log('error', e);
