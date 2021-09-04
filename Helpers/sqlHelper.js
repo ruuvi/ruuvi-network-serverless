@@ -114,9 +114,9 @@ const fetchMultiCondition = async (fields, values, table, limit = 1) => {
  * @returns 
  */
 const fetchUserSetting = async (userId, settingName) => {
-    const result = await fetchMultiCondition(['user_id', '`key`'], [userId, settingName], 'user_settings', 1);
-    if (result !== null && results.length > 0) {
-        return results[0].key;
+    const results = await fetchMultiCondition(['user_id', '`key`'], [userId, settingName], 'user_settings', 1);
+    if (results !== null && results.length > 0) {
+        return results[0].value;
     }
     return null;
 }
@@ -360,7 +360,7 @@ const fetchAlerts = async (sensorId, userId = null) => {
 
 const deleteAlertsForSensor = async (sensor) => {
     try {
-        const result = await mysql.query({
+        await mysql.query({
             sql: `DELETE FROM sensor_alerts WHERE sensor_id = ?`,
             timeout: 1000,
             values: [sensor]

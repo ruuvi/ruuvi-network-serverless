@@ -29,7 +29,7 @@ const executeUnclaimSensor = async (event, context, sqlHelper, user) => {
     // DEPRECATED: BACKWARDS COMPATIBILITY FOR UNCLAIMING WORKING FOR UNSHARING
     // ------------------------------------------------------------------------
     var sensorData = await sqlHelper.fetchSingle('sensor_id', sensor, 'sensors');
-    if (parseInt(sensorData.owner_id) !== user.id) {
+    if (sensorData !== null && parseInt(sensorData.owner_id) !== user.id) {
         const unshareEndpoint = require('../UserApi/unshareSensor');
         let unshareEvent = {
             ...event,
