@@ -24,14 +24,11 @@ const getSensorName = async (sensor, sqlHelper) => {
             values: [sensor]
         });
 
-        if (sensorData.length === 0) {
-            console.error(`Sensor profile not found for owner for ${sensor}`);
-            return null;
-        }
-
-        sensorName = (sensorData[0].name !== null && sensorData[0].name !== '')
+        if (sensorData.length > 0) {
+            sensorName = (sensorData[0].name !== null && sensorData[0].name !== '')
             ? sensorData[0].name
             : emailHelper.getDefaultSensorName(sensor);
+        }
     } catch (e) {
         console.error(`Failed to fetch name for sensor ${sensor}`);
     } finally {
