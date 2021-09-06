@@ -30,7 +30,7 @@ const testData = utils.randomHex(32);
 
 describe('Shares test suite', () => {
 	itif(RI)('`claim` and record data is successful (PRE-REQUISITE)', async () => {
-		const createDefault = await createSensorWithData(newSensorMac, utils.randomMac());
+		const createDefault = await createSensorWithData(newSensorMac, utils.randomMac(), null, 'share-default-test-sensor');
 		expect(createDefault).toBe(true);
 	});
 
@@ -91,7 +91,7 @@ describe('Shares test suite', () => {
 	itif(RI)('`share` is successful and shows original name', async () => {
 		const sharedWithNameGatewayMac = randomMac();
 		const sharedWithNameMac = randomMac();
-		const sharedWithNameName = "TEST-WITH-NAME";
+		const sharedWithNameName = "TEST-WITH-NAME-ORIGINALöööäöäö";
 
         const createResult = await createSensorWithData(sharedWithNameMac, sharedWithNameGatewayMac, null, sharedWithNameName);
         expect(createResult).toBe(true);

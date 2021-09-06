@@ -9,6 +9,36 @@ const wrapper = require('../Helpers/wrapper').wrapper;
 
 exports.handler = async (event, context) => wrapper(executeShare, event, context);
 
+const getSensorName = async (sensor, sqlHelper) => {
+    let sensorName = null;
+    try {
+        const sensorData = await sqlHelper.query({
+            sql: `SELECT name
+                FROM sensor_profiles
+                INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
+                WHERE
+                    sensors.owner_id = sensor_profiles.user_id
+                    AND sensor_profiles.is_active = 1
+                    AND sensor_profiles.sensor_id = ?`,
+            timeout: 1000,
+            values: [sensor]
+        });
+
+        if (sensorData.length === 0) {
+            console.log(`Sensor profile not found for owner for ${sensor}`);
+            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Share successful, but unable to send e-mail.', errorCodes.ER_UNABLE_TO_SEND_EMAIL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
+        }
+
+        sensorName = (sensorData[0].name !== null && sensorData[0].name !== '')
+            ? sensorData[0].name
+            : emailHelper.getDefaultSensorName(sensor);
+    } catch (e) {
+        console.error(`Failed to fetch name for sensor ${sensor}`);
+    } finally {
+        return sensorName;
+    }
+}
+
 const executeShare = async (event, context, sqlHelper, user) => {
     const eventBody = JSON.parse(event.body);
 
@@ -71,7 +101,13 @@ const executeShare = async (event, context, sqlHelper, user) => {
         if (!targetUser) {
             await sqlHelper.createPendingShare(sensor, targetUserEmail, user.id);
             
-            await userHelper.sendInvitation(targetUserEmail, user.email, sensor);
+            const ownerSensorName = await getSensorName(sensor, sqlHelper);
+            if (ownerSensorName === null) {
+                console.log(`Sensor profile not found for owner for ${sensor}`);
+                return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Share successful, but unable to send e-mail.', errorCodes.ER_UNABLE_TO_SEND_EMAIL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
+            }
+    
+            await userHelper.sendInvitation(targetUserEmail, user.email, ownerSensorName);
             return gatewayHelper.successResponse({
                 sensor: sensor,
                 invited: true
@@ -96,24 +132,11 @@ const executeShare = async (event, context, sqlHelper, user) => {
 
     // Sharing was successful, send notification e-mail
     try {
-        const sensorData = await sqlHelper.query({
-            sql: `SELECT name
-                FROM sensor_profiles
-                INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
-                WHERE
-                    sensors.owner_id = sensor_profiles.user_id
-                    AND sensor_profiles.is_active = 1
-                    AND sensor_profiles.sensor_id = ?`,
-            timeout: 1000,
-            values: [sensor]
-        });
-
-        if (sensorData.length === 0) {
+        const sensorName = await getSensorName(sensor, sqlHelper);
+        if (sensorName === null) {
             console.log(`Sensor profile not found for owner for ${sensor}`);
             return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Share successful, but unable to send e-mail.', errorCodes.ER_UNABLE_TO_SEND_EMAIL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
         }
-
-        const sensorName = (sensorData[0].name !== null && sensorData[0].name !== '') ? sensorData[0].name : emailHelper.getDefaultSensorName(sensor);
 
         console.log(`User ${user.email} (${user.id}) sending e-mail notification for sensor ${sensorName} (${sensor}) to ${targetUserEmail} (${targetUserId})`);
         await emailHelper.sendShareNotification(

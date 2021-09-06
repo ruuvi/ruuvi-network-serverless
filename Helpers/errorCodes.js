@@ -18,7 +18,7 @@ const errorCodes = {
     ER_SENSOR_SHARE_COUNT_REACHED: 'ER_SENSOR_SHARE_COUNT_REACHED', // Maximum share count for the sensor reached
     ER_NO_DATA_TO_SHARE: 'ER_NO_DATA_TO_SHARE', // In order to share a sensor, it must have data - thrown when condition is not met
     ER_SENSOR_ALREADY_SHARED: 'ER_SENSOR_ALREADY_SHARED', // The sensor has already been shared to target user
-    ER_SENSOR_ALREADY_SHARED: 'ER_SENSOR_ALREADY_CLAIMED', // The sensor has already been claimed
+    ER_SENSOR_ALREADY_CLAIMED: 'ER_SENSOR_ALREADY_CLAIMED', // The sensor has already been claimed
     ER_UNABLE_TO_SEND_EMAIL: 'ER_UNABLE_TO_SEND_EMAIL', // Error sending an e-mail notification / verification
 
     // Argument errors
