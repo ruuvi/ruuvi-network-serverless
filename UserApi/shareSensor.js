@@ -25,8 +25,8 @@ const getSensorName = async (sensor, sqlHelper) => {
         });
 
         if (sensorData.length === 0) {
-            console.log(`Sensor profile not found for owner for ${sensor}`);
-            return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Share successful, but unable to send e-mail.', errorCodes.ER_UNABLE_TO_SEND_EMAIL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
+            console.error(`Sensor profile not found for owner for ${sensor}`);
+            return null;
         }
 
         sensorName = (sensorData[0].name !== null && sensorData[0].name !== '')
