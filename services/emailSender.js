@@ -3,6 +3,7 @@ const sqlHelper = require('../Helpers/sqlHelper');
 const sesHelper = require('../Helpers/sesHelper');
 
 exports.handler = async (event) => {
+    const stageIdentifier = process.env.SOURCE_STAGE !== 'prod' ? `${process.env.SOURCE_STAGE}-` : '';
     const from = process.env.SOURCE_EMAIL;
 
     let success = 0;
@@ -43,7 +44,7 @@ exports.handler = async (event) => {
             try {
                 var result = await sesHelper.sendTemplated(
                     email,
-                    messageAttributes.Template.stringValue,
+                    `${stageIdentifier}${messageAttributes.Template.stringValue}`,
                     body,
                     from
                 );

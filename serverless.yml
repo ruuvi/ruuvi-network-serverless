@@ -532,6 +532,7 @@ functions:
               - Arn
           batchSize: 1
     environment:
+      SOURCE_STAGE: ${self:custom.stage}
       SOURCE_EMAIL_NAME: ${self:custom.sourceEmailName}
       SOURCE_EMAIL: ${self:custom.sourceEmail}
       SOURCE_DOMAIN: ${self:custom.sourceDomain}
