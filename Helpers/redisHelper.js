@@ -8,6 +8,9 @@ let client = null;
  * @param string key
  */
  const getClient = () => {
+    if (client !== null) {
+        return client;
+    }
     try {
         const redisOptions = {
             host: process.env.REDIS_HOST,
