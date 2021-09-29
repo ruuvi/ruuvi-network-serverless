@@ -662,6 +662,18 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
 
+  metricsProducer:
+    handler: services/metricsProducer.handler
+    events:
+      - schedule:
+          name: ${self:custom.stage}-Metrics-Producer-Timer
+          description: 'Triggers production of metrics periodically.'
+          rate: rate(1 hour)
+    environment:
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
 
 # Resources (queues, databases, etc.)
 resources:
