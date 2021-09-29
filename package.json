@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "async-redis": "^1.1.7",
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "bcrypt": "^5.0.0",
     "dateformat": "^3.0.3",
     "jsonwebtoken": "^8.5.1",
