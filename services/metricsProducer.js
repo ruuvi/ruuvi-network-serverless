@@ -8,7 +8,7 @@ const instrumentUserStatistics = async (sql) => {
 					COUNT(DISTINCT claimed.id) AS claimed_sensors
 				FROM users
 				LEFT JOIN sensors claimed ON claimed.owner_id = users.id;`,
-			timeout: 1000
+			timeout: 5000
 		});
 
 		console.log("INS:USERS:" + result[0].user_count);
@@ -26,7 +26,7 @@ const instrumentUserStatistics = async (sql) => {
 				  INNER JOIN sensors ON
 					sensors.owner_id != sensor_profiles.user_id
 					AND sensors.sensor_id = sensor_profiles.sensor_id;`,
-			timeout: 1000
+			timeout: 5000
 		});
 
 		console.log("INS:SHARED_UNIQUE:" + shareResult[0].shared_sensor_count);

@@ -83,6 +83,12 @@ const executeUnshareSensor = async (event, context, sqlHelper, user) => {
         return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.NOT_FOUND, "User not found.", errorCodes.ER_USER_NOT_FOUND);
     }
 
+    let sensorName = null;
+    if (isOwner) {
+        sensorName = await getSensorName(sensor, targetUserId, sqlHelper);
+    } else {
+        sensorName = await getSensorName(sensor, ownerId, sqlHelper);
+    }
     
     console.log(`User ${user.email} (${user.id}) attempting to remove ${sensor} from ${targetUserEmail} (${targetUserId})`);
     const wasRemoved = await sqlHelper.removeSensorProfileForUser(sensor, targetUserId);
@@ -94,7 +100,6 @@ const executeUnshareSensor = async (event, context, sqlHelper, user) => {
 
     console.log(`User ${user.email} unshared sensor ${sensor} from ${targetUserEmail}`);
     if (isOwner) {
-        const sensorName = await getSensorName(sensor, targetUserId, sqlHelper);
         console.log(`Sending Unshare notification to ${targetUserEmail} from user ${user.email} for sensor ${sensorName}`);
         await emailHelper.sendShareRemovedNotification(
             targetUserEmail,
@@ -102,7 +107,6 @@ const executeUnshareSensor = async (event, context, sqlHelper, user) => {
             user.email
         );
     } else {
-        const sensorName = await getSensorName(sensor, ownerId, sqlHelper);
         console.log(`Sending UnshareBySharee notification to ${owner.email} from user ${targetUserEmail} for sensor ${sensorName}`);
         await emailHelper.sendShareRemovedNotification(
             owner.email,
