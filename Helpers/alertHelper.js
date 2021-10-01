@@ -315,8 +315,9 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
             let thresholdValue = previousValue;
 
             const unit = await getUnitSetting(alertData.type, alertData.userId);
+            const offset = getOffset(alertData);
 
-            [alertUnit, currentValue] = convertValue(unit, currentValue, alertData.type);
+            [alertUnit, currentValue] = convertValue(unit, currentValue + offset, alertData.type);
             [alertUnit, thresholdValue] = convertValue(unit, thresholdValue, alertData.type);
 
             try {
@@ -354,6 +355,11 @@ const capitalize = (s) => {
     return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
+const getOffset = (alert) => {
+    const offsetKey = 'offset' + capitalize(alert.type);
+    return alert.type !== 'signal' ? alert[offsetKey] : 0;
+}
+
 /**
  * Processes the alerts for a sensor
  * 
@@ -372,8 +378,7 @@ const processAlerts = async (alerts, sensorData) => {
         let mode = null;
 
         if (alert.type !== 'movement') {
-            const offsetKey = 'offset' + capitalize(alert.type);
-            const offset = alert.type !== 'signal' ? alert[offsetKey] : 0
+            const offset = getOffset(alert);
 
             if (sensorData[alert.type] + offset > alert.max) {
                 mode = 'over';
