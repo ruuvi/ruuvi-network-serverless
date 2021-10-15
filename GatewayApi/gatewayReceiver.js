@@ -52,7 +52,8 @@ exports.handler = async (event, context) => {
             const redis = require('../Helpers/redisHelper').getClient();
 
             // Log Invalid Signature to Redis for Validation
-            await redis.set('invalid_signature_' + data.gw_mac.toUpperCase(), validator.now());
+            const ttl = 60 * 60 * 24 * 3; // 3 days
+            await redis.set('invalid_signature_' + data.gw_mac.toUpperCase(), validator.now(), 'EX', ttl);
 
             console.error(`${data.gw_mac} - Invalid signature: ${signature}`);
             return gatewayHelper.unauthorizedResponse();
