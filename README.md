@@ -6,10 +6,10 @@ Completely serverless implementation of the Ruuvi Network.
 
 ## Installation
 
-1. Clone the respository (`git clone git@github.com:Muhwu/ruuvi-network-serverless.git`)
-2. Install the Serverless Framework (https://www.serverless.com/framework/docs/providers/aws/guide/installation/)
-3. Install the AWS CLI (https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-4. Install NodeJS
+1. Clone the repository (`git clone git@github.com:ruuvi/ruuvi-network-serverless.git`)
+2. Install NodeJS
+3. Install the Serverless Framework (https://www.serverless.com/framework/docs/providers/aws/guide/installation/)
+4. Install the AWS CLI (https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 5. Run `npm i` in the cloned repository folder
 6. Additionally, you want to `./install_dependencies.sh` for the global packages
 7. Set AWS Credentials in ~/.aws/credentials (Profile `ruuvi` by default; can be found in AWS "My Security Credentials")
