@@ -11,7 +11,7 @@ Completely serverless implementation of the Ruuvi Network.
 3. Install the AWS CLI (https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 4. Install NodeJS
 5. Run `npm i` in the cloned repository folder
-6. Additionally, you want to `npm i -g jest` for the testing packages
+6. Additionally, you want to `./install_dependencies.sh` for the global packages
 7. Set AWS Credentials in ~/.aws/credentials (Profile `ruuvi` by default; can be found in AWS "My Security Credentials")
 ```
 [ruuvi]
@@ -19,7 +19,7 @@ aws_access_key_id=<Your access key>
 aws_secret_access_key=<Your secret access key>
 region=eu-central-1
 ```
-4. Run `serverless deploy` (for staging) or `serverless deploy --prod`
+4. Run `serverless deploy` (for staging) or `serverless deploy --stage prod`
 
 If everything is set up correctly, it will update the stack to match the state in the cloned repository.
 
