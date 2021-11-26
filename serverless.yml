@@ -71,8 +71,8 @@ custom:
         maximum: 100     # Maximum read capacity
         usage: 0.8        # Targeted usage percentage
       write:
-        minimum: 1       # Minimum write capacity
-        maximum: 10     # Maximum write capacity
+        minimum: 15       # Minimum write capacity
+        maximum: 30     # Maximum write capacity
         usage: 0.8        # Targeted usage percentage
 
   vpc:
