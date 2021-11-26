@@ -40,7 +40,8 @@ const clearThrottle = async (throttleKey, interval) => {
         return true;
     }
 
-    await redis.set(fullThrottleKey, now);
+    const ttl = 60 * 60 * 24 * 2; // 2 days
+    await redis.set(fullThrottleKey, now, 'EX', ttl);
     return false;
 }
 

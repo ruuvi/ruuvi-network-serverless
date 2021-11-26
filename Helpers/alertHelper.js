@@ -39,7 +39,8 @@ const refreshAlertCache = async (sensor, data = null) => {
     if (active.length === 0) {
         await redis.del("alerts_" + sensor);
     } else {
-        await redis.set("alerts_" + sensor, JSON.stringify(active));
+        const ttl = 60 * 60 * 24 * 2;
+        await redis.set("alerts_" + sensor, JSON.stringify(active), 'EX', ttl);
     }
 }
 
@@ -289,13 +290,19 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
             previousValue = alertData.max;
         } else {
             previousValue = alertData.counter;
+            const movementCounter = parseInt(sensorData['movementCounter']);
+            if (isNaN(movementCounter)) {
+                console.error(`Parsed Movement Counter was NaN`, sensorData, alertData);
+                await refreshAlertCache(sensorData.sensor_id);
+                return;
+            }
             await sqlHelper.updateValues(
                 'sensor_alerts',
                 [
                     'counter = ?',
                     'triggered_at = ?'
                 ], [
-                    parseInt(sensorData['movementCounter']),
+                    movementCounter,
                     nowDate
                 ], [
                     'sensor_id = ?',
