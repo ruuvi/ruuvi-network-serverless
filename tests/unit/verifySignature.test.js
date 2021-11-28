@@ -174,19 +174,19 @@ const signature2 = '2d2c861fb143d9096f81bf33043dbee4e76a912ba4043fc6a346858e2ad8
 const secret2 = '40:98:A7:78:58:1A:E1:38';
 
 test('fox', () => {
-	const expected = 'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8';
-	const data = "The quick brown fox jumps over the lazy dog";
+  const expected = 'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8';
+  const data = 'The quick brown fox jumps over the lazy dog';
 
-	const result = auth.validateSignature(expected, data, 1625672463, 100000000000000, 'key');
-	expect(result).toBe(true);
+  const result = auth.validateSignature(expected, data, 1625672463, 100000000000000, 'key');
+  expect(result).toBe(true);
 });
 
 test('verify validates correct signature', () => {
-	const result = auth.validateSignature(signature, data, timestamp, 100000000000, secret);
-	expect(result).toBe(true);
+  const result = auth.validateSignature(signature, data, timestamp, 100000000000, secret);
+  expect(result).toBe(true);
 });
 
 test('verify validates correct signature real gw', () => {
-	const result = auth.validateSignature(signature2, data2, timestamp, 100000000000, 'Ruuvi');
-	expect(result).toBe(true);
+  const result = auth.validateSignature(signature2, data2, timestamp, 100000000000, 'Ruuvi');
+  expect(result).toBe(true);
 });

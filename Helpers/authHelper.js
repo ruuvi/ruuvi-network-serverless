@@ -9,51 +9,51 @@ const userHelper = require('../Helpers/userHelper');
  * @param {string} authHeader Bearer token auth string or token
  */
 const authorizedUser = async (headers) => {
-    // Due to case-insensitiveness of the headers, this is done the icky way
-    let token = null;
-    for (const [key, value] of Object.entries(headers)) {
-        if (key.toLowerCase() === 'authorization') {
-            token = value;
-            break;
-        }
+  // Due to case-insensitiveness of the headers, this is done the icky way
+  let token = null;
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === 'authorization') {
+      token = value;
+      break;
     }
+  }
 
-    if (!token) {
-        return null;
-    } else if (token.length > 7 && token.substring(0, 7) === 'Bearer ') {
-        token = token.substring(7);
-    }
-
-    if (!validator.validateToken(token)) {
-        console.error("Invalid token: " + token);
-        return null;
-    }
-
-    // Parse sectioned token
-    const parsed = generator.parse(token);
-    if (!parsed.userId) {
-        return null;
-    }
-
-    // Fetch hashed version
-    const tokenResult = await sqlHelper.fetchAll('user_id', parsed.userId, 'user_tokens');
-    if (!tokenResult || tokenResult.length === 0) {
-        await sqlHelper.disconnect();
-        return null;
-    }
-
-    // Compare tokens
-    const bcrypt = require('bcrypt');
-
-    for (let i = 0; i < tokenResult.length; i++) {
-        const token = tokenResult[i].access_token;
-        if (bcrypt.compareSync(parsed.token, token)) {
-            await userHelper.updateLastAccessed(tokenResult[i].id);
-            return await userHelper.getById(parsed.userId);
-        }
-    }
-
+  if (!token) {
     return null;
+  } else if (token.length > 7 && token.substring(0, 7) === 'Bearer ') {
+    token = token.substring(7);
+  }
+
+  if (!validator.validateToken(token)) {
+    console.error('Invalid token: ' + token);
+    return null;
+  }
+
+  // Parse sectioned token
+  const parsed = generator.parse(token);
+  if (!parsed.userId) {
+    return null;
+  }
+
+  // Fetch hashed version
+  const tokenResult = await sqlHelper.fetchAll('user_id', parsed.userId, 'user_tokens');
+  if (!tokenResult || tokenResult.length === 0) {
+    await sqlHelper.disconnect();
+    return null;
+  }
+
+  // Compare tokens
+  const bcrypt = require('bcrypt');
+
+  for (let i = 0; i < tokenResult.length; i++) {
+    const token = tokenResult[i].access_token;
+    if (bcrypt.compareSync(parsed.token, token)) {
+      await userHelper.updateLastAccessed(tokenResult[i].id);
+      return await userHelper.getById(parsed.userId);
+    }
+  }
+
+  return null;
 };
 
 /**
@@ -66,20 +66,20 @@ const authorizedUser = async (headers) => {
  * @param {integer} maxAge Maximum age of the request
  */
 const validateGatewaySignature = async (givenSignature, data, gatewayMacAddress, timestamp, maxAge) => {
-    if (givenSignature === null || gatewayMacAddress === null || timestamp === null) {
-        return false;
-    }
+  if (givenSignature === null || gatewayMacAddress === null || timestamp === null) {
+    return false;
+  }
 
-    const dynamoHelper = require('../Helpers/dynamoHelper');
+  const dynamoHelper = require('../Helpers/dynamoHelper');
 
-    const gatewayData = await dynamoHelper.getGatewayData(gatewayMacAddress);
-    if (!gatewayData || gatewayData.length === 0) {
-        console.error("Gateway not whitelisted: " + gatewayMacAddress);
-        return false;
-    }
+  const gatewayData = await dynamoHelper.getGatewayData(gatewayMacAddress);
+  if (!gatewayData || gatewayData.length === 0) {
+    console.error('Gateway not whitelisted: ' + gatewayMacAddress);
+    return false;
+  }
 
-    return validateSignature(givenSignature, data, timestamp, maxAge, gatewayData[0].Secret);
-}
+  return validateSignature(givenSignature, data, timestamp, maxAge, gatewayData[0].Secret);
+};
 
 /**
  * Validates the given signature
@@ -91,25 +91,25 @@ const validateGatewaySignature = async (givenSignature, data, gatewayMacAddress,
  * @param {string} secret Signing secret
  */
 const validateSignature = (givenSignature, data, timestamp, maxAge, secret) => {
-    if (givenSignature === null || timestamp === null || secret === null) {
-        return false;
-    }
+  if (givenSignature === null || timestamp === null || secret === null) {
+    return false;
+  }
 
-    const now = Date.now();
-    const tsMs = timestamp * 1000;
-    if (now - tsMs > maxAge) {
-        const diff = now - tsMs;
-        console.error(`Signature expired; diff:${diff}, max-age:${maxAge}, now:${now}, ts:${tsMs}`);
-        return false;
-    }
+  const now = Date.now();
+  const tsMs = timestamp * 1000;
+  if (now - tsMs > maxAge) {
+    const diff = now - tsMs;
+    console.error(`Signature expired; diff:${diff}, max-age:${maxAge}, now:${now}, ts:${tsMs}`);
+    return false;
+  }
 
-    const signature = createSignature(data, secret);
-    if (signature !== givenSignature) {
-        console.error(`Non-matching signatures: Calculated: ${signature}, Given: ${givenSignature}`);
-    }
+  const signature = createSignature(data, secret);
+  if (signature !== givenSignature) {
+    console.error(`Non-matching signatures: Calculated: ${signature}, Given: ${givenSignature}`);
+  }
 
-    return givenSignature === signature;
-}
+  return givenSignature === signature;
+};
 
 /**
  * Creates a signature for the given payload with the parameters.
@@ -120,27 +120,27 @@ const validateSignature = (givenSignature, data, timestamp, maxAge, secret) => {
  * @param {string} secret Signing secret
  */
 const createSignature = (data, secret) => {
-    let dataStr = data;
-    if (typeof data !== 'string') {
-        dataStr = JSON.stringify(data);
-    }
+  let dataStr = data;
+  if (typeof data !== 'string') {
+    dataStr = JSON.stringify(data);
+  }
 
-    const signatureBody = dataStr;
+  const signatureBody = dataStr;
 
-    const crypto = require('crypto');
-    return crypto.createHmac('sha256', secret)
-        .update(signatureBody)
-        .digest('hex');
-}
+  const crypto = require('crypto');
+  return crypto.createHmac('sha256', secret)
+    .update(signatureBody)
+    .digest('hex');
+};
 
 module.exports = {
-    /* User */
-    authorizedUser,
+  /* User */
+  authorizedUser,
 
-    /* Signature */
-    validateSignature,
-    createSignature,
+  /* Signature */
+  validateSignature,
+  createSignature,
 
-    /* Gateway Signature */
-    validateGatewaySignature
-}
+  /* Gateway Signature */
+  validateGatewaySignature
+};
