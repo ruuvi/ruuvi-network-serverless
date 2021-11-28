@@ -28,7 +28,7 @@ jobs:
 
     # Run Semistandard
     - name: Run Semistandard
-      run: semistandard "GatewayAPI/**/*.js" "Helpers/**/*.js" "InternalApi/**/*.js" "services/**/*.js" "TestApi/**/*.js" "tests/**/*.js" "UserApi/**/*.js" --fix
+      run: nnpx semistandard "GatewayAPI/**/*.js" "Helpers/**/*.js" "InternalApi/**/*.js" "services/**/*.js" "TestApi/**/*.js" "tests/**/*.js" "UserApi/**/*.js" --fix
         
     # Check output
     - name: Check formatting
