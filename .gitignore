@@ -8,3 +8,6 @@ jspm_packages
 # Additional
 temp
 tests/integration/integrationCredentials.js
+
+# Mac OSX files
+.DS_Store
