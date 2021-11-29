@@ -77,7 +77,7 @@ const fetchMultiCondition = async (fields, values, table, limit = 1) => {
     console.error('No fields defined for fetchMultiCondition.');
     return null;
   }
-  if (fields.length != values.length) {
+  if (fields.length !== values.length) {
     console.error('Field count does not match value count.');
     return null;
   }
@@ -240,6 +240,7 @@ const setValue = async (field, value, table, keyField, keyValue) => {
  * @param {array} values
  * @param {array} whereConditions
  * @param {array} whereValues
+ * @returns {number} Number of affected rows
  */
 const updateValues = async (table, fields, values, whereConditions, whereValues) => {
   // Append where values to the what is being passed
@@ -249,6 +250,8 @@ const updateValues = async (table, fields, values, whereConditions, whereValues)
 
   const updateString = fields.join(', ');
   const whereString = whereConditions.join(' AND ');
+  let results = {};
+  results.affectedRows = 0;
 
   try {
     results = await mysql.query({
