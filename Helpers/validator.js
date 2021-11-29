@@ -10,7 +10,7 @@ const hasKeys = (given, target) => {
   }
   let found = true;
   target.forEach((item) => {
-    if (!given.hasOwnProperty(item)) {
+    if (!Object.prototype.hasOwnProperty.call(given, item)) {
       found = false;
       return found;
     }
@@ -40,7 +40,7 @@ const validateAll = (given, definitions, allowExtra = true) => {
     }
 
     // Required missing
-    if (!given.hasOwnProperty(definition.name) && definition.required) {
+    if (!Object.prototype.hasOwnProperty.call(given, definition.name) && definition.required) {
       console.error(`No required definition for ${definition.name}`, given);
       return false;
     }
@@ -135,7 +135,7 @@ const validateAlphaNumeric = (str) => {
  */
 const validateTableName = (str) => {
   if (typeof str !== 'string') { return false; }
-  const reg = /^[a-zA-Z0-9\_]+$/;
+  const reg = /^[a-zA-Z0-9_]+$/;
   return reg.test(str);
 };
 
@@ -146,7 +146,7 @@ const validateTableName = (str) => {
  */
 const validateFilename = (str) => {
   if (typeof str !== 'string') { return false; }
-  const reg = /^[a-zA-Z0-9\.\-\_]+$/;
+  const reg = /^[a-zA-Z0-9.\-_]+$/;
   return reg.test(str);
 };
 
