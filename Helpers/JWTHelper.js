@@ -75,7 +75,7 @@ const createRegistrationJWT = async (targetEmail, registrationType, expirationTi
   const tokenData = tokenGenerator.create(process.env.VERIFICATION_SHORT_TOKEN_LENGTH);
   const short = tokenData.token.toUpperCase();
 
-  result = await sqlHelper.insertSingle({
+  const result = await sqlHelper.insertSingle({
     short_token: short,
     long_token: jwt
   }, 'reset_tokens');
