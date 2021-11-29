@@ -91,7 +91,8 @@ exports.handler = async (event, context) => {
     }
 
     unthrottledTags[key] = data.tags[key];
-    if (data.tags.hasOwnProperty(key)) {
+    // https://eslint.org/docs/rules/no-prototype-builtins
+    if (Object.prototype.hasOwnProperty.call(data.tags, key)) {
       tagIds.push(key);
     }
   }
