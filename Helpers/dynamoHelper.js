@@ -9,7 +9,7 @@ const validateSensorData = (data) => {
   // Data field existence
   const fields = ['rssi', 'data', 'coordinates', 'timestamp', 'id', 'gwmac'];
   for (let i = 0, len = fields.length; i < len; i++) {
-    if (!data.hasOwnProperty(fields[i])) {
+    if (!Object.prototype.hasOwnProperty.call(data, fields[i])) {
       console.debug("Missing '" + fields[i] + "' from data.");
       return false;
     }
@@ -113,7 +113,7 @@ const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 10000, sc
   }
 
   const rawData = await ddb.query(params).promise();
-  if (!rawData || !rawData.hasOwnProperty('Items')) {
+  if (!Object.prototype.hasOwnProperty.call(rawData, 'Items')) {
     console.error('No data returned!', rawData);
     return [];
   }
