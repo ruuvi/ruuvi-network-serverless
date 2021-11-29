@@ -168,7 +168,7 @@ const UNIT_SYMBOLS = {
  * @param {*} unit
  * @param {*} current
  * @param {*} alertType (for shared constants)
- * @returns
+ * @returns Tuple with a string symbol of unit and floating-point value in given unit.
  */
 const convertValue = (unit, current, alertType = null) => {
   let currentValue = current;
@@ -324,6 +324,7 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
 
       const unit = await getUnitSetting(alertData.type, alertData.userId);
       const offset = getOffset(alertData);
+      let alertUnit = unit;
 
       [alertUnit, currentValue] = convertValue(unit, currentValue + offset, alertData.type);
       [alertUnit, thresholdValue] = convertValue(unit, thresholdValue, alertData.type);
