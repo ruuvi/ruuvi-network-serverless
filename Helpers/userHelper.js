@@ -91,7 +91,7 @@ const updateLastAccessed = async (tokenId) => {
   }
 
   try {
-    results = await mysqlHelper.query({
+    await mysqlHelper.query({
       sql: 'UPDATE user_tokens SET last_accessed = CURRENT_TIMESTAMP WHERE id = ?;',
       timeout: 1000,
       values: [idInt]
