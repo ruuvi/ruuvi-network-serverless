@@ -1,3 +1,4 @@
+const errorCodes = require('../Helpers/errorCodes');
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const validator = require('../Helpers/validator');
 const alertHelper = require('../Helpers/alertHelper');
