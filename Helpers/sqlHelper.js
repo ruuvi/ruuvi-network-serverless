@@ -309,20 +309,20 @@ const fetchAlerts = async (sensorId, userId = null) => {
  * @param {int} userId ID of the user to add the alert
  * @param {string} sensorId ID of the sensor to get the alert for
  * @param {enum} type Type in: ['temperature', 'humidity', 'pressure', 'signal', 'movement']
- * @returns
+ * @returns true on successful insert, false otherwise.
  */
 const saveAlert = async (userId, sensorId, type, enabled = true, min = Number.MIN_VALUE, max = Number.MAX_VALUE, counter = 0, description = '') => {
   if (!validator.validateEnum(type, ['temperature', 'humidity', 'pressure', 'signal', 'movement'])) {
     console.error('Invalid type given: ' + type);
-    return [];
+    return false;
   }
 
-  let res = null;
+  let res = false;
 
   const enabledInt = enabled === true ? 1 : 0;
 
   try {
-    res = await mysql.query({
+    await mysql.query({
       sql: `INSERT INTO sensor_alerts (
                     user_id,
                     sensor_id,
@@ -351,6 +351,7 @@ const saveAlert = async (userId, sensorId, type, enabled = true, min = Number.MI
       timeout: 1000,
       values: [userId, sensorId, type, min, max, counter, enabledInt, description]
     });
+    res = true;
   } catch (e) {
     console.error(e);
     return false;

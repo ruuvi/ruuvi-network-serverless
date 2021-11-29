@@ -98,7 +98,7 @@ const formatAlerts = (raw) => {
 };
 
 /**
- * Stores an alert
+ * Stores an alert and puts it to a redis cache for faster look-up.
  *
  * @param {*} userId
  * @param {*} sensor
@@ -106,21 +106,23 @@ const formatAlerts = (raw) => {
  * @param {*} min
  * @param {*} max
  * @param {*} enabled
- * @returns
+ * @returns true on success and false on error.
  */
 const putAlert = async (userId, sensor, type, min = Number.MIN_VALUE, max = Number.MAX_VALUE, counter = 0, enabled = true, description = '') => {
-  let res = true;
+  // Assume failure
+  let putResult = false;
   try {
-    const putResult = await sqlHelper.saveAlert(userId, sensor, type, enabled, min, max, counter, description);
+    putResult = await sqlHelper.saveAlert(userId, sensor, type, enabled, min, max, counter, description);
+    if (putResult === true) {
+      // Put the alerts JSON to cache for faster look up
+      await refreshAlertCache(sensor);
+    }
   } catch (e) {
     console.error(e);
-    res = false;
+    putResult = false;
   }
 
-  // Put the alerts JSON to cache for faster look up
-  await refreshAlertCache(sensor);
-
-  return res;
+  return putResult;
 };
 
 const UNIT_SIGNAL_DBM = 'DBM';
