@@ -18,7 +18,7 @@ const executeGetSensorData = async (event, context, sqlHelper, user) => {
     return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid request format.', errorCodes.ER_INVALID_FORMAT);
   }
 
-  if (!Object.prototype.hasOwnProperty.call(query, 'sort') &&
+  if (Object.prototype.hasOwnProperty.call(query, 'sort') &&
         !(['asc', 'desc'].includes(query.sort))
   ) {
     await sqlHelper.disconnect();
