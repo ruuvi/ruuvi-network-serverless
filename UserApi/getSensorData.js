@@ -11,25 +11,21 @@ const executeGetSensorData = async (event, context, sqlHelper, user) => {
   const rawDataTTL = parseInt(process.env.RAW_DATA_TTL);
 
   // Validation
-  if (
-    !query ||
-        !query.hasOwnProperty('sensor') ||
+  if (!Object.prototype.hasOwnProperty.call(query, 'sensor') ||
         !validator.validateMacAddress(query.sensor)) {
     // Invalid request
     await sqlHelper.disconnect();
     return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid request format.', errorCodes.ER_INVALID_FORMAT);
   }
 
-  if (
-    query.hasOwnProperty('sort') &&
+  if (!Object.prototype.hasOwnProperty.call(query, 'sort') &&
         !(['asc', 'desc'].includes(query.sort))
   ) {
     await sqlHelper.disconnect();
     return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid sort argument.', errorCodes.ER_INVALID_SORT_MODE);
   }
 
-  if (
-    query.hasOwnProperty('mode') &&
+  if (Object.prototype.hasOwnProperty.call(query, 'mode') &&
         !(['dense', 'sparse', 'mixed'].includes(query.mode))
   ) {
     await sqlHelper.disconnect();
@@ -39,24 +35,23 @@ const executeGetSensorData = async (event, context, sqlHelper, user) => {
   let sinceTime = null;
   let untilTime = null;
 
-  if (query.hasOwnProperty('since') && parseInt(query.since)) {
+  if (Object.prototype.hasOwnProperty.call(query, 'since') && parseInt(query.since)) {
     sinceTime = parseInt(query.since);
   }
-  if (query.hasOwnProperty('until') && parseInt(query.until)) {
+  if (Object.prototype.hasOwnProperty.call(query, 'until') && parseInt(query.until)) {
     untilTime = parseInt(query.until);
   }
 
-  if (
-    (sinceTime !== null && untilTime !== null && sinceTime > untilTime) ||
+  if ((sinceTime !== null && untilTime !== null && sinceTime > untilTime) ||
         (untilTime === null && sinceTime > validator.now())) {
     return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, '`since` is after `until` or in the future.', errorCodes.ER_INVALID_TIME_RANGE);
   }
 
   // Format arguments
-  const ascending = query.hasOwnProperty('sort') && query.sort === 'asc';
-  let mode = query.hasOwnProperty('mode') ? query.mode : 'mixed';
+  const ascending = Object.prototype.hasOwnProperty.call(query, 'sort') && query.sort === 'asc';
+  let mode = Object.prototype.hasOwnProperty.call(query, 'mode') ? query.mode : 'mixed';
   const sensor = query.sensor;
-  const resultLimit = query.hasOwnProperty('limit')
+  const resultLimit = Object.prototype.hasOwnProperty.call(query, 'limit')
     ? Math.min(parseInt(query.limit), process.env.MAX_RESULTS)
     : process.env.DEFAULT_RESULTS;
 
@@ -121,7 +116,7 @@ const executeGetSensorData = async (event, context, sqlHelper, user) => {
 
   // If data type is 'mixed' but we're fetching for a range exclusively within either - switch mode
   const splitPoint = validator.now() - rawDataTTL;
-  if (mode == 'mixed') {
+  if (mode === 'mixed') {
     if (splitPoint < sinceTime) {
       mode = 'dense';
     } else if (splitPoint > untilTime) {
