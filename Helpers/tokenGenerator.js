@@ -25,11 +25,11 @@ const create = (length, userId) => {
     result.userId = userId;
     result.composite = buf.toString('hex') + '/' + raw;
 
-    // Create the hash
-    const saltRounds = 2; // Performance above 4 degrades a lot
-    const bcrypt = require('bcrypt');
-    result.hash = bcrypt.hashSync(raw, saltRounds);
-  }
+        // Create the hash
+        const saltRounds = 2; // Performance above 4 degrades a lot
+        const bcrypt = require('bcryptjs');
+        result.hash = bcrypt.hashSync(raw, saltRounds);
+    }
 
   return result;
 };
