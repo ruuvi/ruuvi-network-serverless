@@ -27,7 +27,7 @@ const create = (length, userId) => {
 
         // Create the hash
         const saltRounds = 2; // Performance above 4 degrades a lot
-        const bcrypt = require('bcrypt');
+        const bcrypt = require('bcryptjs');
         result.hash = bcrypt.hashSync(raw, saltRounds);
     }
 

@@ -43,7 +43,7 @@ const authorizedUser = async (headers) => {
     }
 
     // Compare tokens
-    const bcrypt = require('bcrypt');
+    const bcrypt = require('bcryptjs');
 
     for (let i = 0; i < tokenResult.length; i++) {
         const token = tokenResult[i].access_token;
