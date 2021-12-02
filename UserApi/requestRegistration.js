@@ -50,7 +50,7 @@ const executeRequestRegistration = async (event, context, sqlHelper) => {
     } else if (userInfo.type === 'reset') {
       emailResult = await emailHelper.sendResetEmail(userInfo.email, short, process.env.SOURCE_DOMAIN);
     }
-    if (!emailResult.hasOwnProperty('MessageId')) {
+    if (!Object.prototype.hasOwnProperty.call(emailResult, 'MessageId')) {
       throw new Error('Error sending e-mail: ' + emailResult);
     }
     console.log(emailResult);
