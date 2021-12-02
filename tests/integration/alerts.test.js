@@ -1,3 +1,5 @@
+const { describe, expect } = require('@jest/globals');
+
 /**
  * Alerts test suite for the back-end.
  */
@@ -17,7 +19,6 @@ const {
 } = require('./common');
 
 const newSensorMac = utils.randomMac();
-const newGatewayMac = utils.randomMac();
 
 const triggerAlertTestCases = [
   // Has humidity of 36.325
@@ -323,6 +324,7 @@ describe('Alerts integration test suite', () => {
   });
 
   itif(RI)('cannot create an alert for a sensor with no access rights', async () => {
+    let threw = false;
     try {
       await post('alerts', {
         sensor: newSensorMac,
@@ -423,18 +425,18 @@ describe('Alerts integration test suite', () => {
       // Create request
       const tags = {};
       tags[alertSensorMac] = {
-        rssi:	testCase.signal,
-        timestamp:	Date.now() - 50,
+        rssi: testCase.signal,
+        timestamp: Date.now() - 50,
         data: testCase.data
       };
 
       try {
         await post('record', {
-          data:	{
-            coordinates:	'',
+          data: {
+            coordinates: '',
             timestamp: Date.now(),
             gw_mac: alertGatewayMac,
-            tags:	tags
+            tags: tags
           }
         });
       } catch (e) {
@@ -502,19 +504,19 @@ describe('Alerts integration test suite', () => {
     // Create request
     const tags = {};
     tags[alertSensorMac] = {
-      rssi:	-76,
-      timestamp:	Date.now() - 50,
+      rssi: -76,
+      timestamp: Date.now() - 50,
       // Has humidity of 36.325
       data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E'
     };
 
     try {
       await post('record', {
-        data:	{
-          coordinates:	'',
+        data: {
+          coordinates: '',
           timestamp: Date.now(),
           gw_mac: alertGatewayMac,
-          tags:	tags
+          tags: tags
         }
       });
     } catch (e) {
@@ -571,19 +573,19 @@ describe('Alerts integration test suite', () => {
     // Create request
     const tags = {};
     tags[alertSensorMac] = {
-      rssi:	-76,
-      timestamp:	Date.now() - 50,
+      rssi: -76,
+      timestamp: Date.now() - 50,
       // Has movements of 184
       data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E'
     };
 
     try {
       await post('record', {
-        data:	{
-          coordinates:	'',
+        data: {
+          coordinates: '',
           timestamp: Date.now(),
           gw_mac: alertGatewayMac,
-          tags:	tags
+          tags: tags
         }
       });
     } catch (e) {
@@ -615,11 +617,11 @@ describe('Alerts integration test suite', () => {
     tags[alertSensorMac].timestamp = Date.now();
     try {
       await post('record', {
-        data:	{
-          coordinates:	'',
+        data: {
+          coordinates: '',
           timestamp: Date.now(),
           gw_mac: alertGatewayMac,
-          tags:	tags
+          tags: tags
         }
       });
     } catch (e) {
@@ -664,6 +666,7 @@ describe('Alerts integration test suite', () => {
   });
 
   itif(RI)('cannot request alerts for non-owned sensor', async () => {
+    let threw = false;
     // Validate existence
     try {
       await get('alerts', {
