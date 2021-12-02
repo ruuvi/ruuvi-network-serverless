@@ -1,3 +1,5 @@
+const { it } = require('@jest/globals');
+
 /**
  * Runs a load test against the given end-point
  */
@@ -22,7 +24,7 @@ const internalKey = stageConfig[stage].internalKey;
 
 // Release test
 const RI = process.env.IS_INTEGRATION_TEST;
-const PRODUCTION = process.env.STAGE == 'prod';
+const PRODUCTION = process.env.STAGE === 'prod';
 
 const testData = utils.randomHex(32);
 
@@ -118,19 +120,19 @@ const createSensorWithData = async (macAddress, gatewayMac, data = null, name = 
 
   const tags = {};
   tags[macAddress] = {
-    rssi:	-76,
-    timestamp:	Date.now() - 50,
-    data:	data
+    rssi: -76,
+    timestamp: Date.now() - 50,
+    data: data
   };
 
   let recordResult = null;
   try {
     recordResult = await post('record', {
-      data:	{
-        coordinates:	'',
-        timestamp:	Date.now(),
-        gw_mac:	gatewayMac,
-        tags:	tags
+      data: {
+        coordinates: '',
+        timestamp: Date.now(),
+        gw_mac: gatewayMac,
+        tags: tags
       }
     });
   } catch (e) {
