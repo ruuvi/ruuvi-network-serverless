@@ -4,10 +4,10 @@ const instrumentUserStatistics = async (sql) => {
   try {
     const result = await sql.query({
       sql: `SELECT
-					COUNT(DISTINCT users.id) AS user_count,
-					COUNT(DISTINCT claimed.id) AS claimed_sensors
-				FROM users
-				LEFT JOIN sensors claimed ON claimed.owner_id = users.id;`,
+          COUNT(DISTINCT users.id) AS user_count,
+          COUNT(DISTINCT claimed.id) AS claimed_sensors
+        FROM users
+        LEFT JOIN sensors claimed ON claimed.owner_id = users.id;`,
       timeout: 5000
     });
 
@@ -20,12 +20,12 @@ const instrumentUserStatistics = async (sql) => {
   try {
     const shareResult = await sql.query({
       sql: `SELECT
-					COUNT(DISTINCT sensors.sensor_id) AS shared_sensor_count,
-					COUNT(DISTINCT sensor_profiles.id) AS share_count
-				  FROM sensor_profiles
-				  INNER JOIN sensors ON
-					sensors.owner_id != sensor_profiles.user_id
-					AND sensors.sensor_id = sensor_profiles.sensor_id;`,
+          COUNT(DISTINCT sensors.sensor_id) AS shared_sensor_count,
+          COUNT(DISTINCT sensor_profiles.id) AS share_count
+          FROM sensor_profiles
+          INNER JOIN sensors ON
+          sensors.owner_id != sensor_profiles.user_id
+          AND sensors.sensor_id = sensor_profiles.sensor_id;`,
       timeout: 5000
     });
 
