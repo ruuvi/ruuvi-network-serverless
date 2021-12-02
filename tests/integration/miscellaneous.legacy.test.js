@@ -1,3 +1,5 @@
+const { describe, expect } = require('@jest/globals');
+
 /**
  * @jest-environment node
  */
@@ -57,19 +59,19 @@ describe('[LEGACY] Remaining uncategorized tests', () => {
   });
 
   // itif(RI)('`verify` succeeds with valid token', async () => {
-  // 	// DEPENDENCY: This verifies previous test
-  // 	expect(registrationToken).not.toBeNull();
+  //  // DEPENDENCY: This verifies previous test
+  //  expect(registrationToken).not.toBeNull();
 
-  // 	// toThrow failed for some reason [temporary workaround]
-  // 	let threw = false;
-  // 	const verifyResult = await get('verify', {
-  // 		token: registrationToken
-  // 	});
+  //  // toThrow failed for some reason [temporary workaround]
+  //  let threw = false;
+  //  const verifyResult = await get('verify', {
+  //    token: registrationToken
+  //  });
 
-  // 	expect(verifyResult.status).toBe(200);
-  // 	expect(verifyResult.statusText).toBe('OK');
+  //  expect(verifyResult.status).toBe(200);
+  //  expect(verifyResult.statusText).toBe('OK');
 
-  // 	// TODO: We could do remainder of the tests with this user
+  //  // TODO: We could do remainder of the tests with this user
   // });
 
   itif(RI)('`record` is successful', async () => {
@@ -80,27 +82,27 @@ describe('[LEGACY] Remaining uncategorized tests', () => {
   itif(RI)('`record` triggers a throttle when updated with same gateway', async () => {
     const tags = {};
     tags[newSensorMac] = {
-      rssi:	-76,
-      timestamp:	Date.now() - 50,
+      rssi: -76,
+      timestamp: Date.now() - 50,
       data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E'
     };
 
     try {
       await post('record', {
-        data:	{
-          coordinates:	'',
+        data: {
+          coordinates: '',
           timestamp: Date.now(),
           gw_mac: newGatewayMac,
-          tags:	tags
+          tags: tags
         }
       });
 
       await post('record', {
-        data:	{
-          coordinates:	'',
+        data: {
+          coordinates: '',
           timestamp: Date.now(),
           gw_mac: newGatewayMac,
-          tags:	tags
+          tags: tags
         }
       });
     } catch (e) {
@@ -125,7 +127,7 @@ describe('[LEGACY] Remaining uncategorized tests', () => {
   itif(RI)('`claim` on already claimed returns 409 Conflict', async () => {
     let caught = false;
     try {
-      const claimResult = await post('claim', {
+      await post('claim', {
         sensor: newSensorMac
       }, secondaryHttp);
     } catch (e) {
