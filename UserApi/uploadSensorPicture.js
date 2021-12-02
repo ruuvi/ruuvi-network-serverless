@@ -27,6 +27,7 @@ const executeUploadSensorPicture = async (event, context, sqlHelper, user) => {
     return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Missing sensor', errorCodes.ER_MISSING_ARGUMENT);
   }
   const sensor = eventBody.sensor;
+  let results = null;
 
   // Default to upload
   const action = validator.hasKeys(eventBody, ['action']) ? eventBody.action : 'upload';
@@ -98,7 +99,7 @@ const executeUploadSensorPicture = async (event, context, sqlHelper, user) => {
   // URL as it will be after upload
   const finalURL = process.env.BUCKET_URL + '/' + name;
 
-  let results = null;
+  results = null;
 
   try {
     results = await sqlHelper.query({
