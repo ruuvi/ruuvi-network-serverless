@@ -55,9 +55,8 @@ const executeSetAlert = async (event, context, sqlHelper, user) => {
   const description = validator.hasKeys(eventBody, ['description']) ? eventBody.description : '';
 
   let res = 'success';
-  let putResult = null;
   try {
-    putResult = await alertHelper.putAlert(user.id, sensor, type, min, max, counter, enabled, description);
+    await alertHelper.putAlert(user.id, sensor, type, min, max, counter, enabled, description);
 
     // Clear Throttle
     const throttleKey = `alert:${user.id}:${sensor}:${type}`;
