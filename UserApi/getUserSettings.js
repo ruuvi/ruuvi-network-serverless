@@ -19,7 +19,7 @@ const executeGetUserSettings = async (event, context, sqlHelper, user) => {
       values: [user.id]
     });
   } catch (e) {
-    return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error fetching user metadata.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
+    return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Error fetching user metadata.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
   }
 
   // Format returned data properly
