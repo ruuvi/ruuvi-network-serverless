@@ -1,3 +1,5 @@
+const { describe, expect } = require('@jest/globals');
+
 /**
  * @jest-environment node
  */
