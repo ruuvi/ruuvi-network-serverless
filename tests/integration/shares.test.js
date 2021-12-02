@@ -1,3 +1,5 @@
+const { describe, expect } = require('@jest/globals');
+
 /**
  * @jest-environment node
  */
@@ -25,8 +27,6 @@ const { randomMac } = require('./integrationHelpers');
 
 // Set up some defaults
 const newSensorMac = utils.randomMac();
-const newGatewayMac = utils.randomMac();
-const testData = utils.randomHex(32);
 
 describe('Shares test suite', () => {
   itif(RI)('`claim` and record data is successful (PRE-REQUISITE)', async () => {
@@ -176,10 +176,9 @@ describe('Shares test suite', () => {
     expect(originalSensorData.data.data.name).toBe(sharedWithNameName);
 
     // Verify that sensor share has been removed
-    let sharedSensorDataRetry = null;
     let threw = false;
     try {
-      sharedSensorDataRetry = await get('get', { sensor: sharedWithNameMac }, secondaryHttp);
+      await get('get', { sensor: sharedWithNameMac }, secondaryHttp);
     } catch (e) {
       expect(e.response.status).toBe(403);
       threw = true;
