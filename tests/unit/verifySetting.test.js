@@ -1,3 +1,4 @@
+const { test, expect } = require('@jest/globals');
 const validator = require('../../Helpers/validator.js');
 
 test('verify setting returns true on valid input', () => {
