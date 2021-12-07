@@ -1,3 +1,4 @@
+const { test, expect } = require('@jest/globals');
 const validator = require('../../Helpers/validator.js');
 
 const valid = [
@@ -19,13 +20,13 @@ const invalid = [
 test('verify filename returns true on valid input', () => {
   for (const v of valid) {
     const isValid = validator.validateFilename(v);
-	    expect(isValid).toBe(true);
+    expect(isValid).toBe(true);
   }
 });
 
 test('verify filename returns false on URL', () => {
   for (const i of invalid) {
     const isValid = validator.validateFilename(i);
-	    expect(isValid).toBe(false);
+    expect(isValid).toBe(false);
   }
 });
