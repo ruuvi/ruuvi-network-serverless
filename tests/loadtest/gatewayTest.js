@@ -4,9 +4,6 @@
 const loadtest = require('loadtest');
 const fs = require('fs');
 const yargs = require('yargs');
-const { measureMemory } = require('vm');
-const urlLib = require('url');
-const { exit } = require('process');
 const hexCharacters = '0123456789ABCDEF';
 
 function randomId (length) {
@@ -67,7 +64,7 @@ const options = {
     }
 
     options.body = JSON.stringify({
-      data:	{
+      data: {
         coordinates: '',
         timestamp: Date.now(),
         gwmac: '240ac4e32eb4',
