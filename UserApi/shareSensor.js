@@ -31,9 +31,8 @@ const getSensorName = async (sensor, sqlHelper) => {
     }
   } catch (e) {
     console.error(`Failed to fetch name for sensor ${sensor}`);
-  } finally {
-    return sensorName;
   }
+  return sensorName;
 };
 
 const executeShare = async (event, context, sqlHelper, user) => {

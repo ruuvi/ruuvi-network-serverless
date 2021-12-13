@@ -20,9 +20,9 @@ const getClient = () => {
   } catch (e) {
     console.error('Failed to connect to Redis:', e);
     return null;
-  } finally {
-    return client;
   }
+
+  return client;
 };
 
 /**

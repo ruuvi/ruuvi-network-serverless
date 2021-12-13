@@ -324,6 +324,7 @@ describe('Alerts integration test suite', () => {
   });
 
   itif(RI)('cannot create an alert for a sensor with no access rights', async () => {
+    let threw = false;
     try {
       await post('alerts', {
         sensor: newSensorMac,
@@ -666,6 +667,7 @@ describe('Alerts integration test suite', () => {
 
   itif(RI)('cannot request alerts for non-owned sensor', async () => {
     // Validate existence
+    let threw = false;
     try {
       await get('alerts', {
         sensor: newSensorMac

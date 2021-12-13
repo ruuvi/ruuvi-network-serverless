@@ -53,12 +53,11 @@ const executeUploadSensorPicture = async (event, context, sqlHelper, user) => {
         return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error closing connection.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
       }
       return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error storing sensor metadata.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
-    } finally {
-      return gatewayHelper.successResponse({
-        uploadURL: '',
-        guid: ''
-      });
     }
+    return gatewayHelper.successResponse({
+      uploadURL: '',
+      guid: ''
+    });
   } else if (!validator.hasKeys(eventBody, ['type'])) {
     return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Missing type', errorCodes.ER_MISSING_ARGUMENT);
   }

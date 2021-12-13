@@ -30,10 +30,10 @@ const executeSetUserSetting = async (event, context, sqlHelper, user) => {
       values: [user.id, eventBody.name, eventBody.value]
     });
   } catch (e) {
-    if (results.affectedRows && results.affectedRows === 1) {
-      return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error closing connection.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
+    if (settings.affectedRows && settings.affectedRows === 1) {
+      return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Error closing connection.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
     }
-    return gatewayHelper.errorResponse(HTTPCodes.INTERNAL, 'Error storing user metadata.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
+    return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Error storing user metadata.', errorCodes.ER_INTERNAL, errorCodes.ER_SUB_DATA_STORAGE_ERROR);
   }
 
   let res = 'unchanged';
