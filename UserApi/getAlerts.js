@@ -13,7 +13,8 @@ const executeGetAlerts = async (event, context, sqlHelper, user) => {
     if (!validator.validateMacAddress(event.queryStringParameters.sensor)) {
       return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Invalid request format.', errorCodes.ER_INVALID_FORMAT);
     }
-    if (!sqlHelper.canReadSensor(user.id, event.queryStringParameters.sensor)) {
+    const isReadable = await sqlHelper.canReadSensor(user.id, event.queryStringParameters.sensor);
+    if (!isReadable) {
       return gatewayHelper.forbiddenResponse();
     }
     sensors.push(event.queryStringParameters.sensor);
