@@ -12,22 +12,22 @@ exports.handler = async (event, context) => wrapper(executeGetSensorList, event,
  * @param {object} context
  */
 const executeGetSensorList = async (event, context, sqlHelper, user) => {
-    let queryArguments = [user.id, user.id];
-    let sensorFilter = '';
-    let filteredSensorId = null;
+  const queryArguments = [user.id, user.id];
+  let sensorFilter = '';
+  let filteredSensorId = null;
 
-    if (
-        event.queryStringParameters
-        && validator.hasKeys(event.queryStringParameters, ['sensor'])
-        && validator.validateMacAddress(event.queryStringParameters.sensor)
-    ) {
-        sensorFilter = 'AND sensors.sensor_id = ?';
-        filteredSensorId = event.queryStringParameters.sensor;
-        queryArguments.push(filteredSensorId);
-    }
+  if (
+    event.queryStringParameters &&
+        validator.hasKeys(event.queryStringParameters, ['sensor']) &&
+        validator.validateMacAddress(event.queryStringParameters.sensor)
+  ) {
+    sensorFilter = 'AND sensors.sensor_id = ?';
+    filteredSensorId = event.queryStringParameters.sensor;
+    queryArguments.push(filteredSensorId);
+  }
 
-    const sensors = await sqlHelper.query({
-        sql: `SELECT
+  const sensors = await sqlHelper.query({
+    sql: `SELECT
                 sensors.sensor_id AS sensor,
                 sensor_profiles.name AS name,
                 sensor_profiles.picture AS picture,
@@ -40,30 +40,30 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
                 AND sensor_profiles.is_active = 1
                 AND sensor_profiles.user_id = ?
                 ${sensorFilter}`,
-        timeout: 1000,
-        values: queryArguments
-    });
+    timeout: 1000,
+    values: queryArguments
+  });
 
-    let formatted = [];
+  const formatted = [];
 
-    for (let sensor of sensors) {
-        sensor.public = sensor.public ? true : false;
-        sensor.canShare = sensor.canShare ? true : false;
-        if (!sensor.canShare) {
-            const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
-            if (data.length > 0) {
-                sensor.canShare = true;
-                await sqlHelper.setValue('can_share', 1, 'sensors', 'sensor_id', sensor.sensor);
-            }
-        }
-
-        sensor.sharedTo = [];
-        formatted.push(JSON.parse(JSON.stringify(sensor)));
+  for (const sensor of sensors) {
+    sensor.public = !!sensor.public;
+    sensor.canShare = !!sensor.canShare;
+    if (!sensor.canShare) {
+      const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
+      if (data.length > 0) {
+        sensor.canShare = true;
+        await sqlHelper.setValue('can_share', 1, 'sensors', 'sensor_id', sensor.sensor);
+      }
     }
 
-    // Fetch Shares
-    const sharedSensors = await sqlHelper.query({
-        sql: `SELECT
+    sensor.sharedTo = [];
+    formatted.push(JSON.parse(JSON.stringify(sensor)));
+  }
+
+  // Fetch Shares
+  const sharedSensors = await sqlHelper.query({
+    sql: `SELECT
                 sensor_profiles.sensor_id AS sensor,
                 users.email AS sharedTo
             FROM sensor_profiles
@@ -73,32 +73,32 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
                 sensors.owner_id = ?
                 AND sensor_profiles.is_active = 1
                 AND sensor_profiles.user_id != ?`,
-        timeout: 1000,
-        values: [user.id, user.id]
-    });
+    timeout: 1000,
+    values: [user.id, user.id]
+  });
 
-    for (const sensor of sharedSensors) {
-        var found = formatted.findIndex(s => s.sensor === sensor.sensor);
-        
-        // Broken reference
-        if (found === -1) {
-            console.log('Not found', sensor);
-            continue;
-        }
+  for (const sensor of sharedSensors) {
+    const found = formatted.findIndex(s => s.sensor === sensor.sensor);
 
-        // Not the filtered sensor
-        if (filteredSensorId !== null) {
-            const filteredShared = sharedSensors.filter(s => s.sensor === filteredSensorId);
-            if (filteredShared.length === 0) {
-                continue;
-            }
-        }
-        formatted[found].sharedTo.push(sensor.sharedTo);
+    // Broken reference
+    if (found === -1) {
+      console.log('Not found', sensor);
+      continue;
     }
 
-    // Fetch Shared to Me
-    const sensorsSharedToMe = await sqlHelper.query({
-        sql: `SELECT
+    // Not the filtered sensor
+    if (filteredSensorId !== null) {
+      const filteredShared = sharedSensors.filter(s => s.sensor === filteredSensorId);
+      if (filteredShared.length === 0) {
+        continue;
+      }
+    }
+    formatted[found].sharedTo.push(sensor.sharedTo);
+  }
+
+  // Fetch Shared to Me
+  const sensorsSharedToMe = await sqlHelper.query({
+    sql: `SELECT
                 sensors.sensor_id AS sensor,
                 current_profile.name AS name,
                 current_profile.picture AS picture,
@@ -112,20 +112,20 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
                 AND current_profile.is_active = 1
                 AND current_profile.user_id = ?
                 ${sensorFilter}`,
-        timeout: 1000,
-        values: queryArguments
-    });
+    timeout: 1000,
+    values: queryArguments
+  });
 
-    let formattedSharedToMe = [];
+  const formattedSharedToMe = [];
 
-    for (let sensor of sensorsSharedToMe) {
-        sensor.public = sensor.public ? true : false;
-        sensor.canShare = false;
-        formattedSharedToMe.push(JSON.parse(JSON.stringify(sensor)));
-    }
+  for (const sensor of sensorsSharedToMe) {
+    sensor.public = !!sensor.public;
+    sensor.canShare = false;
+    formattedSharedToMe.push(JSON.parse(JSON.stringify(sensor)));
+  }
 
-    return gatewayHelper.successResponse({
-        sensors: formatted,
-        sharedToMe: formattedSharedToMe
-    });
-}
+  return gatewayHelper.successResponse({
+    sensors: formatted,
+    sharedToMe: formattedSharedToMe
+  });
+};

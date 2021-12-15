@@ -10,8 +10,8 @@ exports.handler = async (event, context) => wrapper(executeGetShared, event, con
  * @param {object} context
  */
 const executeGetShared = async (event, context, sqlHelper, user) => {
-    const sensors = await sqlHelper.query({
-        sql: `SELECT
+  const sensors = await sqlHelper.query({
+    sql: `SELECT
                 sensors.sensor_id AS sensor,
                 sensor_profiles.name AS name,
                 sensor_profiles.picture AS picture,
@@ -24,18 +24,18 @@ const executeGetShared = async (event, context, sqlHelper, user) => {
                 sensors.owner_id = ?
                 AND sensor_profiles.is_active = 1
                 AND sensor_profiles.user_id != ?`,
-        timeout: 1000,
-        values: [user.id, user.id]
-    });
+    timeout: 1000,
+    values: [user.id, user.id]
+  });
 
-    // Format returned data properly
-    let formatted = [];
-    sensors.forEach((sensor) => {
-        sensor.public = sensor.public ? true : false;
-        formatted.push(sensor);
-    });
+  // Format returned data properly
+  const formatted = [];
+  sensors.forEach((sensor) => {
+    sensor.public = !!sensor.public;
+    formatted.push(sensor);
+  });
 
-    return gatewayHelper.successResponse({
-        sensors: formatted
-    });
-}
+  return gatewayHelper.successResponse({
+    sensors: formatted
+  });
+};
