@@ -1,21 +1,19 @@
 const axios = require('axios');
 const gatewayHelper = require('../Helpers/gatewayHelper.js');
-const parseSemVer = require('semver-parser');
+const semver = require('semver');
 
 /**
  * Sends received status to external service for logging.
  */
 exports.handler = async (event, context) => {
   const eventBody = JSON.parse(event.body);
-  const espVersion = parseSemVer(eventBody.ESP_FW, false);
-  const nrfVersion = parseSemVer(eventBody.NRF_FW, false);
 
   // If version is not valid SEMVER
-  if ((!espVersion.matches) || (!nrfVersion.matches)) {
+  if ((!semver.valid(eventBody.ESP_FW)) || (!semver.valid(eventBody.NRF_FW))) {
     return gatewayHelper.invalid();
   } else {
-    const espIntegral = espVersion.major * 10000 + espVersion.minor * 100 + espVersion.patch;
-    const nrfIntegral = nrfVersion.major * 10000 + nrfVersion.minor * 100 + nrfVersion.patch;
+    const espIntegral = semver.major(eventBody.ESP_FW) * 10000 + semver.minor(eventBody.ESP_FW) * 100 + semver.patch(eventBody.ESP_FW);
+    const nrfIntegral = semver.major(eventBody.NRF_FW) * 10000 + semver.minor(eventBody.NRF_FW) * 100 + semver.patch(eventBody.NRF_FW);
     const res = await axios.post('http://graphs.ruuvi.com:3001/gw_statistics', {
       gw_addr: eventBody.DEVICE_ADDR,
       esp_fw: espIntegral,
