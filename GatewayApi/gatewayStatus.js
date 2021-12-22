@@ -16,7 +16,7 @@ exports.handler = async (event, context) => {
   } else {
     const espIntegral = espVersion.major * 10000 + espVersion.minor * 100 + espVersion.patch;
     const nrfIntegral = nrfVersion.major * 10000 + nrfVersion.minor * 100 + nrfVersion.patch;
-    axios.post('http://graphs.ruuvi.com:3001/gw_statistics', {
+    const res = await axios.post('http://graphs.ruuvi.com:3001/gw_statistics', {
       gw_addr: eventBody.DEVICE_ADDR,
       esp_fw: espIntegral,
       nrf_fw: nrfIntegral,
@@ -25,16 +25,14 @@ exports.handler = async (event, context) => {
       sensors_seen: eventBody.SENSORS_SEEN,
       active_sensors: eventBody.ACTIVE_SENSORS.length,
       inactive_sensors: eventBody.INACTIVE_SENSORS.length
-    }).then(res => {
-      return gatewayHelper.ok(null);
-    }).catch(error => {
-      // Assume internal error in case of exception in analytics post.
-      console.log(error);
-      return gatewayHelper.internal();
     });
+    if (res.status === 200) {
+      return gatewayHelper.ok(null);
+    } else {
+      // Assume internal error in case of exception in analytics post.
+      return gatewayHelper.internal();
+    }
   }
-  // Return error if we're here for any reason.
-  return gatewayHelper.invalid();
 };
 
 /*
