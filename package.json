@@ -14,7 +14,7 @@
     "jsonwebtoken": "^8.5.1",
     "loadtest": "^5.0.4",
     "redis": "^3.1.1",
-    "semver-parser": "^4.0.0",
+    "semver": "^7.3.5",
     "serverless-dynamodb-autoscaling": "^0.6.2",
     "serverless-mysql": "^1.5.4",
     "util": "^0.12.3",
