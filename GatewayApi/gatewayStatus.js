@@ -16,7 +16,7 @@ exports.handler = async (event, context) => {
   } else {
     const espIntegral = espVersion.major * 10000 + espVersion.minor * 100 + espVersion.patch;
     const nrfIntegral = nrfVersion.major * 10000 + nrfVersion.minor * 100 + nrfVersion.patch;
-    axios.post('http://graphs.ruuvi.com/status', {
+    axios.post('http://graphs.ruuvi.com:3001/gw_statistics', {
       gw_addr: eventBody.DEVICE_ADDR,
       esp_fw: espIntegral,
       nrf_fw: nrfIntegral,
