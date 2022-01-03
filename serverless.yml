@@ -277,7 +277,7 @@ functions:
       REQUIRE_LOGIN: ${self:custom.requireLoginForData}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
       DEFAULT_RESULTS: 15
-      MAX_RESULTS: 10000
+      MAX_RESULTS: 144000
 
   getUserData:
     handler: UserApi/getUserData.handler
