@@ -7,30 +7,45 @@ const semver = require('semver');
  */
 exports.handler = async (event, context) => {
   const eventBody = JSON.parse(event.body);
+  console.log("1");
 
   // If version is not valid SEMVER
   if ((!semver.valid(eventBody.ESP_FW)) || (!semver.valid(eventBody.NRF_FW))) {
+    console.log("2");
     return gatewayHelper.invalid();
   } else {
+    console.log("3");
     const espIntegral = semver.major(eventBody.ESP_FW) * 10000 + semver.minor(eventBody.ESP_FW) * 100 + semver.patch(eventBody.ESP_FW);
     const nrfIntegral = semver.major(eventBody.NRF_FW) * 10000 + semver.minor(eventBody.NRF_FW) * 100 + semver.patch(eventBody.NRF_FW);
-    const res = await axios.post('http://graphs.ruuvi.com:3001/gw_statistics', {
-      gw_addr: eventBody.DEVICE_ADDR,
-      esp_fw: espIntegral,
-      nrf_fw: nrfIntegral,
-      uptime: eventBody.UPTIME,
-      connection: eventBody.CONNECTION,
-      sensors_seen: eventBody.SENSORS_SEEN,
-      active_sensors: eventBody.ACTIVE_SENSORS.length,
-      inactive_sensors: eventBody.INACTIVE_SENSORS.length
-    });
-    if (res.status === 200) {
-      return gatewayHelper.ok(null);
-    } else {
+    try {
+      console.log("4");
+      const res = await axios.post('http://graphs.ruuvi.com:3001/gw_statistics', {
+        gw_addr: eventBody.DEVICE_ADDR,
+        esp_fw: espIntegral,
+        nrf_fw: nrfIntegral,
+        uptime: eventBody.UPTIME,
+        connection: eventBody.CONNECTION,
+        sensors_seen: eventBody.SENSORS_SEEN,
+        active_sensors: eventBody.ACTIVE_SENSORS.length,
+        inactive_sensors: eventBody.INACTIVE_SENSORS.length
+      });
+      console.log("5");
+      if (res.status === 200) {
+        console.log("6");
+        return gatewayHelper.ok(null);
+      } else {
       // Assume internal error in case of exception in analytics post.
+        console.log("7");
+        console.log(JSON.stringify(res));
+        return gatewayHelper.internal();
+      }
+    } catch (e) {
+      console.log("8");
+      console.log(e.message);
       return gatewayHelper.internal();
     }
   }
+  console.log("9");
 };
 
 /*
