@@ -10,6 +10,7 @@ const errorCodes = {
   ER_THROTTLED: 'ER_THROTTLED', // Throttled request due to too high call frequency
   ER_GATEWAY_NOT_FOUND: 'ER_GATEWAY_NOT_FOUND', // Gateway not found
   ER_GATEWAY_ALREADY_WHITELISTED: 'ER_GATEWAY_ALREADY_WHITELISTED', // Gateway already whitelisted
+  ER_GATEWAY_STATUS_REPORT_FAILED: 'ER_GATEWAY_STATUS_REPORT_FAILED', // Gateway already whitelisted
 
   // Subscriptions and Sharing
   ER_SUBSCRIPTION_NOT_FOUND: 'ER_SUBSCRIPTION_NOT_FOUND', // Thrown when action requires a subscription but it is not found

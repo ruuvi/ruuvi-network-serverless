@@ -188,23 +188,15 @@ functions:
   # Gateway update receiver that forwards to external service
   status:
     handler: GatewayApi/gatewayStatus.handler
+    vpc:
+      securityGroupIds: []
+      subnetIds: []
     events:
       - httpApi:
           method: POST
           path: /status
     environment:
-      DEBUG_MODE: ${self:custom.debugMode}
-      STREAM_NAME: ${self:custom.gatewayStream}
-      ENFORCE_SIGNATURE: ${self:custom.gatewayEnforceSignature}
-      GATEWAY_REQUEST_TTL: ${self:custom.gatewayRequestTTL}
-      WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
-      GATEWAY_THROTTLE_INTERVAL: ${self:custom.gatewayThrottleInterval}
-      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
-      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
-      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
-      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
-      SIGNATURE_HEADER_NAME: 'Ruuvi-HMAC-SHA256'
-      ALERT_THROTTLE_INTERVAL: ${self:custom.${self:custom.stage}-throttle-interval}
+      STATUS_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-status-endpoint}
 
   writeToDatabase:
     handler: GatewayApi/writeToDatabase.handler
