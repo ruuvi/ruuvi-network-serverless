@@ -1,6 +1,7 @@
 const axios = require('axios');
 const gatewayHelper = require('../Helpers/gatewayHelper.js');
 const semver = require('semver');
+const errorCodes = require('../Helpers/errorCodes');
 
 /**
  * Sends received status to external service for logging.
@@ -14,7 +15,7 @@ exports.handler = async (event, context) => {
   } else {
     const espIntegral = semver.major(eventBody.ESP_FW) * 10000 + semver.minor(eventBody.ESP_FW) * 100 + semver.patch(eventBody.ESP_FW);
     const nrfIntegral = semver.major(eventBody.NRF_FW) * 10000 + semver.minor(eventBody.NRF_FW) * 100 + semver.patch(eventBody.NRF_FW);
-    const res = await axios.post('http://graphs.ruuvi.com:3001/gw_statistics', {
+    const res = await axios.post(process.env.STATUS_ENDPOINT, {
       gw_addr: eventBody.DEVICE_ADDR,
       esp_fw: espIntegral,
       nrf_fw: nrfIntegral,
@@ -28,7 +29,7 @@ exports.handler = async (event, context) => {
       return gatewayHelper.ok(null);
     } else {
       // Assume internal error in case of exception in analytics post.
-      return gatewayHelper.internal();
+      return gatewayHelper.internal(null, null, errorCodes.ER_GATEWAY_STATUS_REPORT_FAILED);
     }
   }
 };
