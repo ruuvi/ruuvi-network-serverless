@@ -14,6 +14,7 @@ exports.handler = async (event, context) => {
   } else {
     const espIntegral = semver.major(eventBody.ESP_FW) * 10000 + semver.minor(eventBody.ESP_FW) * 100 + semver.patch(eventBody.ESP_FW);
     const nrfIntegral = semver.major(eventBody.NRF_FW) * 10000 + semver.minor(eventBody.NRF_FW) * 100 + semver.patch(eventBody.NRF_FW);
+    /* Disabled until outoud traffic issue is solved
     const res = await axios.post('http://graphs.ruuvi.com:3001/gw_statistics', {
       gw_addr: eventBody.DEVICE_ADDR,
       esp_fw: espIntegral,
@@ -24,7 +25,8 @@ exports.handler = async (event, context) => {
       active_sensors: eventBody.ACTIVE_SENSORS.length,
       inactive_sensors: eventBody.INACTIVE_SENSORS.length
     });
-    if (res.status === 200) {
+    */
+    if (true /* res.status === 200 */) {
       return gatewayHelper.ok(null);
     } else {
       // Assume internal error in case of exception in analytics post.
