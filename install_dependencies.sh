@@ -11,5 +11,5 @@
 # Global Tooling
 if [ "$1" == "--include-serverless" ]; then
 	sudo npm i -g jest@26.6.3
-	sudo npm i -g serverless@2.30.3
+	sudo npm i -g serverless@2.72.0
 fi
