@@ -1,82 +1,35 @@
-/*
-const { describe, expect } = require('@jest/globals');
+const { expect, test } = require('@jest/globals');
 const dataHelper = require('../../Helpers/sensorDataHelper');
 
-const successfulCases = [
-*/
-/*
+// Test vectors at https://docs.ruuvi.com/communication/bluetooth-advertisements/data-format-5-rawv2#test-vectors
+const df5ValidParsed =
     {
-          temperature: 21.45,
-          humidity: 36.05,
-          pressure: 98606,
-          accelerationX: -24,
-          accelerationY: 0,
-          accelerationZ: 1032,
-          battery: 3067,
-          txPower: 4,
-          movementCounter: 184,
-          measurementSequenceNumber: 12320,
-          mac: 'EF:54:4A:E7:1D:9E'
-        }
-  */
-/*
-  {
-    data: '0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E',
-    temperature: 21.45,
-    humidity: 36.05,
-    pressure: 98606,
-    movementCounter: 184
-  }
-*/
-// '0201061BFF99040510BC387CBDD8FFDC00000400B776B72F36EF544AE71D9E',
-// '0201061BFF99040510BC39C1BDD5FFE0000403F4B836B72F45EF544AE71D9E',
-// '0201061BFF99040510BC3966BDD5FFE8FFFC0400B776B72F55EF544AE71D9E',
-// '0201061BFF99040510BC3962BDD3FFE0FFFC03FCB5F6B72F5EEF544AE71D9E',
+      temperature: 24.30,
+      humidity: 53.49,
+      pressure: 100044,
+      accelerationX: 4,
+      accelerationY: -4,
+      accelerationZ: 1036,
+      battery: 2977,
+      txPower: 4,
+      movementCounter: 66,
+      measurementSequenceNumber: 205,
+      mac: 'CB:B8:33:4C:88:4F'
+    };
 
-// Specific cases
-// '0201061BFF99040512FC5394C37C0004FFFC040CAC364200CDCBB8334C884F', // Valid data
-// '0201061BFF9904058001000000008001800180010000000000CBB8334C884F', // Min values
-// '0201061BFF9904057FFFFFFEFFFE7FFF7FFF7FFFFFDEFEFFFECBB8334C884F', // Max values
+const df5ValidHex = '0201061BFF99040512FC5394C37C0004FFFC040CAC364200CDCBB8334C884F';
 
-/* '02011A020A070BFF4C001006201E4E56B3A9',
-  '02011A020A180AFF4C0010050118236914',
-  '02011A03036FFD17166FFD4FB6C1AB8ED38FB0AC9A664C33A2DA21AC096709',
-  '02011A020A070BFF4C001006201E4E56B3A9' */
-/*
-];
-*/
-/*
-const failingCases = [
-
-];
-*/
-// successfulCases.forEach(function(testCase) {
-//  test('verify parsing a valid payload returns correct answer: ' + testCase.data, () => {
-//    const result = dataHelper.parseData(testCase.data, 5);
-//    expect(result).not.toBe(null);
-//    expect(result.temperature).toBe(testCase.temperature);
-//    expect(result.humidity).toBe(testCase.humidity);
-//    expect(result.pressure).toBe(testCase.pressure);
-//    expect(result.movementCounter).toBe(testCase.movementCounter);
-//  });
-// });
-//
-// failingCases.forEach(function(testCase) {
-//  test('verify parsing a invalid payload throws: ' + testCase, () => {
-//    expect(() => {
-//      const result = dataHelper.parseData(testCase, 5);
-//      console.log(result);
-//    }).toThrow();
-//  });
-// });
-/*
-test('dumdidum', () => {
-  let result = dataHelper.parseData('0201061BFF99040510C23854BDDEFFE800000408B776B83020EF544AE71D9E', 5);
-  result = dataHelper.parseData('0201061BFF99040511D74955CDDEFFE800000408B776B93020EF544AE71D9E', 5);
+test('Data Format 5 parses correctly', () => {
+  const result = dataHelper.parseData(df5ValidHex);
+  expect(result.temperature).toBe(df5ValidParsed.temperature);
+  expect(result.humidity).toBe(df5ValidParsed.humidity);
+  expect(result.pressure).toBe(df5ValidParsed.pressure);
+  expect(result.accelerationX).toBe(df5ValidParsed.accelerationX);
+  expect(result.accelerationY).toBe(df5ValidParsed.accelerationY);
+  expect(result.accelerationZ).toBe(df5ValidParsed.accelerationZ);
+  expect(result.battery).toBe(df5ValidParsed.battery);
+  expect(result.txPower).toBe(df5ValidParsed.txPower);
+  expect(result.movementCounter).toBe(df5ValidParsed.movementCounter);
+  expect(result.measurementSequenceNumber).toBe(df5ValidParsed.measurementSequenceNumber);
+  expect(result.mac).toBe(df5ValidParsed.mac);
 });
-
-test('didid', () => {
-  const result = dataHelper.parseData('0201061BFF99040511C059CDC4AF0258FCB800109BB69BC8D4CAE7DD09ABF9');
-  // console.log(result);
-});
-*/

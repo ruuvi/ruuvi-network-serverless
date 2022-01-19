@@ -67,12 +67,12 @@ const validateAll = (given, definitions, allowExtra = true) => {
         console.error('Failed to validate ALPHANUM', given[definition.name]);
         return false;
       }
-      if (definition.type === 'STRING' && typeof given[definition.name] !== 'string') {
+      if ((definition.type === 'STRING') && (!validateString(given[definition.name]))) {
         console.error('Failed to validate STRING', given[definition.name]);
         return false;
       }
       if (definition.type === 'ARRAY' && Array.isArray(given[definition.name])) {
-        console.error('Failed to validate STRING', given[definition.name]);
+        console.error('Failed to validate ARRAY', given[definition.name]);
         return false;
       }
     }
@@ -185,6 +185,18 @@ const validateEnum = (str, values) => {
   return values.includes(str);
 };
 
+/**
+ * Validates that given parameter is a non-empty string.
+ *
+ * @param {string} str String to validate
+ */
+const validateString = (str) => {
+  if (str && (typeof str === 'string') && (str !== '')) {
+    return true;
+  }
+  return false;
+};
+
 const now = () => {
   return Date.now() / 1000;
 };
@@ -200,6 +212,7 @@ module.exports = {
   validateAlphaNumeric,
   validateMacAddress,
   validateSettingName,
+  validateString,
   validateEnum,
   validateFilename,
   validateTableName,

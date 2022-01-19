@@ -30,3 +30,18 @@ test('verify filename returns false on URL', () => {
     expect(isValid).toBe(false);
   }
 });
+
+test('verify string returns false on empty string', () => {
+  const isValid = validator.validateString('');
+  expect(isValid).toBe(false);
+});
+
+test('verify string returns false on non-string', () => {
+  const isValid = validator.validateString(1337);
+  expect(isValid).toBe(false);
+});
+
+test('verify string returns true on string', () => {
+  const isValid = validator.validateString('Test string ok');
+  expect(isValid).toBe(true);
+});
