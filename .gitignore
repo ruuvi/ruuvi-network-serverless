@@ -5,6 +5,10 @@ jspm_packages
 # Serverless directories
 .serverless
 
+# Coverage report
+coverage
+test-report.xml
+
 # Additional
 temp
 tests/integration/integrationCredentials.js
