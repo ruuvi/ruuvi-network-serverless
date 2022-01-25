@@ -5,10 +5,10 @@ const config = {
   testTimeout: 90000,
   testEnvironment: 'node',
   collectCoverage: true,
-  testResultsProcessor: "jest-sonar-reporter",
+  testResultsProcessor: 'jest-sonar-reporter',
   coveragePathIgnorePatterns: [
-    "/node_modules/",
-    "/tests/"
+    '/node_modules/',
+    '/tests/'
   ]
 };
 
