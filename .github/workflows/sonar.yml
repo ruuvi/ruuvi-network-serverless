@@ -18,8 +18,8 @@ jobs:
       run: git fetch origin master
     - name: Install dependencies
       run:  npm install
-    - name: Install Jest globally
-      run:  sudo npm install -g jest
+    - name: Install global dependencies
+      run:  ./install_dependencies.sh --include-serverless
     - name: Setup Credentials
       run: |
         echo \
@@ -51,9 +51,7 @@ jobs:
         --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }} \
         --profile ruuvi
     - name: serverless deploy
-      uses: serverless/github-action@master
-      with:
-        args: deploy
+      run: serverless deploy
     - name: Run Tests
       run:  jest --coverage
     - name: SonarCloud Scan
