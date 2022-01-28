@@ -20,11 +20,9 @@ jobs:
       run:  npm install
     - name: Install Jest globally
       run:  sudo npm install -g jest
-    - name: Run Tests
-      run:  jest --coverage
     - name: Setup Credentials
       run: echo \
-        module.exports = { \
+        "module.exports = { \
           prod: { \
           primary: 'PRODUCTION ACCESS TOKEN 1', \
           primaryEmail: 'test@ruuvi.com', \
@@ -43,8 +41,17 @@ jobs:
           url: 'DEVELOPMENT URL', \
           internalKey: 'hello-there' \
           } \
-        }; > tests/integration/integrationCredentials.json
-
+        };" > tests/integration/integrationCredentials.json
+    - name: serverless deploy
+        uses: serverless/github-action@master
+        with:
+          args: deploy
+        env:
+          # or if using AWS credentials directly
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    - name: Run Tests
+      run:  jest --coverage
     - name: SonarCloud Scan
       uses: sonarsource/sonarcloud-github-action@master
       env:
