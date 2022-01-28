@@ -42,7 +42,7 @@ jobs:
           url: 'DEVELOPMENT URL', \
           internalKey: 'hello-there' \
           } \
-        };" > tests/integration/integrationCredentials.json
+        };" > tests/integration/integrationCredentials.js
     - name: serverless configure profile
       run: |
         serverless config credentials \
