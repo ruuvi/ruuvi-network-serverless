@@ -46,7 +46,7 @@ jobs:
     - name: serverless deploy
       uses: serverless/github-action@master
       with:
-        args: deploy
+        args: deploy, profile=default
       env:
         # or if using AWS credentials directly
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
