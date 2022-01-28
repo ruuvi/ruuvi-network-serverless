@@ -53,7 +53,7 @@ jobs:
     - name: serverless deploy
       run: serverless deploy
     - name: Run Tests
-      run:  jest --coverage
+      run:  ./run_integration_tests
     - name: SonarCloud Scan
       uses: sonarsource/sonarcloud-github-action@master
       env:
