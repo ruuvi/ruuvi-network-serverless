@@ -21,7 +21,8 @@ jobs:
     - name: Install Jest globally
       run:  sudo npm install -g jest
     - name: Setup Credentials
-      run: echo \
+      run: |
+        echo \
         "module.exports = { \
           prod: { \
           primary: 'PRODUCTION ACCESS TOKEN 1', \
