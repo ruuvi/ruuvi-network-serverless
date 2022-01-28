@@ -87,7 +87,7 @@ custom:
 provider:
   name: aws
   runtime: nodejs12.x
-  profile: ${opt:profile, "ruuvi"}
+  profile: ruuvi
   vpc: ${self:custom.vpc}
 
   # Defaults
