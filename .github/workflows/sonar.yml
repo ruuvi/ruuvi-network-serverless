@@ -46,7 +46,7 @@ jobs:
     - name: serverless deploy
       uses: serverless/github-action@master
       with:
-        args:
+        args: |
           - deploy
           - --profile=default
       env:
