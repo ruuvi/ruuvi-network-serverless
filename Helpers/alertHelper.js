@@ -370,25 +370,26 @@ const getOffset = (alert) => {
 };
 
 const checkAlertTrigger = (alert, sensorData) => {
+  let mode = null;
   let triggered = false;
-    if (alert.type !== 'movement') {
-      const offset = getOffset(alert);
+  if (alert.type !== 'movement') {
+    const offset = getOffset(alert);
 
-      if (sensorData[alert.type] + offset > alert.max) {
-        mode = 'over';
-        triggered = true;
-      }
-      if (sensorData[alert.type] + offset < alert.min) {
-        mode = 'under';
-        triggered = true;
-      }
-    } else {
-      if (parseInt(sensorData.movementCounter) !== parseInt(alert.counter)) {
-        mode = 'different from';
-        triggered = true;
-      }
+    if (sensorData[alert.type] + offset > alert.max) {
+      mode = 'over';
+      triggered = true;
     }
-    return triggered;
+    if (sensorData[alert.type] + offset < alert.min) {
+      mode = 'under';
+      triggered = true;
+    }
+  } else {
+    if (parseInt(sensorData.movementCounter) !== parseInt(alert.counter)) {
+      mode = 'different from';
+      triggered = true;
+    }
+  }
+  return { triggered, mode };
 };
 
 /**
@@ -405,17 +406,14 @@ const processAlerts = async (alerts, sensorData) => {
       continue;
     }
 
-    //XXX Dummy value for development
-    let mode = "problem";
     // Assume throttled to be safe
     let throttled = true;
 
-    let triggered = checkAlertTrigger(alert, sensorData);
-    if(triggered)
-    {
-      throttled =  await throttleHelper.throttle(
+    const { triggered, mode } = checkAlertTrigger(alert, sensorData);
+    if (triggered) {
+      throttled = await throttleHelper.throttle(
                           `alert:${alert.userId}:${sensorData.sensor_id}:${alert.type}`,
-                            throttleInterval);
+                          throttleInterval);
 
       if (throttled) {
         // For movement, we want to update the counters but not send an email when throttled
