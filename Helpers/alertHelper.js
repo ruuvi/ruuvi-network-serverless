@@ -369,23 +369,8 @@ const getOffset = (alert) => {
   return alert.type !== 'signal' ? alert[offsetKey] : 0;
 };
 
-/**
- * Processes the alerts for a sensor
- *
- * @param {array} alerts Array of alerts
- * @param {string} data
- */
-const processAlerts = async (alerts, sensorData) => {
-  const throttleInterval = process.env.ALERT_THROTTLE_INTERVAL ? process.env.ALERT_THROTTLE_INTERVAL : throttleHelper.defaultIntervals.alert;
-
-  for (const alert of alerts) {
-    if (!alert.enabled) {
-      continue;
-    }
-
-    let triggered = false;
-    let mode = null;
-
+const checkAlertTrigger = (alert, sensorData) => {
+  let triggered = false;
     if (alert.type !== 'movement') {
       const offset = getOffset(alert);
 
@@ -403,14 +388,36 @@ const processAlerts = async (alerts, sensorData) => {
         triggered = true;
       }
     }
+    return triggered;
+};
 
-    if (triggered) {
-      // Throttling
-      const throttleAlert = await throttleHelper.throttle(
-                `alert:${alert.userId}:${sensorData.sensor_id}:${alert.type}`,
-                throttleInterval
-      );
-      if (throttleAlert) {
+/**
+ * Processes the alerts for a sensor
+ *
+ * @param {array} alerts Array of alerts
+ * @param {string} data
+ */
+const processAlerts = async (alerts, sensorData) => {
+  const throttleInterval = process.env.ALERT_THROTTLE_INTERVAL ? process.env.ALERT_THROTTLE_INTERVAL : throttleHelper.defaultIntervals.alert;
+
+  for (const alert of alerts) {
+    if (!alert.enabled) {
+      continue;
+    }
+
+    //XXX Dummy value for development
+    let mode = "problem";
+    // Assume throttled to be safe
+    let throttled = true;
+
+    let triggered = checkAlertTrigger(alert, sensorData);
+    if(triggered)
+    {
+      throttled =  await throttleHelper.throttle(
+                          `alert:${alert.userId}:${sensorData.sensor_id}:${alert.type}`,
+                            throttleInterval);
+
+      if (throttled) {
         // For movement, we want to update the counters but not send an email when throttled
         if (alert.type === 'movement') {
           console.log(`Triggered movement while throttled for ${sensorData.sensor_id} with value ${sensorData.movementCounter} (in alert: ${alert.counter}). Skipping e-mail.`);
@@ -422,7 +429,7 @@ const processAlerts = async (alerts, sensorData) => {
       await triggerAlert(alert, sensorData, mode);
     }
 
-    // Trigger
+    // Clear trigger status if was triggered but is not anymore
     if (!triggered && alert.triggered) {
       await clearAlert(alert);
     }
