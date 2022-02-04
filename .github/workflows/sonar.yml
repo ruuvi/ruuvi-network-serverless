@@ -1,0 +1,69 @@
+on:
+  # Trigger analysis when pushing in master or pull requests, and when creating
+  # a pull request.
+  push:
+    branches:
+      - master
+  pull_request:
+      types: [opened, synchronize, reopened]
+name: SonarCloud
+jobs:
+  sonarcloud:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Get master
+      run: git fetch origin master
+    - name: Install dependencies
+      run:  npm install
+    - name: Install global dependencies
+      run:  ./install_dependencies.sh --include-serverless
+    - name: Setup Credentials
+      run: |
+        echo \
+        "module.exports = { \
+          prod: { \
+          primary: 'PRODUCTION ACCESS TOKEN 1', \
+          primaryEmail: 'test@ruuvi.com', \
+          secondary: 'PRODUCTION ACCESS TOKEN 2',\
+          secondaryEmail: 'test2@ruuvi.com', \
+          unregisteredEmail: 'test3@ruuvi.com', \
+          url: 'PRODUCTION URL', \
+          internalKey: 'hello-there' \
+          }, \
+          dev: { \
+          primary: '$DAT1', \
+          primaryEmail: '$EMAIL1', \
+          secondary: '$DAT2', \
+          secondaryEmail: '$EMAIL2', \
+          unregisteredEmail: '$EMAIL3', \
+          url: '$DURL', \
+          internalKey: '$DIK' \
+          } \
+        };" > tests/integration/integrationCredentials.js
+      env:
+        DAT1: ${{secrets.dev_access_token_1}}
+        DAT2: ${{secrets.dev_access_token_2}}
+        DURL: ${{secrets.dev_url}}
+        DIK: ${{secrets.dev_internal_key}}
+        EMAIL1: ${{secrets.primary_email}}
+        EMAIL2: ${{secrets.secondary_email}}
+        EMAIL3: ${{secrets.unregistered_email}}
+    - name: serverless configure profile
+      run: |
+        serverless config credentials \
+        --provider aws \
+        --key ${{ secrets.AWS_ACCESS_KEY_ID }} \
+        --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+        --profile ruuvi
+    - name: serverless deploy
+      run: serverless deploy
+    - name: Run Tests
+      run: ./run_integration_tests.sh
+    - name: SonarCloud Scan
+      uses: sonarsource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

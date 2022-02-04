@@ -289,7 +289,7 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
       previousValue = alertData.min;
     } else if (triggerType === 'over') {
       previousValue = alertData.max;
-    } else {
+    } else if (triggerType === 'different from') {
       previousValue = alertData.counter;
       const movementCounter = parseInt(sensorData.movementCounter);
       if (isNaN(movementCounter)) {
@@ -315,6 +315,8 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
           'movement'
         ]
       );
+    } else {
+      console.error(`Unknown alert triggerType: ${triggerType}`);
     }
 
     if (sendEmail) {
@@ -328,6 +330,20 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
 
       [alertUnit, currentValue] = convertValue(unit, currentValue + offset, alertData.type);
       [alertUnit, thresholdValue] = convertValue(unit, thresholdValue, alertData.type);
+
+      const sendEmailData = {
+        email: user.email,
+        name: name,
+        id: sensorData.sensor_id,
+        alertType: alertData.type,
+        triggerType: triggerType,
+        currentValue: currentValue,
+        thresholdValue: thresholdValue,
+        alertUnit: alertUnit,
+        alertData: alertData.description
+      };
+
+      console.log(JSON.stringify(sendEmailData));
 
       try {
         await emailHelper.sendAlertEmail(
@@ -366,7 +382,35 @@ const capitalize = (s) => {
 
 const getOffset = (alert) => {
   const offsetKey = 'offset' + capitalize(alert.type);
-  return alert.type !== 'signal' ? alert[offsetKey] : 0;
+  let offset = 0;
+  if ((Object.prototype.hasOwnProperty.call(alert, offsetKey)) &&
+      (typeof alert[offsetKey] === 'number')) {
+    offset = alert[offsetKey];
+  }
+  return offset;
+};
+
+const checkAlertTrigger = (alert, sensorData) => {
+  let mode = null;
+  let triggered = false;
+  if (alert.type !== 'movement') {
+    const offset = getOffset(alert);
+
+    if (sensorData[alert.type] + offset > alert.max) {
+      mode = 'over';
+      triggered = true;
+    }
+    if (sensorData[alert.type] + offset < alert.min) {
+      mode = 'under';
+      triggered = true;
+    }
+  } else {
+    if (parseInt(sensorData.movementCounter) !== parseInt(alert.counter)) {
+      mode = 'different from';
+      triggered = true;
+    }
+  }
+  return { triggered, mode };
 };
 
 /**
@@ -383,34 +427,16 @@ const processAlerts = async (alerts, sensorData) => {
       continue;
     }
 
-    let triggered = false;
-    let mode = null;
+    // Assume throttled to be safe
+    let throttled = true;
 
-    if (alert.type !== 'movement') {
-      const offset = getOffset(alert);
-
-      if (sensorData[alert.type] + offset > alert.max) {
-        mode = 'over';
-        triggered = true;
-      }
-      if (sensorData[alert.type] + offset < alert.min) {
-        mode = 'under';
-        triggered = true;
-      }
-    } else {
-      if (parseInt(sensorData.movementCounter) !== parseInt(alert.counter)) {
-        mode = 'different from';
-        triggered = true;
-      }
-    }
-
+    const { triggered, mode } = checkAlertTrigger(alert, sensorData);
     if (triggered) {
-      // Throttling
-      const throttleAlert = await throttleHelper.throttle(
-                `alert:${alert.userId}:${sensorData.sensor_id}:${alert.type}`,
-                throttleInterval
-      );
-      if (throttleAlert) {
+      throttled = await throttleHelper.throttle(
+                          `alert:${alert.userId}:${sensorData.sensor_id}:${alert.type}`,
+                          throttleInterval);
+
+      if (throttled) {
         // For movement, we want to update the counters but not send an email when throttled
         if (alert.type === 'movement') {
           console.log(`Triggered movement while throttled for ${sensorData.sensor_id} with value ${sensorData.movementCounter} (in alert: ${alert.counter}). Skipping e-mail.`);
@@ -422,7 +448,7 @@ const processAlerts = async (alerts, sensorData) => {
       await triggerAlert(alert, sensorData, mode);
     }
 
-    // Trigger
+    // Clear trigger status if was triggered but is not anymore
     if (!triggered && alert.triggered) {
       await clearAlert(alert);
     }

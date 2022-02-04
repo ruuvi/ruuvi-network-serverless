@@ -3,7 +3,13 @@
 const config = {
   // verbose: true,
   testTimeout: 90000,
-  testEnvironment: 'node'
+  testEnvironment: 'node',
+  collectCoverage: true,
+  testResultsProcessor: 'jest-sonar-reporter',
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/tests/'
+  ]
 };
 
 module.exports = config;
