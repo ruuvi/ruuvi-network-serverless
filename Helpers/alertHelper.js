@@ -331,6 +331,20 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
       [alertUnit, currentValue] = convertValue(unit, currentValue + offset, alertData.type);
       [alertUnit, thresholdValue] = convertValue(unit, thresholdValue, alertData.type);
 
+      const sendEmailData = {
+        email: user.email,
+        name: name,
+        id: sensorData.sensor_id,
+        alertType: alertData.type,
+        triggerType: triggerType,
+        currentValue: currentValue,
+        thresholdValue: thresholdValue,
+        alertUnit: alertUnit,
+        alertData: alertData.description
+      };
+
+      console.log(JSON.stringify(sendEmailData));
+
       try {
         await emailHelper.sendAlertEmail(
           user.email,
