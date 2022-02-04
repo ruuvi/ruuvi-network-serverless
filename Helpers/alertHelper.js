@@ -289,7 +289,7 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
       previousValue = alertData.min;
     } else if (triggerType === 'over') {
       previousValue = alertData.max;
-    } else {
+    } else if (triggerType === 'different from') {
       previousValue = alertData.counter;
       const movementCounter = parseInt(sensorData.movementCounter);
       if (isNaN(movementCounter)) {
@@ -315,6 +315,8 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
           'movement'
         ]
       );
+    } else {
+      console.error(`Unknown alert triggerType: ${triggerType}`);
     }
 
     if (sendEmail) {
