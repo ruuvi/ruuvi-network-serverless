@@ -382,7 +382,12 @@ const capitalize = (s) => {
 
 const getOffset = (alert) => {
   const offsetKey = 'offset' + capitalize(alert.type);
-  return alert.type !== 'signal' ? alert[offsetKey] : 0;
+  let offset = 0;
+  if ((Object.prototype.hasOwnProperty.call(alert, offsetKey)) &&
+      (typeof alert[offsetKey] === 'number')) {
+    offset = alert[offsetKey];
+  }
+  return offset;
 };
 
 const checkAlertTrigger = (alert, sensorData) => {
