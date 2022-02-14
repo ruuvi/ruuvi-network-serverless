@@ -87,7 +87,7 @@ const executeShare = async (event, context, sqlHelper, user) => {
       return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, `Maximum share (${maxSharesPerSensor}) count reached for sensor ${sensor}.`, errorCodes.ER_SENSOR_SHARE_COUNT_REACHED);
     }
 
-    const data = await dynamoHelper.getSensorData(sensor, 1, null, null);
+    const data = await dynamoHelper.getSensorData(sensor, 1, null, null, false, process.env.REDUCED_TABLE_NAME);
     if (data.length === 0) {
       return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'Cannot share a sensor without data.', errorCodes.ER_NO_DATA_TO_SHARE);
     }
