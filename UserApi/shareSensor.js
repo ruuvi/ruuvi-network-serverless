@@ -62,7 +62,11 @@ const executeShare = async (event, context, sqlHelper, user) => {
     if (!subscription) {
       return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INVALID, 'No subscription found.', errorCodes.ER_SUBSCRIPTION_NOT_FOUND);
     }
-    const maxShares = parseInt(subscription.max_shares);
+
+    // No acccount-wide limit on shares, only on single sensor.
+    // const maxShares = parseInt(subscription.max_shares);
+    // Max shares  = max sensors * max shares per sensor
+    const maxShares = parseInt(subscription.max_shares_per_sensor) * parseInt(subscription.max_claims);
     const maxSharesPerSensor = parseInt(subscription.max_shares_per_sensor);
 
     const currentShares = await sqlHelper.query({
