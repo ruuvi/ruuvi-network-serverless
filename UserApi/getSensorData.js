@@ -132,11 +132,20 @@ const executeGetSensorData = async (event, context, sqlHelper, user) => {
     }
     dataPoints = await dynamoHelper.getSensorData(sensor, resultLimit, sinceTime, untilTime, ascending, tableName);
   } else {
-    const sparse = await dynamoHelper.getSensorData(sensor, resultLimit, sinceTime, splitPoint, ascending, process.env.REDUCED_TABLE_NAME);
+    // Merge tables if dense table does not have up to limit datapoints.
     const dense = await dynamoHelper.getSensorData(sensor, resultLimit, splitPoint, untilTime, ascending, process.env.TABLE_NAME);
-
-    // Combine results
-    dataPoints = sparse.concat(dense);
+    const sparseLimit = resultLimit - (dense.length);
+    if (sparseLimit > 0) {
+      const sparse = await dynamoHelper.getSensorData(sensor, sparseLimit, sinceTime, splitPoint, ascending, process.env.REDUCED_TABLE_NAME);
+      // Combine results
+      if (ascending) {
+        dataPoints = sparse.concat(dense);
+      } else {
+        dataPoints = dense.concat(sparse);
+      }
+    } else {
+      dataPoints = dense;
+    }
   }
 
   // Format data for the API
