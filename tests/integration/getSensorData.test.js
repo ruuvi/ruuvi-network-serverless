@@ -135,7 +135,7 @@ describe('Sensor data integration test suite', () => {
     expect(sensorData.data.data.measurements[1].data).toBe(testData2);
   });
 
-    // This might fail if Kinesis processing above is slow
+  // This might fail if Kinesis processing above is slow
   itif(RI)('`get` returns mixed sensor data', async () => {
     const sensorData = await get('get', { sensor: newSensorMac, mode: 'mixed' });
     expect(sensorData.data.data.measurements.length).toBe(3);
