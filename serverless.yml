@@ -200,6 +200,7 @@ functions:
 
   writeToDatabase:
     handler: GatewayApi/writeToDatabase.handler
+    timeout: 60
     events:
       - stream:
           type: kinesis
