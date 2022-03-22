@@ -112,7 +112,7 @@ exports.handler = async (event, context) => {
     // Kinesis params
     const params = {
       Data: JSON.stringify(dataPacket),
-      PartitionKey: 'TestPartition',
+      PartitionKey: data.gw_mac,
       StreamName: process.env.STREAM_NAME
     };
 
