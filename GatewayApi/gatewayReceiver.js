@@ -105,7 +105,7 @@ const receiveData = async (event, context) => {
 
   console.info('Validation');
   if (!validateInput(data)) {
-    console.error('Validation step failed'); 
+    console.error('Validation step failed');
     return gatewayHelper.invalid();
   }
 
@@ -144,7 +144,7 @@ const receiveData = async (event, context) => {
   }
 
   console.info('Sending to Kinesis');
-  const kinesisStatus = sendToKinesis(unthrottledTags, data, tagIds);
+  const kinesisStatus = await sendToKinesis(unthrottledTags, data, tagIds);
   if (kinesisStatus !== 0) {
     console.error(`Error in Kinesis. Data ${data}, tagIds ${tagIds}, unthrottledTags ${unthrottledTags}`);
     return gatewayHelper.internal();
