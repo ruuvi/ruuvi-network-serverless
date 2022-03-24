@@ -76,7 +76,8 @@ const gatewayWrapper = async (func, event, context, requireAuth = true) => {
         await redis.set('invalid_signature_' + data.gw_mac.toUpperCase(), validator.now(), 'EX', ttl);
 
         console.error(`${data.gw_mac} - Invalid signature: ${signature}`);
-        if (parseInt(process.env.ENFORCE_SIGNATURE) === 1) {
+        // Check signature if signature is present, or if it is enforced to be present
+        if (parseInt(process.env.ENFORCE_SIGNATURE) === 1 || signature !== null) {
           return gatewayHelper.unauthorizedResponse();
         } else {
           console.warn('Not enforcing signature');
