@@ -105,7 +105,7 @@ const receiveData = async (event, context) => {
 
   console.info('Validation');
   if (!validateInput(data)) {
-    console.error('Validation step failed');
+    console.error('Validation step failed'); 
     return gatewayHelper.invalid();
   }
 
