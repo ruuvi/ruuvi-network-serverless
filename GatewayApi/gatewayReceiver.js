@@ -19,7 +19,7 @@ exports.handler = async (event, context) => gatewayWrapper(receiveData, event, c
  * Validates that data in eventBody.data has all the required fields and is not too old.
  * @return true if data is valid and should be processed.
  */
-const validateInput = function (data) {
+const validateInput = function (data) { 
   return (validator.validateAll(data, [
     { name: 'tags', type: 'ARRAY', required: true },
     { name: 'gw_mac', type: 'MAC', required: true },
