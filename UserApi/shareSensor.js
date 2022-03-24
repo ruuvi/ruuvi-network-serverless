@@ -5,7 +5,7 @@ const emailHelper = require('../Helpers/emailHelper');
 const dynamoHelper = require('../Helpers/dynamoHelper');
 const errorCodes = require('../Helpers/errorCodes');
 
-const userWrapper = require('../Helpers/wrapper').wrapper;
+const userWrapper = require('../Helpers/wrapper').userWrapper;
 
 exports.handler = async (event, context) => userWrapper(executeShare, event, context);
 
