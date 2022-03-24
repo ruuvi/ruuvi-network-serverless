@@ -1,8 +1,8 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 
-const { wrapper } = require('../Helpers/wrapper');
+const { userWrapper } = require('../Helpers/wrapper');
 
-exports.handler = async (event, context) => wrapper(executeGetUserData, event, context);
+exports.handler = async (event, context) => userWrapper(executeGetUserData, event, context);
 
 const executeGetUserData = async (event, context, sqlHelper, user) => {
   const sensors = await sqlHelper.fetchSensorsForUser(user.id);

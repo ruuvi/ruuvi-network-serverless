@@ -1,7 +1,7 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
-const { wrapper } = require('../Helpers/wrapper');
+const { userWrapper } = require('../Helpers/wrapper');
 
-exports.handler = async (event, context) => wrapper(executeGetShared, event, context);
+exports.handler = async (event, context) => userWrapper(executeGetShared, event, context);
 
 /**
  * Fetches list of tags the user has shared.

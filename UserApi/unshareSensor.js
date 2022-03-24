@@ -4,7 +4,7 @@ const userHelper = require('../Helpers/userHelper');
 const emailHelper = require('../Helpers/emailHelper');
 const errorCodes = require('../Helpers/errorCodes');
 
-const wrapper = require('../Helpers/wrapper').wrapper;
+const userWrapper = require('../Helpers/wrapper').userWrapper;
 
 const getSensorName = async (sensor, userId, sqlHelper) => {
   const sensorProfiles = await sqlHelper.fetchMultiCondition(['sensor_id', 'user_id'], [sensor, userId], 'sensor_profiles');
@@ -121,6 +121,6 @@ const executeUnshareSensor = async (event, context, sqlHelper, user) => {
 };
 
 module.exports = {
-  handler: async (event, context) => wrapper(executeUnshareSensor, event, context),
+  handler: async (event, context) => userWrapper(executeUnshareSensor, event, context),
   executeUnshareSensor: executeUnshareSensor
 };

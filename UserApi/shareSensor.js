@@ -5,9 +5,9 @@ const emailHelper = require('../Helpers/emailHelper');
 const dynamoHelper = require('../Helpers/dynamoHelper');
 const errorCodes = require('../Helpers/errorCodes');
 
-const wrapper = require('../Helpers/wrapper').wrapper;
+const userWrapper = require('../Helpers/wrapper').wrapper;
 
-exports.handler = async (event, context) => wrapper(executeShare, event, context);
+exports.handler = async (event, context) => userWrapper(executeShare, event, context);
 
 const getSensorName = async (sensor, sqlHelper) => {
   let sensorName = null;

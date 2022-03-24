@@ -1,9 +1,9 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const errorCodes = require('../Helpers/errorCodes.js');
 
-const { wrapper } = require('../Helpers/wrapper');
+const { userWrapper } = require('../Helpers/wrapper');
 
-exports.handler = async (event, context) => wrapper(executeGetUserSettings, event, context);
+exports.handler = async (event, context) => userWrapper(executeGetUserSettings, event, context);
 
 const executeGetUserSettings = async (event, context, sqlHelper, user) => {
   let settings = null;

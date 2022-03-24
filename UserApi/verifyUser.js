@@ -6,9 +6,9 @@ const errorCodes = require('../Helpers/errorCodes');
 
 const dateFormat = require('dateformat');
 
-const wrapper = require('../Helpers/wrapper').wrapper;
+const userWrapper = require('../Helpers/wrapper').userWrapper;
 
-exports.handler = async (event, context) => wrapper(executeVerifyUser, event, context, false);
+exports.handler = async (event, context) => userWrapper(executeVerifyUser, event, context, false);
 
 const executeVerifyUser = async (event, context, sqlHelper) => {
   if (

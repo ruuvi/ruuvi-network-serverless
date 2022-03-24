@@ -3,9 +3,9 @@ const { HTTPCodes } = require('../Helpers/gatewayHelper');
 const validator = require('../Helpers/validator');
 const errorCodes = require('../Helpers/errorCodes');
 const emailHelper = require('../Helpers/emailHelper');
-const wrapper = require('../Helpers/wrapper').wrapper;
+const userWrapper = require('../Helpers/wrapper').userWrapper;
 
-exports.handler = async (event, context) => wrapper(executeClaim, event, context);
+exports.handler = async (event, context) => userWrapper(executeClaim, event, context);
 
 const executeClaim = async (event, context, sqlHelper, user) => {
   const eventBody = JSON.parse(event.body);

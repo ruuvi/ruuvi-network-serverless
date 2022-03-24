@@ -6,9 +6,9 @@ const dynamoHelper = require('../Helpers/dynamoHelper');
 const sensorDataHelper = require('../Helpers/sensorDataHelper');
 const throttleHelper = require('../Helpers/throttleHelper');
 
-const { wrapper } = require('../Helpers/wrapper');
+const { userWrapper } = require('../Helpers/wrapper');
 
-exports.handler = async (event, context) => wrapper(executeSetAlert, event, context);
+exports.handler = async (event, context) => userWrapper(executeSetAlert, event, context);
 
 const executeSetAlert = async (event, context, sqlHelper, user) => {
   const eventBody = JSON.parse(event.body);

@@ -7,9 +7,9 @@ const errorCodes = require('../Helpers/errorCodes');
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
 
-const wrapper = require('../Helpers/wrapper').wrapper;
+const userWrapper = require('../Helpers/wrapper').userWrapper;
 
-exports.handler = async (event, context) => wrapper(executeUploadSensorPicture, event, context);
+exports.handler = async (event, context) => userWrapper(executeUploadSensorPicture, event, context);
 
 /**
  * Gets a signed profile image upload URL

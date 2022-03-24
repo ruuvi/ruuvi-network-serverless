@@ -2,9 +2,9 @@ const gatewayHelper = require('../Helpers/gatewayHelper');
 const dynamoHelper = require('../Helpers/dynamoHelper');
 const validator = require('../Helpers/validator');
 const errorCodes = require('../Helpers/errorCodes');
-const { wrapper } = require('../Helpers/wrapper');
+const { userWrapper } = require('../Helpers/wrapper');
 
-exports.handler = async (event, context) => wrapper(executeGetSensorData, event, context);
+exports.handler = async (event, context) => userWrapper(executeGetSensorData, event, context);
 
 const executeGetSensorData = async (event, context, sqlHelper, user) => {
   const query = event.queryStringParameters;
