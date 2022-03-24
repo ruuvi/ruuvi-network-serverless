@@ -8,51 +8,40 @@ const gatewayWrapper = require('../Helpers/wrapper').gatewayWrapper;
 
 AWS.config.update({ region: 'eu-central-1' });
 const kinesis = new AWS.Kinesis({ apiVersion: '2013-12-02' });
+const MAX_UPLOAD_DELAY = 30 * 24 * 60 * 60 * 1000; // 1 month
 
 /**
  * Sends received data to Kinesis Stream for processing
  */
 exports.handler = async (event, context) => gatewayWrapper(receiveData, event, context, true);
 
-const receiveData = async (event, context) => {
-  const eventBody = JSON.parse(event.body);
-  const data = eventBody.data;
+/**
+ * Validates that data in eventBody.data has all the required fields and is not too old.
+ * @return true if data is valid and should be processed.
+ */
+const validateInput = function (data) {
+  return (validator.validateAll(data, [
+    { name: 'tags', type: 'ARRAY', required: true },
+    { name: 'gw_mac', type: 'MAC', required: true },
+    { name: 'timestamp', type: 'INT', required: true },
+    { name: 'coordinates', type: 'STRING', required: true }
+  ]) &&
+  ((parseInt(data.timestamp) * 1000) > (Date.now() - MAX_UPLOAD_DELAY)));
+};
 
-  if (parseInt(process.env.DEBUG_MODE) === 1) {
-    console.info(eventBody);
-  }
-
-  // TODO: This validation is pretty rudimentary
-  const MAX_UPLOAD_DELAY = 30 * 24 * 60 * 60 * 1000; // 1 month
-
-  if (
-    !validator.validateAll(data, [
-      { name: 'tags', type: 'ARRAY', required: true },
-      { name: 'gw_mac', type: 'MAC', required: true },
-      { name: 'timestamp', type: 'INT', required: true },
-      { name: 'coordinates', type: 'STRING', required: true }
-    ]) ||
-        (parseInt(data.timestamp) * 1000) < Date.now() - MAX_UPLOAD_DELAY // Cap history upload
-  ) {
-    return gatewayHelper.invalid();
-  }
-
-  const throttleGW = await throttleHelper.throttle('gw_' + data.gw_mac, process.env.GATEWAY_THROTTLE_INTERVAL);
-
-  if (throttleGW) {
-    return gatewayHelper.throttledResponse();
-  }
-
-  // Process per Tag Throttling + Parse Tags from data
-  const unthrottledTags = {};
-  const tagIds = [];
-  for (const key in data.tags) {
-    // Process alerts first to alert if necessary, even if throttled
+/**
+ * Processes alerts for given keys in given tags in data.tags.
+ * @return 0 if processing was successful, 1 if exception occurred.
+ * @note Unknown dataformats are discarded, but return 0.
+ */
+const processAlerts = async (key, data) => {
+  let status = 0;
+  try {
     const alerts = await alertHelper.getAlerts(key, null, true);
     if (alerts.length > 0) {
       const alertData = sensorDataHelper.parseData(data.tags[key].data);
       if (alertData === null) {
-        console.error('Invalid data received: ' + data.tags[key].data);
+        console.debug('Unknown data received: ' + data.tags[key].data);
       } else {
         alertData.sensor_id = key;
         alertData.signal = data.tags[key].rssi; // Not a part of the data payload
@@ -60,20 +49,21 @@ const receiveData = async (event, context) => {
         await alertHelper.processAlerts(alerts, alertData);
       }
     }
-
-    // Process throttling
-    const throttleSensor = await throttleHelper.throttle(`sensor_${key}`, parseInt(process.env.MINIMUM_SENSOR_THROTTLE_INTERVAL) - 5);
-    if (throttleSensor) {
-      continue;
-    }
-
-    unthrottledTags[key] = data.tags[key];
-    // https://eslint.org/docs/rules/no-prototype-builtins
-    if (Object.prototype.hasOwnProperty.call(data.tags, key)) {
-      tagIds.push(key);
-    }
+  } catch (e) {
+    console.error('Error in alert processing ' + JSON.stringify(e));
+    status = 1;
   }
+  return status;
+};
 
+/**
+ * Send processed data to Kinesis for storing todatabase.
+ * @return 0 on success, 1 on Kinesis error, 2 on exception.
+ *
+ */
+
+const sendToKinesis = async (unthrottledTags, data, tagIds) => {
+  let kinesisStatus = 0;
   try {
     // Sensor data format
     const dataPacket = {
@@ -92,19 +82,64 @@ const receiveData = async (event, context) => {
       PartitionKey: data.gw_mac,
       StreamName: process.env.STREAM_NAME
     };
-
-    async function sendUpdate (params) {
-      return kinesis.putRecord(params).promise();
-    }
-
-    const res = await sendUpdate(params);
+    const res = await kinesis.putRecord(params).promise();
 
     if (!res.ShardId || !res.SequenceNumber) {
       console.error(res);
-      return gatewayHelper.invalid();
+      kinesisStatus = 1;
     }
   } catch (e) {
+    kinesisStatus = 2;
     console.error(`Write exception for ${data.gw_mac}`, e);
+  }
+  return kinesisStatus;
+};
+
+const receiveData = async (event, context) => {
+  const eventBody = JSON.parse(event.body);
+  const data = eventBody.data;
+
+  if (parseInt(process.env.DEBUG_MODE) === 1) {
+    console.info(eventBody);
+  }
+
+  if (!validateInput(data)) {
+    return gatewayHelper.invalid();
+  }
+
+  const throttleGW = await throttleHelper.throttle('gw_' + data.gw_mac, process.env.GATEWAY_THROTTLE_INTERVAL);
+
+  if (throttleGW) {
+    return gatewayHelper.throttledResponse();
+  }
+
+  // Process per Tag Throttling + Parse Tags from data
+  const unthrottledTags = {};
+  const tagIds = [];
+  // Process alerts first to alert if necessary, even if throttled
+  let alertStatus = 0;
+  for (const key in data.tags) {
+    alertStatus += await processAlerts(key, data);
+
+    // Process throttling
+    const throttleSensor = await throttleHelper.throttle(`sensor_${key}`, parseInt(process.env.MINIMUM_SENSOR_THROTTLE_INTERVAL) - 5);
+    if (throttleSensor) {
+      continue;
+    }
+
+    unthrottledTags[key] = data.tags[key];
+    // https://eslint.org/docs/rules/no-prototype-builtins
+    if (Object.prototype.hasOwnProperty.call(data.tags, key)) {
+      tagIds.push(key);
+    }
+  }
+  if (alertStatus !== 0) {
+    console.error('Exception in processing alerts');
+    return gatewayHelper.invalid();
+  }
+
+  const kinesisStatus = sendToKinesis(unthrottledTags, data, tagIds);
+  if (kinesisStatus !== 0) {
     return gatewayHelper.invalid();
   }
 

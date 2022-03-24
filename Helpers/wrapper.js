@@ -86,14 +86,14 @@ const gatewayWrapper = async (func, event, context, requireAuth = true) => {
     }
   } catch (e) {
     console.error('Unknown error in validation', e);
-    result = gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Error in signature validation', errorCodes.ER_INTERNAL);
+    return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Error in signature validation', errorCodes.ER_INTERNAL);
   }
 
   try {
     result = await func(event, context);
   } catch (e) {
     console.error('Unknown error in handler', e);
-    result = gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Very Unknown error occurred.', errorCodes.ER_INTERNAL);
+    return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Very Unknown error occurred.', errorCodes.ER_INTERNAL);
   }
 
   return result;
