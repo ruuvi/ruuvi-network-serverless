@@ -103,13 +103,15 @@ const receiveData = async (event, context) => {
     console.info(eventBody);
   }
 
+  console.info('Validation');
   if (!validateInput(data)) {
-    console.error("Validation step failed");
+    console.error('Validation step failed');
     return gatewayHelper.invalid();
   }
 
   const throttleGW = await throttleHelper.throttle('gw_' + data.gw_mac, process.env.GATEWAY_THROTTLE_INTERVAL);
 
+  console.info('Throttling GW');
   if (throttleGW) {
     return gatewayHelper.throttledResponse();
   }
@@ -117,33 +119,38 @@ const receiveData = async (event, context) => {
   // Process per Tag Throttling + Parse Tags from data
   const unthrottledTags = {};
   const tagIds = [];
-  // Process alerts first to alert if necessary, even if throttled
   let alertStatus = 0;
   for (const key in data.tags) {
+    // Process alerts first to alert if necessary, even if throttled
+    console.info('Processing Alerts');
     alertStatus += await processAlerts(key, data);
 
     // Process throttling
+    console.info('Throttling sensor');
     const throttleSensor = await throttleHelper.throttle(`sensor_${key}`, parseInt(process.env.MINIMUM_SENSOR_THROTTLE_INTERVAL) - 5);
     if (throttleSensor) {
       continue;
     }
 
     unthrottledTags[key] = data.tags[key];
-    // https://eslint.org/docs/rules/no-prototype-builtins
     if (Object.prototype.hasOwnProperty.call(data.tags, key)) {
       tagIds.push(key);
     }
   }
+
   if (alertStatus !== 0) {
     console.error('Exception in processing alerts');
     return gatewayHelper.invalid();
   }
 
+  console.info('Sending to Kinesis');
   const kinesisStatus = sendToKinesis(unthrottledTags, data, tagIds);
   if (kinesisStatus !== 0) {
+    console.error('Error in Kinesis');
     return gatewayHelper.internal();
   }
 
+  console.info('OK');
   // Include the gateway request rate by default
   return gatewayHelper.ok(null, {
     [gatewayHelper.RequestRateHeader]: process.env.GATEWAY_SEND_RATE
