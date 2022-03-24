@@ -104,6 +104,7 @@ const receiveData = async (event, context) => {
   }
 
   if (!validateInput(data)) {
+    console.error("Validation step failed");
     return gatewayHelper.invalid();
   }
 
@@ -140,7 +141,7 @@ const receiveData = async (event, context) => {
 
   const kinesisStatus = sendToKinesis(unthrottledTags, data, tagIds);
   if (kinesisStatus !== 0) {
-    return gatewayHelper.invalid();
+    return gatewayHelper.internal();
   }
 
   // Include the gateway request rate by default

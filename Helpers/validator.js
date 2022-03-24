@@ -24,7 +24,7 @@ const hasKeys = (given, target) => {
  * @param {object} given Given data object
  * @param {array} definitions Array of definitions: [{'name': ..., 'type': ..., required: true|false}, ...]
  * @param {bool} allowExtra If false, will reject validation if non-listed definitions are present
- * @returns true if valid, false otherwise
+ * @return true if valid, false otherwise
  */
 const validateAll = (given, definitions, allowExtra = true) => {
   const validatableTypes = ['MAC', 'EMAIL', 'TOKEN', 'INT', 'STRING', 'ARRAY'];
