@@ -2,9 +2,9 @@ const errorCodes = require('../Helpers/errorCodes');
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const validator = require('../Helpers/validator');
 const alertHelper = require('../Helpers/alertHelper');
-const { wrapper } = require('../Helpers/wrapper');
+const { userWrapper } = require('../Helpers/wrapper');
 
-exports.handler = async (event, context) => wrapper(executeGetAlerts, event, context);
+exports.handler = async (event, context) => userWrapper(executeGetAlerts, event, context);
 
 const executeGetAlerts = async (event, context, sqlHelper, user) => {
   // Fetch either filtered or full list

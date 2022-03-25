@@ -2,9 +2,9 @@ const gatewayHelper = require('../Helpers/gatewayHelper');
 const validator = require('../Helpers/validator');
 const errorCodes = require('../Helpers/errorCodes');
 
-const wrapper = require('../Helpers/wrapper').wrapper;
+const userWrapper = require('../Helpers/wrapper').userWrapper;
 
-exports.handler = async (event, context) => wrapper(executeUpdateSensor, event, context);
+exports.handler = async (event, context) => userWrapper(executeUpdateSensor, event, context);
 
 /**
  * Updates sensor profile (currently name)

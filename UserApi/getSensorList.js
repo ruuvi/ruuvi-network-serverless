@@ -1,9 +1,9 @@
 const gatewayHelper = require('../Helpers/gatewayHelper');
 const validator = require('../Helpers/validator');
 const dynamoHelper = require('../Helpers/dynamoHelper');
-const { wrapper } = require('../Helpers/wrapper');
+const { userWrapper } = require('../Helpers/wrapper');
 
-exports.handler = async (event, context) => wrapper(executeGetSensorList, event, context);
+exports.handler = async (event, context) => userWrapper(executeGetSensorList, event, context);
 
 /**
  * Fetches list of tags the user has shared.

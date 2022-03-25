@@ -5,9 +5,9 @@ const jwtHelper = require('../Helpers/JWTHelper');
 const userHelper = require('../Helpers/userHelper');
 const errorCodes = require('../Helpers/errorCodes');
 
-const { wrapper } = require('../Helpers/wrapper');
+const { userWrapper } = require('../Helpers/wrapper');
 
-exports.handler = async (event, context) => wrapper(executeRequestRegistration, event, context, false);
+exports.handler = async (event, context) => userWrapper(executeRequestRegistration, event, context, false);
 
 const executeRequestRegistration = async (event, context, sqlHelper) => {
   // TODO: This should no longer be required

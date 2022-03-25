@@ -3,9 +3,9 @@ const validator = require('../Helpers/validator');
 const errorCodes = require('../Helpers/errorCodes');
 const emailHelper = require('../Helpers/emailHelper');
 
-const wrapper = require('../Helpers/wrapper').wrapper;
+const userWrapper = require('../Helpers/wrapper').userWrapper;
 
-exports.handler = async (event, context) => wrapper(executeUnclaimSensor, event, context, true);
+exports.handler = async (event, context) => userWrapper(executeUnclaimSensor, event, context, true);
 
 /**
  * Unclaims a sensor.

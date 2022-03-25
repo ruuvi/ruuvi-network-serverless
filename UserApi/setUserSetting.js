@@ -2,9 +2,9 @@ const gatewayHelper = require('../Helpers/gatewayHelper');
 const validator = require('../Helpers/validator');
 const errorCodes = require('../Helpers/errorCodes.js');
 
-const { wrapper } = require('../Helpers/wrapper');
+const { userWrapper } = require('../Helpers/wrapper');
 
-exports.handler = async (event, context) => wrapper(executeSetUserSetting, event, context);
+exports.handler = async (event, context) => userWrapper(executeSetUserSetting, event, context);
 
 const executeSetUserSetting = async (event, context, sqlHelper, user) => {
   const eventBody = JSON.parse(event.body);
