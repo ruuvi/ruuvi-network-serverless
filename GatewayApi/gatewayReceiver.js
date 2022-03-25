@@ -9,6 +9,9 @@ const gatewayWrapper = require('../Helpers/wrapper').gatewayWrapper;
 AWS.config.update({ region: 'eu-central-1' });
 const kinesis = new AWS.Kinesis({ apiVersion: '2013-12-02' });
 const MAX_UPLOAD_DELAY = 30 * 24 * 60 * 60 * 1000; // 1 month
+const STATUS_SUCCESS = 0;
+const STATUS_ERROR = 1;
+const STATUS_EXCEPTION = 2;
 
 /**
  * Sends received data to Kinesis Stream for processing
@@ -35,13 +38,13 @@ const validateInput = function (data) {
  * @note Unknown dataformats are discarded, but return 0.
  */
 const processAlerts = async (key, data) => {
-  let status = 0;
+  let status = STATUS_SUCCESS;
   try {
     const alerts = await alertHelper.getAlerts(key, null, true);
     if (alerts.length > 0) {
       const alertData = sensorDataHelper.parseData(data.tags[key].data);
       if (alertData === null) {
-        console.debug('Unknown data received: ' + data.tags[key].data);
+        // No action needed, unknown / unofficial dataformat.
       } else {
         alertData.sensor_id = key;
         alertData.signal = data.tags[key].rssi; // Not a part of the data payload
@@ -51,7 +54,7 @@ const processAlerts = async (key, data) => {
     }
   } catch (e) {
     console.error('Error in alert processing ' + JSON.stringify(e));
-    status = 1;
+    status = STATUS_EXCEPTION;
   }
   return status;
 };
@@ -63,7 +66,7 @@ const processAlerts = async (key, data) => {
  */
 
 const sendToKinesis = async (unthrottledTags, data, tagIds) => {
-  let kinesisStatus = 0;
+  let kinesisStatus = STATUS_SUCCESS;
   try {
     // Sensor data format
     const dataPacket = {
@@ -86,10 +89,10 @@ const sendToKinesis = async (unthrottledTags, data, tagIds) => {
 
     if (!res.ShardId || !res.SequenceNumber) {
       console.error(res);
-      kinesisStatus = 1;
+      kinesisStatus = STATUS_ERROR;
     }
   } catch (e) {
-    kinesisStatus = 2;
+    kinesisStatus = STATUS_EXCEPTION;
     console.error(`Write exception for ${data.gw_mac}`, e);
   }
   return kinesisStatus;
@@ -103,7 +106,6 @@ const receiveData = async (event, context) => {
     console.info(eventBody);
   }
 
-  console.info('Validation');
   if (!validateInput(data)) {
     console.error('Validation step failed');
     return gatewayHelper.invalid();
@@ -111,7 +113,6 @@ const receiveData = async (event, context) => {
 
   const throttleGW = await throttleHelper.throttle('gw_' + data.gw_mac, process.env.GATEWAY_THROTTLE_INTERVAL);
 
-  console.info('Throttling GW');
   if (throttleGW) {
     return gatewayHelper.throttledResponse();
   }
@@ -119,14 +120,15 @@ const receiveData = async (event, context) => {
   // Process per Tag Throttling + Parse Tags from data
   const unthrottledTags = {};
   const tagIds = [];
-  let alertStatus = 0;
+  let alertStatus = STATUS_SUCCESS;
   for (const key in data.tags) {
     // Process alerts first to alert if necessary, even if throttled
-    console.info('Processing Alerts');
-    alertStatus += await processAlerts(key, data);
+    const runStatus = await processAlerts(key, data);
+    if (runStatus !== STATUS_SUCCESS) {
+      alertStatus = runStatus;
+    }
 
     // Process throttling
-    console.info('Throttling sensor');
     const throttleSensor = await throttleHelper.throttle(`sensor_${key}`, parseInt(process.env.MINIMUM_SENSOR_THROTTLE_INTERVAL) - 5);
     if (throttleSensor) {
       continue;
@@ -138,19 +140,17 @@ const receiveData = async (event, context) => {
     }
   }
 
-  if (alertStatus !== 0) {
+  if (alertStatus !== STATUS_SUCCESS) {
     console.error('Exception in processing alerts');
     return gatewayHelper.invalid();
   }
 
-  console.info('Sending to Kinesis');
   const kinesisStatus = await sendToKinesis(unthrottledTags, data, tagIds);
-  if (kinesisStatus !== 0) {
+  if (kinesisStatus !== STATUS_SUCCESS) {
     console.error(`Error in Kinesis. Data ${data}, tagIds ${tagIds}, unthrottledTags ${unthrottledTags}`);
     return gatewayHelper.internal();
   }
 
-  console.info('OK');
   // Include the gateway request rate by default
   return gatewayHelper.ok(null, {
     [gatewayHelper.RequestRateHeader]: process.env.GATEWAY_SEND_RATE
