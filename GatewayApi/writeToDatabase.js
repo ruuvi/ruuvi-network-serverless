@@ -5,6 +5,37 @@ const dynamoHelper = require('../Helpers/dynamoHelper');
 const throttleHelper = require('../Helpers/throttleHelper');
 const kinesisHelper = require('../Helpers/kinesisHelper');
 
+/**
+ *
+ * Lambda treats a batch as a complete success if you return any of the following:
+ *  An empty batchItemFailure list
+ *  A null batchItemFailure list
+ *  An empty EventResponse
+ *  A null EventResponse
+ * https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html#services-kinesis-batchfailurereporting
+*/
+const successResponse =
+{
+  batchItemFailures: []
+};
+
+/**
+ *
+ * Lambda treats a batch as a complete failure if you return any of the following:
+ *  An empty string itemIdentifier
+ *  A null itemIdentifier
+ *  An itemIdentifier with a bad key name
+ * https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html#services-kinesis-batchfailurereporting
+*/
+const errorResponse =
+{
+  batchItemFailures: [
+    {
+      itemIdentifier: ''
+    }
+  ]
+};
+
 exports.handler = async (event) => {
   const whitelistTableName = process.env.WHITELIST_TABLE_NAME;
   const interval = parseInt(process.env.MAXIMUM_STORAGE_INTERVAL - 5);
@@ -18,7 +49,9 @@ exports.handler = async (event) => {
       if (err) {
         console.error('Error', err);
       }
-    }).promise();
+    }).promise().catch((error) => {
+      console.error(error);
+    });
   }
 
   const uploadBatchPromises = [];
@@ -129,8 +162,10 @@ exports.handler = async (event) => {
 
       const updateLatest = dynamo.updateItem(params, function (err, data) {
         if (err) {
-          console.log('Error', err);
+          console.error('Error', err);
         }
+      }).catch((error) => {
+        console.error(error);
       });
 
       uploadBatchPromises.push(updateLatest);
@@ -140,7 +175,10 @@ exports.handler = async (event) => {
   // Note: async's in Lambdas should always be awaited as exiting the function
   // pauses the execution context and there is no guarantee that the same one
   // will be resumed in the future.
-  await Promise.all(uploadBatchPromises);
+  await Promise.all(uploadBatchPromises).catch(function (err) {
+    console.error(err);
+    return errorResponse;
+  });
 
   console.log(JSON.stringify({
     queueRecords: event.Records.length,
@@ -148,5 +186,5 @@ exports.handler = async (event) => {
     records: uploadedRecords
   }));
 
-  return `queueRecords: ${event.Records.length}, batches: ${uploadedBatches}, records: ${uploadedRecords}`;
+  return successResponse;
 };
