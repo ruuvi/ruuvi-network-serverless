@@ -136,7 +136,7 @@ const processKinesisQueue = async (event) => {
         if (err) {
           console.error('Error', err);
         }
-      }).catch((error) => {
+      }).promise().catch((error) => {
         console.error(error);
       });
 
