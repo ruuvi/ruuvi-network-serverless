@@ -94,7 +94,7 @@ const internal = (headers, body, internalCode, internalSubCode) => response(HTTP
 const logAPIError = (code, errorMessage, errorData, internalCode, internalSubCode) => {
   internalCode = internalCode || '';
   internalSubCode = internalSubCode || '';
-  console.error(
+  console.warn(
         `API Error (${internalCode} ${internalSubCode} [${code}]): ${errorMessage}` + ((typeof errorData !== 'undefined' && errorData !== null) ? '\n' + JSON.stringify(errorData, null, 4) : '')
   );
 };

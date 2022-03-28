@@ -75,7 +75,7 @@ const gatewayWrapper = async (func, event, context, requireAuth = true) => {
         const ttl = 60 * 60 * 24 * 3; // 3 days
         await redis.set('invalid_signature_' + data.gw_mac.toUpperCase(), validator.now(), 'EX', ttl);
 
-        console.error(`${data.gw_mac} - Invalid signature: ${signature}`);
+        console.info(`${data.gw_mac} - Invalid signature: ${signature}`);
         // Check signature if signature is present, or if it is enforced to be present
         if (parseInt(process.env.ENFORCE_SIGNATURE) === 1 || signature !== null) {
           return gatewayHelper.unauthorizedResponse();
@@ -85,7 +85,7 @@ const gatewayWrapper = async (func, event, context, requireAuth = true) => {
       }
     }
   } catch (e) {
-    console.error('Unknown error in validation', e);
+    console.warn('Unknown error in validation', e);
     return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Error in signature validation', errorCodes.ER_INTERNAL);
   }
 
