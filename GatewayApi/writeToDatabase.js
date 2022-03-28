@@ -4,39 +4,11 @@ const dynamo = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 const dynamoHelper = require('../Helpers/dynamoHelper');
 const throttleHelper = require('../Helpers/throttleHelper');
 const kinesisHelper = require('../Helpers/kinesisHelper');
+const kinesisWrapper = require('../Helpers/wrapper').kinesisWrapper;
 
-/**
- *
- * Lambda treats a batch as a complete success if you return any of the following:
- *  An empty batchItemFailure list
- *  A null batchItemFailure list
- *  An empty EventResponse
- *  A null EventResponse
- * https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html#services-kinesis-batchfailurereporting
-*/
-const successResponse =
-{
-  batchItemFailures: []
-};
+exports.handler = async (event) => kinesisWrapper(processKinesisQueue, event);
 
-/**
- *
- * Lambda treats a batch as a complete failure if you return any of the following:
- *  An empty string itemIdentifier
- *  A null itemIdentifier
- *  An itemIdentifier with a bad key name
- * https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html#services-kinesis-batchfailurereporting
-*/
-const errorResponse =
-{
-  batchItemFailures: [
-    {
-      itemIdentifier: ''
-    }
-  ]
-};
-
-exports.handler = async (event) => {
+const processKinesisQueue = async (event) => {
   const whitelistTableName = process.env.WHITELIST_TABLE_NAME;
   const interval = parseInt(process.env.MAXIMUM_STORAGE_INTERVAL - 5);
   const dataTTL = parseInt(process.env.DATA_TTL);
@@ -177,7 +149,7 @@ exports.handler = async (event) => {
   // will be resumed in the future.
   await Promise.all(uploadBatchPromises).catch(function (err) {
     console.error(err);
-    return errorResponse;
+    return false;
   });
 
   console.log(JSON.stringify({
@@ -186,5 +158,5 @@ exports.handler = async (event) => {
     records: uploadedRecords
   }));
 
-  return successResponse;
+  return true;
 };

@@ -27,7 +27,7 @@ const userWrapper = async (func, event, context, requireAuth = true) => {
   try {
     result = await func(event, context, sqlHelper, user);
   } catch (e) {
-    console.error('Unknown error in handler', e);
+    console.error('Unknown error in user handler', e);
     result = gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Very Unknown error occurred.', errorCodes.ER_INTERNAL);
   }
 
@@ -92,14 +92,70 @@ const gatewayWrapper = async (func, event, context, requireAuth = true) => {
   try {
     result = await func(event, context);
   } catch (e) {
-    console.error('Unknown error in handler', e);
+    console.error('Unknown error in gateway handler', e);
     return gatewayHelper.errorResponse(gatewayHelper.HTTPCodes.INTERNAL, 'Very Unknown error occurred.', errorCodes.ER_INTERNAL);
   }
 
   return result;
 };
 
+/**
+ *
+ * Lambda treats a batch as a complete success if you return any of the following:
+ *  An empty batchItemFailure list
+ *  A null batchItemFailure list
+ *  An empty EventResponse
+ *  A null EventResponse
+ * https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html#services-kinesis-batchfailurereporting
+*/
+const kinesisSuccessResponse =
+{
+  batchItemFailures: []
+};
+
+/**
+ *
+ * Lambda treats a batch as a complete failure if you return any of the following:
+ *  An empty string itemIdentifier
+ *  A null itemIdentifier
+ *  An itemIdentifier with a bad key name
+ * https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html#services-kinesis-batchfailurereporting
+*/
+const kinesisErrorResponse =
+{
+  batchItemFailures: [
+    {
+      itemIdentifier: ''
+    }
+  ]
+};
+
+/**
+ * Wraps the internal API to perform exception management a centralized way.
+ *
+ * @param {*} func Function to be executed, must return true on success and false on failure
+ * @param {*} event Lambda event
+ * @return kinesis complete success response on successful execution of func,
+ *         kinesis complete failure response if func throws exception or returns false.
+ */
+const kinesisWrapper = async (func, event) => {
+  let result = false;
+
+  try {
+    result = await func(event);
+  } catch (e) {
+    console.error('Unknown error in internal handler', e);
+    result = false;
+  }
+
+  if (result) {
+    return kinesisSuccessResponse;
+  }
+  return kinesisErrorResponse;
+};
+
 module.exports = {
   userWrapper,
-  gatewayWrapper
+  gatewayWrapper,
+  kinesisWrapper
 };
