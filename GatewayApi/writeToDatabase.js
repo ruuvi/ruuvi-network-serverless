@@ -4,8 +4,11 @@ const dynamo = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 const dynamoHelper = require('../Helpers/dynamoHelper');
 const throttleHelper = require('../Helpers/throttleHelper');
 const kinesisHelper = require('../Helpers/kinesisHelper');
+const kinesisWrapper = require('../Helpers/wrapper').kinesisWrapper;
 
-exports.handler = async (event) => {
+exports.handler = async (event) => kinesisWrapper(processKinesisQueue, event);
+
+const processKinesisQueue = async (event) => {
   const whitelistTableName = process.env.WHITELIST_TABLE_NAME;
   const interval = parseInt(process.env.MAXIMUM_STORAGE_INTERVAL - 5);
   const dataTTL = parseInt(process.env.DATA_TTL);
@@ -18,7 +21,9 @@ exports.handler = async (event) => {
       if (err) {
         console.error('Error', err);
       }
-    }).promise();
+    }).promise().catch((error) => {
+      console.error(error);
+    });
   }
 
   const uploadBatchPromises = [];
@@ -129,8 +134,10 @@ exports.handler = async (event) => {
 
       const updateLatest = dynamo.updateItem(params, function (err, data) {
         if (err) {
-          console.log('Error', err);
+          console.error('Error', err);
         }
+      }).promise().catch((error) => {
+        console.error(error);
       });
 
       uploadBatchPromises.push(updateLatest);
@@ -140,7 +147,10 @@ exports.handler = async (event) => {
   // Note: async's in Lambdas should always be awaited as exiting the function
   // pauses the execution context and there is no guarantee that the same one
   // will be resumed in the future.
-  await Promise.all(uploadBatchPromises);
+  await Promise.all(uploadBatchPromises).catch(function (err) {
+    console.error(err);
+    return false;
+  });
 
   console.log(JSON.stringify({
     queueRecords: event.Records.length,
@@ -148,5 +158,5 @@ exports.handler = async (event) => {
     records: uploadedRecords
   }));
 
-  return `queueRecords: ${event.Records.length}, batches: ${uploadedBatches}, records: ${uploadedRecords}`;
+  return true;
 };

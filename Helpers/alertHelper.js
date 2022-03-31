@@ -293,7 +293,6 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
       previousValue = alertData.counter;
       const movementCounter = parseInt(sensorData.movementCounter);
       if (isNaN(movementCounter)) {
-        console.error('Parsed Movement Counter was NaN', sensorData, alertData);
         await refreshAlertCache(sensorData.sensor_id);
         return;
       }
@@ -320,7 +319,7 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
     }
 
     if (sendEmail) {
-      console.log(`Sending email for ${alertData.type} Alert (${triggerType} for sensor ${name} [${sensorData.sensor_id}]) to user: ${alertData.userId}`);
+      console.info(`Sending email for ${alertData.type} Alert (${triggerType} for sensor ${name} [${sensorData.sensor_id}]) to user: ${alertData.userId}`);
       let currentValue = alertData.type === 'movement' ? sensorData.movementCounter : sensorData[alertData.type];
       let thresholdValue = previousValue;
 
@@ -343,7 +342,7 @@ const triggerAlert = async (alertData, sensorData, triggerType, overrideEnabled 
         alertData: alertData.description
       };
 
-      console.log(JSON.stringify(sendEmailData));
+      console.debug(JSON.stringify(sendEmailData));
 
       try {
         await emailHelper.sendAlertEmail(
