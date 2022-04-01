@@ -103,7 +103,7 @@ const receiveData = async (event, context) => {
   const data = eventBody.data;
 
   if (parseInt(process.env.DEBUG_MODE) === 1) {
-    console.info(eventBody);
+    console.debug(eventBody);
   }
 
   if (!validateInput(data)) {

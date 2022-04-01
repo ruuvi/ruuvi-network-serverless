@@ -12,7 +12,7 @@ plugins:
 custom:
   stage: ${opt:stage, self:provider.stage}
 
-  debugMode: 0 # Increased logging if 1
+  debugMode: ${ssm:${self:custom.stage}-debugMode, 0} # Increased logging if 1
 
   # Kinesis mode
   #gatewayStream: ${self:custom.stage}-ruuvi-sensor-stream
@@ -218,6 +218,7 @@ functions:
           maximumRetryAttempts: 3
           enabled: true
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       TABLE_NAME: ${self:custom.dynamoSensorData}
       MAXIMUM_STORAGE_INTERVAL: ${self:custom.denseDataInterval}
       DATA_TTL: ${self:custom.rawDataTTL}
@@ -244,6 +245,7 @@ functions:
           maximumRetryAttempts: 3
           enabled: true
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       TABLE_NAME: ${self:custom.dynamoSensorDataReduced}
       MAXIMUM_STORAGE_INTERVAL: ${self:custom.sparseDataInterval}
       DATA_TTL: 0
@@ -259,7 +261,7 @@ functions:
           path: /get
           #payload: '2.0'
     environment:
-      DEBUG: 1
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}

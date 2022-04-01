@@ -154,7 +154,7 @@ const executeGetSensorData = async (event, context, sqlHelper, user) => {
   response.total = data.length;
   response.measurements = data;
 
-  if (parseInt(process.env.DEBUG) === 1) {
+  if (parseInt(process.env.DEBUG_MODE) === 1) {
     response.table = tableName;
     response.resolvedMode = mode;
   }
