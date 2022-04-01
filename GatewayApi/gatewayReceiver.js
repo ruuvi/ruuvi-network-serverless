@@ -102,7 +102,7 @@ const receiveData = async (event, context) => {
   const eventBody = JSON.parse(event.body);
   const data = eventBody.data;
 
-  if (parseInt(process.env.debugMode) === 1) {
+  if (parseInt(process.env.DEBUG_MODE) === 1) {
     console.debug(eventBody);
   }
 

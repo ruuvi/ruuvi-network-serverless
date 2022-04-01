@@ -52,7 +52,7 @@ const processKinesisQueue = async (event) => {
 
     // -- INSTRUMENT PLACEHOLDER --
     if (!loggedGateways.includes(gwmac)) {
-      if (parseInt(process.env.debugMode) === 1) {
+      if (parseInt(process.env.DEBUG_MODE) === 1) {
         console.debug('GW: ' + gwmac);
       }
       loggedGateways.push(gwmac);
@@ -62,14 +62,14 @@ const processKinesisQueue = async (event) => {
     const timestamp = meta.timestamp;
 
     const sensors = data;
-    if (parseInt(process.env.debugMode) === 1) {
+    if (parseInt(process.env.DEBUG_MODE) === 1) {
       console.debug('Processing sensor data');
     }
 
     await Promise.all(Object.keys(sensors).map(async (key) => {
       // Dedupe
       if (batchedIds.includes(key + ',' + sensors[key].timestamp)) {
-        if (parseInt(process.env.debugMode) === 1) {
+        if (parseInt(process.env.DEBUG_MODE) === 1) {
           console.debug('Deduped ' + key);
         }
         return;
@@ -109,7 +109,7 @@ const processKinesisQueue = async (event) => {
     uploadedBatches++;
     uploadedRecords += flattenedData.length;
   }
-  if (parseInt(process.env.debugMode) === 1) {
+  if (parseInt(process.env.DEBUG_MODE) === 1) {
     console.debug('Sensor data processed, processing Gateway status');
   }
 
@@ -145,7 +145,7 @@ const processKinesisQueue = async (event) => {
       const updateLatest = dynamo.updateItem(params, function (err, data) {
         if (err) {
           console.error('Error', err);
-        } else if (parseInt(process.env.debugMode) === 1) {
+        } else if (parseInt(process.env.DEBUG_MODE) === 1) {
           console.debug('updateItem result:' + JSON.stringify(data));
         }
       }).promise().catch((error) => {
@@ -155,7 +155,7 @@ const processKinesisQueue = async (event) => {
       uploadBatchPromises.push(updateLatest);
     }
   }
-  if (parseInt(process.env.debugMode) === 1) {
+  if (parseInt(process.env.DEBUG_MODE) === 1) {
     console.debug('Gateway status processed, uploading data to DynamoDB');
   }
 
