@@ -62,14 +62,14 @@ const processKinesisQueue = async (event) => {
     const timestamp = meta.timestamp;
 
     const sensors = data;
-    if (parseInt(process.env.DEBUG_MODE) === 1) {
+    if (parseInt(process.env.debugMode) === 1) {
       console.debug('Processing sensor data');
     }
 
     await Promise.all(Object.keys(sensors).map(async (key) => {
       // Dedupe
       if (batchedIds.includes(key + ',' + sensors[key].timestamp)) {
-        if (parseInt(process.env.DEBUG_MODE) === 1) {
+        if (parseInt(process.env.debugMode) === 1) {
           console.debug('Deduped ' + key);
         }
         return;
