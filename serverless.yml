@@ -12,7 +12,7 @@ plugins:
 custom:
   stage: ${opt:stage, self:provider.stage}
 
-  debugMode: 0 # Increased logging if 1
+  debugMode: ${self:custom.stage}-debugMode # Increased logging if 1
 
   # Kinesis mode
   #gatewayStream: ${self:custom.stage}-ruuvi-sensor-stream

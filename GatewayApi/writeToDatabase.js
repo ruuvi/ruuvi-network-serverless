@@ -52,7 +52,9 @@ const processKinesisQueue = async (event) => {
 
     // -- INSTRUMENT PLACEHOLDER --
     if (!loggedGateways.includes(gwmac)) {
-      console.info('GW: ' + gwmac);
+      if (parseInt(process.env.debugMode) === 1) {
+        console.debug('GW: ' + gwmac);
+      }
       loggedGateways.push(gwmac);
     }
 
@@ -60,11 +62,16 @@ const processKinesisQueue = async (event) => {
     const timestamp = meta.timestamp;
 
     const sensors = data;
+    if (parseInt(process.env.DEBUG_MODE) === 1) {
+      console.debug('Processing sensor data');
+    }
 
     await Promise.all(Object.keys(sensors).map(async (key) => {
       // Dedupe
       if (batchedIds.includes(key + ',' + sensors[key].timestamp)) {
-        console.info('Deduped ' + key);
+        if (parseInt(process.env.DEBUG_MODE) === 1) {
+          console.debug('Deduped ' + key);
+        }
         return;
       }
 
@@ -102,6 +109,9 @@ const processKinesisQueue = async (event) => {
     uploadedBatches++;
     uploadedRecords += flattenedData.length;
   }
+  if (parseInt(process.env.debugMode) === 1) {
+    console.debug('Sensor data processed, processing Gateway status');
+  }
 
   // Log the last seen for all gateways
   if (loggedGateways.length > 0) {
@@ -135,6 +145,8 @@ const processKinesisQueue = async (event) => {
       const updateLatest = dynamo.updateItem(params, function (err, data) {
         if (err) {
           console.error('Error', err);
+        } else if (parseInt(process.env.debugMode) === 1) {
+          console.debug('updateItem result:' + JSON.stringify(data));
         }
       }).promise().catch((error) => {
         console.error(error);
@@ -142,6 +154,9 @@ const processKinesisQueue = async (event) => {
 
       uploadBatchPromises.push(updateLatest);
     }
+  }
+  if (parseInt(process.env.debugMode) === 1) {
+    console.debug('Gateway status processed, uploading data to DynamoDB');
   }
 
   // Note: async's in Lambdas should always be awaited as exiting the function
