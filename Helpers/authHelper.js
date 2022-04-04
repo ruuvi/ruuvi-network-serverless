@@ -25,7 +25,7 @@ const authorizedUser = async (headers) => {
   }
 
   if (!validator.validateToken(token)) {
-    console.error('Invalid token: ' + token);
+    console.warn('Invalid token: ' + token);
     return null;
   }
 
@@ -74,7 +74,7 @@ const validateGatewaySignature = async (givenSignature, data, gatewayMacAddress,
 
   const gatewayData = await dynamoHelper.getGatewayData(gatewayMacAddress);
   if (!gatewayData || gatewayData.length === 0) {
-    console.error('Gateway not whitelisted: ' + gatewayMacAddress);
+    console.warn('Gateway not whitelisted: ' + gatewayMacAddress);
     return false;
   }
 
@@ -99,13 +99,13 @@ const validateSignature = (givenSignature, data, timestamp, maxAge, secret) => {
   const tsMs = timestamp * 1000;
   if (now - tsMs > maxAge) {
     const diff = now - tsMs;
-    console.error(`Signature expired; diff:${diff}, max-age:${maxAge}, now:${now}, ts:${tsMs}`);
+    console.warn(`Signature expired; diff:${diff}, max-age:${maxAge}, now:${now}, ts:${tsMs}`);
     return false;
   }
 
   const signature = createSignature(data, secret);
   if (signature !== givenSignature) {
-    console.error(`Non-matching signatures: Calculated: ${signature}, Given: ${givenSignature}`);
+    console.warn(`Non-matching signatures: Calculated: ${signature}, Given: ${givenSignature}`);
   }
 
   return givenSignature === signature;
