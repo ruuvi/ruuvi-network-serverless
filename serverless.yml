@@ -362,6 +362,21 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
 
+checkSensor:
+    handler: UserApi/checkSensor.handler
+    #reservedConcurrency: ${self:custom.lambdaConcurrency}
+    events:
+      - httpApi:
+          method: GET
+          path: /check
+          #payload: '2.0'
+    environment:
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
+
   claimSensor:
     handler: UserApi/claimSensor.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}

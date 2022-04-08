@@ -1,4 +1,4 @@
-const { describe, expect } = require('@jest/globals');
+const { afterEach, beforeEach, describe, expect } = require('@jest/globals');
 
 /**
  * @jest-environment node
@@ -9,28 +9,39 @@ const { describe, expect } = require('@jest/globals');
  */
 const {
   utils,
-
   itif,
   get,
   post,
-
   RI,
-
   secondaryHttp,
-
   secondaryEmail,
   unregisteredEmail,
-
-  createSensorWithData
+  createSensorWithData,
+  createWhitelistedGateway,
+  removeWhitelistedGateway
 } = require('./common');
 const { randomMac } = require('./integrationHelpers');
 
 // Set up some defaults
 const newSensorMac = utils.randomMac();
+let individualAlertGatewayMac = null;
+let individualAlertGatewaySecret = null;
+let individualAlertGatewayConnection = null;
 
 describe('Shares test suite', () => {
+  beforeEach(() => {
+    individualAlertGatewayMac = utils.randomMac();
+    individualAlertGatewaySecret = utils.randomMac();
+    individualAlertGatewayConnection = createWhitelistedGateway(individualAlertGatewayMac, individualAlertGatewaySecret);
+  });
+
+  afterEach(() => {
+    removeWhitelistedGateway(individualAlertGatewayMac);
+    individualAlertGatewayConnection = null;
+  });
+
   itif(RI)('`claim` and record data is successful (PRE-REQUISITE)', async () => {
-    const createDefault = await createSensorWithData(newSensorMac, utils.randomMac(), null, 'share-default-test-sensor');
+    const createDefault = await createSensorWithData(newSensorMac, individualAlertGatewayConnection, null, 'share-default-test-sensor');
     expect(createDefault).toBe(true);
   });
 
@@ -89,11 +100,10 @@ describe('Shares test suite', () => {
   });
 
   itif(RI)('`share` is successful and shows original name', async () => {
-    const sharedWithNameGatewayMac = randomMac();
     const sharedWithNameMac = randomMac();
     const sharedWithNameName = 'TEST-WITH-NAME-ORIGINALöööäöäö';
 
-    const createResult = await createSensorWithData(sharedWithNameMac, sharedWithNameGatewayMac, null, sharedWithNameName);
+    const createResult = await createSensorWithData(sharedWithNameMac, individualAlertGatewayConnection, null, sharedWithNameName);
     expect(createResult).toBe(true);
 
     let shareResult = null;
@@ -126,11 +136,10 @@ describe('Shares test suite', () => {
   });
 
   itif(RI)('`unclaim` (TO BE DEPRECATED) on sharee unshares sensor', async () => {
-    const sharedWithNameGatewayMac = randomMac();
     const sharedWithNameMac = randomMac();
     const sharedWithNameName = 'TEST-FOR-UNSHARING-VIA-UNCLAIM';
 
-    const createResult = await createSensorWithData(sharedWithNameMac, sharedWithNameGatewayMac, null, sharedWithNameName);
+    const createResult = await createSensorWithData(sharedWithNameMac, individualAlertGatewayConnection, null, sharedWithNameName);
     expect(createResult).toBe(true);
 
     let shareResult = null;
@@ -192,12 +201,11 @@ describe('Shares test suite', () => {
   });
 
   itif(RI)('`share` is successful and shows name set by sharee', async () => {
-    const sharedWithNameGatewayMac = randomMac();
     const sharedWithNameMac = randomMac();
     const sharedWithNameName = 'TEST-WITH-NAME';
     const sharedWithNameShareeName = 'SHAREE-WITH-NAME';
 
-    const createResult = await createSensorWithData(sharedWithNameMac, sharedWithNameGatewayMac, null, sharedWithNameName);
+    const createResult = await createSensorWithData(sharedWithNameMac, individualAlertGatewayConnection, null, sharedWithNameName);
     expect(createResult).toBe(true);
 
     let shareResult = null;
