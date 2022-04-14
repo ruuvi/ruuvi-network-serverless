@@ -132,13 +132,18 @@ const createWhitelistedGateway = async (mac, secret) => {
 
   await sleep(1000);
 
-  const result = await post('whitelist', {
-    macAddress: mac,
-    secret: secret
-  }, internalHttp);
+  try {
+    const result = await post('whitelist', {
+      macAddress: mac,
+      secret: secret
+    }, internalHttp);
 
-  expect(result.status).toBe(200);
-  expect(result.data.data.gateway.macAddress).toBe(mac);
+    expect(result.status).toBe(200);
+    expect(result.data.data.gateway.macAddress).toBe(mac);
+  } catch (e) {
+    rejected = true;
+  }
+  expect(rejected).toBe(false, 'whitelisting accepted');
   /**
  * HTTP Client mimicing Gateway.
  */
@@ -163,8 +168,8 @@ const removeWhitelistedGateway = async (mac) => {
     expect(result.status).toBe(200);
   } catch (e) {
     console.error(e.result.status);
+    expect(true).toBe(false);
   }
-  expect(true).toBe(false);
 };
 
 /*
