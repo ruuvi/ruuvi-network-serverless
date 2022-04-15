@@ -117,12 +117,18 @@ const sleep = async (ms) => {
 const createWhitelistedGateway = async (mac, secret) => {
   let rejected = false;
   try {
+    const tags = {};
+    tags[utils.randomMac()] = {
+      rssi: -76,
+      timestamp: Date.now() - 50,
+      data: testData
+    };
     await post('record', {
       data: {
         coordinates: '',
         timestamp: Date.now(),
         gw_mac: mac,
-        tags: []
+        tags: tags
       }
     }, httpWithInvalidSignature);
   } catch (e) {
