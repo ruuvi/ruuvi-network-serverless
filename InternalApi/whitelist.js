@@ -66,7 +66,7 @@ exports.handler = async (event, context) => {
         seen = true;
       }
     }
-    console.log(`Successfully fetched invalid signature timestamp for ${macAddress}`, lastSeen);
+    console.log(`Successfully fetched invalid signature timestamp ${lastSeen} for ${macAddress}`);
   } catch (e) {
     console.error('Error fetching invalid signature timestamp', e);
     gatewaySeen = {
