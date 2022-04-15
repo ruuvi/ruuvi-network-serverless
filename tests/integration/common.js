@@ -132,6 +132,7 @@ const createWhitelistedGateway = async (mac, secret) => {
 
   await sleep(1000);
 
+  rejected = false;
   try {
     const result = await post('whitelist', {
       macAddress: mac,
@@ -143,7 +144,7 @@ const createWhitelistedGateway = async (mac, secret) => {
   } catch (e) {
     rejected = true;
   }
-  expect(rejected).toBe(false, 'whitelisting accepted');
+  expect(rejected).toBe(false, 'whitelisting failed');
   /**
  * HTTP Client mimicing Gateway.
  */
