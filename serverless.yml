@@ -362,7 +362,7 @@ functions:
       DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
       SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
 
-checkSensor:
+  checkSensor:
     handler: UserApi/checkSensor.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
     events:
