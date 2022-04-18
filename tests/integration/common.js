@@ -136,7 +136,7 @@ const createWhitelistedGateway = async (mac, secret) => {
   }
   expect(rejected).toBe(true, 'rejected signature');
 
-  await sleep(1000);
+  await sleep(2000);
 
   rejected = false;
   try {

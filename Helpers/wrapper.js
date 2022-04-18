@@ -3,6 +3,7 @@ const sqlHelper = require('../Helpers/sqlHelper');
 const errorCodes = require('../Helpers/errorCodes');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
+const redis = require('../Helpers/redisHelper').getClient();
 
 /**
  * Wraps the function to perform connection management in a centralized way.
@@ -69,7 +70,6 @@ const gatewayWrapper = async (func, event, context, requireAuth = true) => {
       );
 
       if (!validationResult) {
-        const redis = require('../Helpers/redisHelper').getClient();
         const gwMac = data.gw_mac.toUpperCase();
 
         // Log Invalid Signature to Redis for Validation
