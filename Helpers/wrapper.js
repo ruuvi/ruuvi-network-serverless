@@ -74,7 +74,8 @@ const gatewayWrapper = async (func, event, context, requireAuth = true) => {
 
         // Log Invalid Signature to Redis for Validation
         const ttl = 60 * 60 * 24 * 3; // 3 days
-        await redis.set('invalid_signature_' + gwMac, validator.now(), 'EX', ttl);
+        const keyString = 'invalid_signature_' + gwMac;
+        await redis.set(keyString, validator.now(), 'EX', ttl);
 
         console.info(`${gwMac} - Invalid signature: ${signature}, Logging timestamp ${validator.now()}`);
         // Check signature if signature is present, or if it is enforced to be present

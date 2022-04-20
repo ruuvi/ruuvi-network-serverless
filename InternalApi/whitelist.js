@@ -46,8 +46,9 @@ exports.handler = async (event, context) => {
   // Last seen timestamps
   let seen = false;
   try {
-    console.log(`Fetching last invalid signature timestamp for ${macAddress}`);
-    const lastSeen = await redis.get('invalid_signature_' + macAddress.toUpperCase());
+    const keyString = 'invalid_signature_' + macAddress.toUpperCase();
+    console.log(`Fetching last invalid signature timestamp for ${macAddress} with key ${keyString}`);
+    const lastSeen = await redis.get(keyString);
     gatewaySeen = {
       macAddress: macAddress,
       blockedAt: lastSeen
@@ -66,7 +67,7 @@ exports.handler = async (event, context) => {
         seen = true;
       }
     }
-    console.log(`Successfully fetched invalid signature timestamp ${lastSeen} for ${macAddress}`);
+    console.log(`Successfully fetched invalid signature timestamp ${lastSeen} for ${macAddress} with key ${keyString}`);
   } catch (e) {
     console.error('Error fetching invalid signature timestamp', e);
     gatewaySeen = {
