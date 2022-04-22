@@ -216,7 +216,7 @@ const createSensorWithData = async (macAddress, gatewayConnection, data = null, 
       }
     }, gatewayConnection);
   } catch (e) {
-    console.error('failed to record data', e);
+    console.error('failed to record data');
   }
 
   // Wait for data to show up
