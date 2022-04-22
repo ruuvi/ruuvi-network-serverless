@@ -81,8 +81,9 @@ const gatewayWrapper = async (func, event, context, requireAuth = true) => {
           console.error(`REDIS failed to store timestamp, result was ${redisResult}`);
         } else {
           console.info(`${gwMac} - Invalid signature: ${signature}, Logging timestamp ${timestring} with key ${keyString}`);
+          const readbackExists = await redis.exists(keyString);
           const readbackResult = await redis.get(keyString);
-          console.info(`${gwMac} - Readback timestamp ${readbackResult}`);
+          console.info(`${gwMac} - Readback timestamp exists: ${readbackExists} with value ${readbackResult}`);
         }
         // Check signature if signature is present, or if it is enforced to be present
         if (parseInt(process.env.ENFORCE_SIGNATURE) === 1 || signature !== null) {

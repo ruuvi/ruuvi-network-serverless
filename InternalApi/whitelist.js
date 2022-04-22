@@ -48,6 +48,8 @@ exports.handler = async (event, context) => {
   try {
     const keyString = 'invalid_signature_' + macAddress.toUpperCase();
     console.log(`Fetching last invalid signature timestamp for ${macAddress} with key ${keyString}`);
+    const valueExists = await redis.exists(keyString);
+    console.info(`Key exists: ${valueExists}`);
     const lastSeen = await redis.get(keyString);
     gatewaySeen = {
       macAddress: macAddress,
