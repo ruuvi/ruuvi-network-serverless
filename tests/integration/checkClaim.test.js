@@ -19,14 +19,14 @@ let individualAlertGatewaySecret = null;
 let individualAlertGatewayConnection = null;
 
 describe('Check owner email tests', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     individualAlertGatewayMac = randomMac();
     individualAlertGatewaySecret = randomMac();
-    individualAlertGatewayConnection = createWhitelistedGateway(individualAlertGatewayMac, individualAlertGatewaySecret);
+    individualAlertGatewayConnection = await createWhitelistedGateway(individualAlertGatewayMac, individualAlertGatewaySecret);
   });
 
-  afterEach(() => {
-    removeWhitelistedGateway(individualAlertGatewayMac);
+  afterEach(async () => {
+    await removeWhitelistedGateway(individualAlertGatewayMac);
     individualAlertGatewayConnection = null;
   });
 

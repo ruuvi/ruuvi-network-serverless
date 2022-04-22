@@ -18,12 +18,6 @@ const {
 
 const newSensorMac = utils.randomMac();
 
-/*
-const alertGatewayMac = utils.randomMac();
-const alertGatewaySecret = utils.randomMac();
-let alertGatewayConnection = null;
-*/
-
 let individualAlertGatewayMac = null;
 let individualAlertGatewaySecret = null;
 let individualAlertGatewayConnection = null;
