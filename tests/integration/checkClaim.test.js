@@ -33,7 +33,7 @@ describe('Check owner email tests', () => {
   itif(RI)('Unregistered sensor returns empty string', async () => {
     try {
       const response = await get('check', {
-        sensor: randomMac()
+        sensor: utils.randomMac()
       });
       expect(response.status).toBe(HTTPCodes.OK);
       expect(response.data.email).toBe('');
