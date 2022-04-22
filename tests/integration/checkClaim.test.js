@@ -38,6 +38,7 @@ describe('Check owner email tests', () => {
       expect(response.status).toBe(HTTPCodes.OK);
       expect(response.data.email).toBe('');
     } catch (e) {
+      console.log(e);
       expect(true).toBe('Check endpoint returned error code');
     }
   });
