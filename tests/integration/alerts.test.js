@@ -284,14 +284,14 @@ const triggerAlertTestCases = [
 ];
 
 describe('Alerts integration test suite', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     individualAlertGatewayMac = utils.randomMac();
     individualAlertGatewaySecret = utils.randomMac();
-    individualAlertGatewayConnection = createWhitelistedGateway(individualAlertGatewayMac, individualAlertGatewaySecret);
+    individualAlertGatewayConnection = await createWhitelistedGateway(individualAlertGatewayMac, individualAlertGatewaySecret);
   });
 
-  afterEach(() => {
-    removeWhitelistedGateway(individualAlertGatewayMac);
+  afterEach(async () => {
+    await removeWhitelistedGateway(individualAlertGatewayMac);
     individualAlertGatewayConnection = null;
   });
 
