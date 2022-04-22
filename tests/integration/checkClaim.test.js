@@ -7,7 +7,7 @@ const {
   itif,
   post,
   primaryEmail,
-  randomMac,
+  utils,
   RI
 } = require('./common');
 
@@ -20,8 +20,8 @@ let individualAlertGatewayConnection = null;
 
 describe('Check owner email tests', () => {
   beforeEach(async () => {
-    individualAlertGatewayMac = randomMac();
-    individualAlertGatewaySecret = randomMac();
+    individualAlertGatewayMac = utils.randomMac();
+    individualAlertGatewaySecret = utils.randomMac();
     individualAlertGatewayConnection = await createWhitelistedGateway(individualAlertGatewayMac, individualAlertGatewaySecret);
   });
 
@@ -43,7 +43,7 @@ describe('Check owner email tests', () => {
   });
 
   itif(RI)('Registered, unclaimed sensor returns empty string', async () => {
-    const newSensorMac = randomMac();
+    const newSensorMac = utils.randomMac();
     try {
       createSensorWithData(newSensorMac, individualAlertGatewayConnection, null, 'share-default-test-sensor', false);
       const response = await get('check', {
@@ -57,7 +57,7 @@ describe('Check owner email tests', () => {
   });
 
   itif(RI)('Registered, claimed sensor returns masked email', async () => {
-    const newSensorMac = randomMac();
+    const newSensorMac = utils.randomMac();
     try {
       createSensorWithData(newSensorMac, individualAlertGatewayConnection, null, 'share-default-test-sensor', true);
       const response = await get('check', {
