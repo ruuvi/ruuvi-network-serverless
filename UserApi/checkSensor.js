@@ -11,7 +11,11 @@ const executeCheck = async (event, context, sqlHelper, user) => {
   const query = event.queryStringParameters;
 
   if (!query || !validator.hasKeys(query, ['sensor']) || !validator.validateMacAddress(query.sensor)) {
-    console.log('Invalid Sensor: ' + query.sensor);
+    let sensorName = 'undefined';
+    if (query && query.sensor) {
+      sensorName = query.sensor.toString();
+    }
+    console.log(`Invalid Sensor given: ${sensorName}`);
     return gatewayHelper.errorResponse(HTTPCodes.INVALID, 'Missing or invalid sensor given', errorCodes.ER_MISSING_ARGUMENT);
   }
 
