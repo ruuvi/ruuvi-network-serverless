@@ -8,14 +8,14 @@ const userWrapper = require('../Helpers/wrapper').userWrapper;
 exports.handler = async (event, context) => userWrapper(executeCheck, event, context);
 
 const executeCheck = async (event, context, sqlHelper, user) => {
-  const eventBody = JSON.parse(event.body);
+  const query = event.queryStringParameters;
 
-  if (!eventBody || !validator.hasKeys(eventBody, ['sensor']) || !validator.validateMacAddress(eventBody.sensor)) {
-    console.log('Invalid Sensor: ' + eventBody.sensor);
+  if (!query || !validator.hasKeys(query, ['sensor']) || !validator.validateMacAddress(query.sensor)) {
+    console.log('Invalid Sensor: ' + query.sensor);
     return gatewayHelper.errorResponse(HTTPCodes.INVALID, 'Missing or invalid sensor given', errorCodes.ER_MISSING_ARGUMENT);
   }
 
-  const sensor = eventBody.sensor;
+  const sensor = query.sensor;
   const checkRes = await sqlHelper.fetchSingle('sensor_id', sensor, 'sensors');
   let ownerEmail = '';
 
