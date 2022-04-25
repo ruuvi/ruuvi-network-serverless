@@ -285,6 +285,7 @@ functions:
           path: /user
           #payload: '2.0'
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -301,6 +302,7 @@ functions:
           path: /settings
           #payload: '2.0'
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -317,6 +319,7 @@ functions:
           path: /settings
           #payload: '2.0'
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -332,6 +335,7 @@ functions:
           method: POST
           path: /register
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -362,6 +366,7 @@ functions:
           path: /verify
           #payload: '2.0'
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -378,6 +383,7 @@ functions:
           path: /check
           #payload: '2.0'
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -394,6 +400,7 @@ functions:
           path: /claim
           #payload: '2.0'
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -410,6 +417,7 @@ functions:
           path: /unclaim
           #payload: '2.0'
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -427,6 +435,7 @@ functions:
           path: /share
           #payload: '2.0'
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -454,6 +463,7 @@ functions:
           path: /unshare
           #payload: '2.0'
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -471,6 +481,7 @@ functions:
           path: /shared
           #payload: '2.0'
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -487,6 +498,7 @@ functions:
           path: /sensors
           #payload: '2.0'
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -503,6 +515,7 @@ functions:
           method: POST
           path: /update
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -517,6 +530,7 @@ functions:
           method: POST
           path: /upload
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -542,6 +556,7 @@ functions:
           method: POST
           path: /alerts
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -558,6 +573,7 @@ functions:
           method: GET
           path: /alerts
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
       DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
       DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
@@ -578,6 +594,7 @@ functions:
               - Arn
           batchSize: 1
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       SOURCE_STAGE: ${self:custom.stage}
       SOURCE_EMAIL_NAME: ${self:custom.sourceEmailName}
       SOURCE_EMAIL: ${self:custom.sourceEmail}
@@ -643,6 +660,7 @@ functions:
           method: POST
           path: /whitelist
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
@@ -654,6 +672,7 @@ functions:
           method: POST
           path: /blacklist
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
@@ -666,6 +685,7 @@ functions:
           method: GET
           path: /gwinfo
     environment:
+      DEBUG_MODE: ${self:custom.debugMode}
       INTERNAL_API_KEY: ${ssm:${self:custom.stage}-ruuvi-internal-api-key}
       WHITELIST_TABLE_NAME: ${self:custom.dynamoGatewayWhitelist}
       REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}

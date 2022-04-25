@@ -35,11 +35,9 @@ describe('Check owner email tests', () => {
       const response = await get('check', {
         sensor: utils.randomMac()
       });
-      console.debug(response.data);
       expect(response.status).toBe(HTTPCodes.OK);
       expect(response.data.data.email).toBe('');
     } catch (e) {
-      console.log(e);
       expect(true).toBe('Check endpoint returned error code');
     }
   });
