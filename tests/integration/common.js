@@ -1,4 +1,4 @@
-const { it } = require('@jest/globals');
+const { expect, it } = require('@jest/globals');
 
 /**
  * Runs a load test against the given end-point
@@ -6,6 +6,7 @@ const { it } = require('@jest/globals');
 const querystring = require('querystring');
 const axios = require('axios');
 const utils = require('./integrationHelpers');
+const { createSignature } = require('../../Helpers/authHelper.js');
 
 // Only run when condition is met; used for skipping tests
 const itif = (condition) => condition ? it : it.skip;
@@ -51,7 +52,7 @@ const secondaryHttp = axios.create({
 });
 
 /**
- * HTTP Client without signature
+ * HTTP Client with invalid signature
  */
 const httpWithInvalidSignature = axios.create({
   baseURL: baseURL,
@@ -87,11 +88,17 @@ const get = async (endpoint, queryParams, client = null) => {
 /**
  * Performs a POST call to the back-end
  *
- * @param {string} endpoint
- * @param {object} body
+ * @param {string} endpoint URL endpoint data is sent to
+ * @param {object} body Body of data to send
+ * @param {object} client HTTP client / token to use
  */
 const post = async (endpoint, body, client = null) => {
   client = client || instance;
+  if (Object.prototype.hasOwnProperty.call(client, 'ruuviSecret')) {
+    const signature = createSignature(body, client.ruuviSecret);
+    return await client.post('/' + endpoint, body, { headers: { 'Ruuvi-HMAC-SHA256': signature } });
+  }
+
   return await client.post('/' + endpoint, body);
 };
 
@@ -101,7 +108,80 @@ const sleep = async (ms) => {
   });
 };
 
-const createSensorWithData = async (macAddress, gatewayMac, data = null, name = null, claim = true) => {
+/*
+ * Whitelist a Gateway to backend.
+ * @param{string} mac MAC address to whiltelist.
+ * @param{string} secret Secret used for signing data.
+ * @return HTTP connection object that can mimic a Whitelisted Gateway
+ */
+const createWhitelistedGateway = async (mac, secret) => {
+  let rejected = false;
+  try {
+    const tags = {};
+    tags[utils.randomMac()] = {
+      rssi: -76,
+      timestamp: Date.now() - 50,
+      data: testData
+    };
+    await post('record', {
+      data: {
+        coordinates: '',
+        timestamp: Date.now(),
+        gw_mac: mac,
+        tags: tags
+      }
+    }, httpWithInvalidSignature);
+  } catch (e) {
+    rejected = true;
+  }
+  expect(rejected).toBe(true, 'rejected signature');
+
+  await sleep(1000);
+
+  rejected = false;
+  try {
+    const result = await post('whitelist', {
+      macAddress: mac,
+      secret: secret
+    }, internalHttp);
+
+    expect(result.status).toBe(200);
+    expect(result.data.data.gateway.macAddress).toBe(mac);
+  } catch (e) {
+    rejected = true;
+  }
+  expect(rejected).toBe(false, 'whitelisting failed');
+  /**
+ * HTTP Client mimicing Gateway.
+ */
+  const httpWithValidSignature = axios.create({
+    baseURL: baseURL,
+    timeout: 10000
+  });
+  httpWithValidSignature.ruuviSecret = secret;
+  httpWithValidSignature.ruuviMac = mac;
+  return httpWithValidSignature;
+};
+
+/*
+ * Remove a Gateway in backend.
+ * @param{string} mac MAC address to remove.
+ */
+const removeWhitelistedGateway = async (mac) => {
+  try {
+    const result = await post('blacklist', {
+      macAddress: mac
+    }, internalHttp);
+    expect(result.status).toBe(200);
+  } catch (e) {
+    console.error(e.result.status);
+    expect(true).toBe(false);
+  }
+};
+
+/*
+ */
+const createSensorWithData = async (macAddress, gatewayConnection, data = null, name = null, claim = true) => {
   const payload = { sensor: macAddress };
   if (name !== null) {
     payload.name = name;
@@ -131,12 +211,12 @@ const createSensorWithData = async (macAddress, gatewayMac, data = null, name = 
       data: {
         coordinates: '',
         timestamp: Date.now(),
-        gw_mac: gatewayMac,
+        gw_mac: gatewayConnection.ruuviMac,
         tags: tags
       }
-    });
+    }, gatewayConnection);
   } catch (e) {
-    console.error('failed to record data', e);
+    console.error('failed to record data');
   }
 
   // Wait for data to show up
@@ -182,7 +262,8 @@ module.exports = {
   primaryEmail,
   secondaryEmail,
   unregisteredEmail,
-
+  createWhitelistedGateway,
+  removeWhitelistedGateway,
   createSensorWithData,
 
   internalKey,

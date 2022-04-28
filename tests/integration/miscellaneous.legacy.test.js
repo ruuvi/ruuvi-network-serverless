@@ -1,4 +1,4 @@
-const { describe, expect } = require('@jest/globals');
+const { afterEach, beforeEach, describe, expect } = require('@jest/globals');
 
 /**
  * @jest-environment node
@@ -22,18 +22,34 @@ const {
   unregisteredEmail,
 
   sleep,
-  createSensorWithData
+  createSensorWithData,
+  createWhitelistedGateway,
+  removeWhitelistedGateway
 } = require('./common');
 const { randomMac } = require('./integrationHelpers');
 
 // Set up some defaults
 const newSensorMac = utils.randomMac();
-const newGatewayMac = utils.randomMac();
 const testData = utils.randomHex(32);
+
+let individualGatewayMac = null;
+let individualGatewaySecret = null;
+let individualGatewayConnection = null;
 
 const maxClaims = 25;
 
 describe('[LEGACY] Remaining uncategorized tests', () => {
+  beforeEach(async () => {
+    individualGatewayMac = utils.randomMac();
+    individualGatewaySecret = utils.randomMac();
+    individualGatewayConnection = await createWhitelistedGateway(individualGatewayMac, individualGatewaySecret);
+  });
+
+  afterEach(async () => {
+    await removeWhitelistedGateway(individualGatewayMac);
+    individualGatewayConnection = null;
+  });
+
   // USER
   itif(RI)('`register` returns 200 OK', async () => {
     const registerResult = await post('register', {
@@ -75,7 +91,7 @@ describe('[LEGACY] Remaining uncategorized tests', () => {
   // });
 
   itif(RI)('`record` is successful', async () => {
-    const result = await createSensorWithData(newSensorMac, newGatewayMac, testData, null, false);
+    const result = await createSensorWithData(newSensorMac, individualGatewayConnection, testData, null, false);
     expect(result).toBe(true);
   });
 
@@ -92,19 +108,19 @@ describe('[LEGACY] Remaining uncategorized tests', () => {
         data: {
           coordinates: '',
           timestamp: Date.now(),
-          gw_mac: newGatewayMac,
+          gw_mac: individualGatewayMac,
           tags: tags
         }
-      });
+      }, individualGatewayConnection);
 
       await post('record', {
         data: {
           coordinates: '',
           timestamp: Date.now(),
-          gw_mac: newGatewayMac,
+          gw_mac: individualGatewayMac,
           tags: tags
         }
-      });
+      }, individualGatewayConnection);
     } catch (e) {
       expect(e.response.status).toBe(429); // Throttled
       expect(e.response.data.code).toBe('ER_THROTTLED');

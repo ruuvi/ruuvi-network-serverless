@@ -1,24 +1,26 @@
-const { describe, expect } = require('@jest/globals');
+const { afterEach, beforeEach, describe, expect } = require('@jest/globals');
 
 /**
  * Alerts test suite for the back-end.
  */
 const {
-  utils,
-
-  itif,
+  createWhitelistedGateway,
+  removeWhitelistedGateway,
   get,
+  itif,
   post,
-
-  RI,
   PRODUCTION,
-
+  RI,
   secondaryHttp,
-
-  sleep
+  sleep,
+  utils
 } = require('./common');
 
 const newSensorMac = utils.randomMac();
+
+let individualAlertGatewayMac = null;
+let individualAlertGatewaySecret = null;
+let individualAlertGatewayConnection = null;
 
 const triggerAlertTestCases = [
   // Has humidity of 36.325
@@ -276,9 +278,20 @@ const triggerAlertTestCases = [
 ];
 
 describe('Alerts integration test suite', () => {
+  beforeEach(async () => {
+    individualAlertGatewayMac = utils.randomMac();
+    individualAlertGatewaySecret = utils.randomMac();
+    individualAlertGatewayConnection = await createWhitelistedGateway(individualAlertGatewayMac, individualAlertGatewaySecret);
+  });
+
+  afterEach(async () => {
+    await removeWhitelistedGateway(individualAlertGatewayMac);
+    individualAlertGatewayConnection = null;
+  });
+
   /**
-     * TODO: These should be created inside tests or pre-step
-     */
+    * TODO: These should be created inside tests or pre-step
+    */
   itif(RI)('Initial setup for legacy alert tests', async () => {
     let thrown = false;
     try {
@@ -387,7 +400,6 @@ describe('Alerts integration test suite', () => {
     itif(RI)(`triggering a ${testCase.type} limit alert on ${testCase.sensorName} is successful`, async () => {
       // Setup
       const alertSensorMac = utils.randomMac();
-      const alertGatewayMac = utils.randomMac();
 
       try {
         if (testCase.unit && testCase.type === 'temperature') {
@@ -435,12 +447,11 @@ describe('Alerts integration test suite', () => {
           data: {
             coordinates: '',
             timestamp: Date.now(),
-            gw_mac: alertGatewayMac,
+            gw_mac: individualAlertGatewayMac,
             tags: tags
           }
-        });
+        }, individualAlertGatewayConnection);
       } catch (e) {
-        console.log(e);
         expect(true).toBe(false, 'Failed to post data for triggering alert');
       }
 
@@ -475,7 +486,6 @@ describe('Alerts integration test suite', () => {
   itif(RI)('triggering a max limit alert on a sensor with offset is successful', async () => {
     // Setup
     const alertSensorMac = utils.randomMac();
-    const alertGatewayMac = utils.randomMac();
 
     try {
       await post('claim', {
@@ -515,12 +525,11 @@ describe('Alerts integration test suite', () => {
         data: {
           coordinates: '',
           timestamp: Date.now(),
-          gw_mac: alertGatewayMac,
+          gw_mac: individualAlertGatewayMac,
           tags: tags
         }
-      });
+      }, individualAlertGatewayConnection);
     } catch (e) {
-      console.log(e);
       expect(true).toBe(false, 'Failed to post data for triggering alert');
     }
 
@@ -547,7 +556,6 @@ describe('Alerts integration test suite', () => {
   itif(RI)('triggering a movement alert on a sensor is successful', async () => {
     // Setup
     const alertSensorMac = utils.randomMac();
-    const alertGatewayMac = utils.randomMac();
 
     try {
       await post('claim', {
@@ -584,12 +592,11 @@ describe('Alerts integration test suite', () => {
         data: {
           coordinates: '',
           timestamp: Date.now(),
-          gw_mac: alertGatewayMac,
+          gw_mac: individualAlertGatewayMac,
           tags: tags
         }
-      });
+      }, individualAlertGatewayConnection);
     } catch (e) {
-      console.log(e);
       expect(true).toBe(false, 'Failed to post data for triggering alert');
     }
 
@@ -620,10 +627,10 @@ describe('Alerts integration test suite', () => {
         data: {
           coordinates: '',
           timestamp: Date.now(),
-          gw_mac: alertGatewayMac,
+          gw_mac: individualAlertGatewayMac,
           tags: tags
         }
-      });
+      }, individualAlertGatewayConnection);
     } catch (e) {
       console.log(e);
       expect(true).toBe(false, 'Failed to post data for triggering alert');

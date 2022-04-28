@@ -3,6 +3,7 @@ const sqlHelper = require('../Helpers/sqlHelper');
 const errorCodes = require('../Helpers/errorCodes');
 const auth = require('../Helpers/authHelper');
 const validator = require('../Helpers/validator');
+const redis = require('../Helpers/redisHelper').getClient();
 
 /**
  * Wraps the function to perform connection management in a centralized way.
@@ -69,13 +70,18 @@ const gatewayWrapper = async (func, event, context, requireAuth = true) => {
       );
 
       if (!validationResult) {
-        const redis = require('../Helpers/redisHelper').getClient();
+        const gwMac = data.gw_mac.toUpperCase();
 
         // Log Invalid Signature to Redis for Validation
         const ttl = 60 * 60 * 24 * 3; // 3 days
-        await redis.set('invalid_signature_' + data.gw_mac.toUpperCase(), validator.now(), 'EX', ttl);
-
-        console.info(`${data.gw_mac} - Invalid signature: ${signature}`);
+        const keyString = 'invalid_signature_' + gwMac;
+        const timestring = validator.now().toString();
+        const redisResult = await redis.set(keyString, timestring, 'EX', ttl);
+        if (redisResult !== 'OK') {
+          console.error(`REDIS failed to store timestamp, result was ${redisResult}`);
+        } else if (parseInt(process.env.DEBUG_MODE) === 1) {
+          console.debug(`${gwMac} - Invalid signature: ${signature}, Logging timestamp ${timestring} with key ${keyString}`);
+        }
         // Check signature if signature is present, or if it is enforced to be present
         if (parseInt(process.env.ENFORCE_SIGNATURE) === 1 || signature !== null) {
           return gatewayHelper.unauthorizedResponse();
