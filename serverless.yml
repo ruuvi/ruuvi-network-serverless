@@ -276,6 +276,26 @@ functions:
       DEFAULT_RESULTS: 15
       MAX_RESULTS: 144000
 
+  getLatestData:
+    handler: UserApi/getLatestData.handler
+    events:
+      - httpApi:
+          method: GET
+          path: /latest
+          #payload: '2.0'
+    environment:
+      DEBUG_MODE: ${self:custom.debugMode}
+      DATABASE_USERNAME: ${ssm:${self:custom.stage}-ruuvi-db-username}
+      DATABASE_PASSWORD: ${ssm:${self:custom.stage}-ruuvi-db-password}
+      DATABASE_ENDPOINT: ${ssm:${self:custom.stage}-ruuvi-db-endpoint}
+      DATABASE_NAME: ${ssm:${self:custom.stage}-ruuvi-db-database}
+      TABLE_NAME: ${self:custom.dynamoSensorData}
+      REDUCED_TABLE_NAME: ${self:custom.dynamoSensorDataReduced}
+      REDIS_HOST: ${ssm:${self:custom.stage}-ruuvi-redis-host}
+      RAW_DATA_TTL: ${self:custom.rawDataTTL}
+      REQUIRE_LOGIN: ${self:custom.requireLoginForData}
+      SIGNING_SECRET: ${ssm:${self:custom.stage}-ruuvi-signing-secret}
+
   getUserData:
     handler: UserApi/getUserData.handler
     #reservedConcurrency: ${self:custom.lambdaConcurrency}
