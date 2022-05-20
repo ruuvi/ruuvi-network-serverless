@@ -17,15 +17,10 @@ const processKinesisQueue = async (event) => {
   async function sendBatch (data) {
     const batch = dynamoHelper.getDynamoBatch(data, process.env.TABLE_NAME);
 
-    return dynamo.batchWriteItem(batch, function (err, data) {
-      if (err) {
-        console.error('Error', err);
-      } else if (parseInt(process.env.DEBUG_MODE) === 1) {
-        console.debug('Sendbatch result:' + JSON.stringify(data, function (k, v) { return v === undefined ? null : v; }));
-      }
-    }).promise().catch((error) => {
-      console.error(error);
-    });
+    const rdata = await dynamo.batchWriteItem(batch);
+    if (parseInt(process.env.DEBUG_MODE) === 1) {
+      console.debug('Sendbatch result:' + JSON.stringify(rdata, function (k, v) { return v === undefined ? null : v; }));
+    }
   }
   const batchedIds = []; // For deduplication
 
@@ -142,15 +137,10 @@ const processKinesisQueue = async (event) => {
         params.UpdateExpression += ', #N = :n';
       }
 
-      await dynamo.updateItem(params, function (err, data) {
-        if (err) {
-          console.error('Error', err);
-        } else if (parseInt(process.env.DEBUG_MODE) === 1) {
-          console.debug('updateItem result:' + JSON.stringify(data, function (k, v) { return v === undefined ? null : v; }));
-        }
-      }).promise().catch((error) => {
-        console.error(error);
-      });
+      const data = await dynamo.updateItem(params);
+      if (parseInt(process.env.DEBUG_MODE) === 1) {
+        console.debug('updateItem result:' + JSON.stringify(data, function (k, v) { return v === undefined ? null : v; }));
+      }
     }
   }
 
