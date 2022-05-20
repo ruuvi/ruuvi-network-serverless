@@ -14,7 +14,7 @@ const processKinesisQueue = async (event) => {
   const dataTTL = parseInt(process.env.DATA_TTL);
   const now = validator.now();
 
-  function sendBatch (data) {
+  async function sendBatch (data) {
     const batch = dynamoHelper.getDynamoBatch(data, process.env.TABLE_NAME);
 
     return dynamo.batchWriteItem(batch, function (err, data) {
@@ -105,7 +105,7 @@ const processKinesisQueue = async (event) => {
   }
 
   if (flattenedData.length > 0) {
-    uploadBatchPromises.push(sendBatch(flattenedData));
+    await sendBatch(flattenedData);
     uploadedBatches++;
     uploadedRecords += flattenedData.length;
   }
@@ -142,7 +142,7 @@ const processKinesisQueue = async (event) => {
         params.UpdateExpression += ', #N = :n';
       }
 
-      const updateLatest = dynamo.updateItem(params, function (err, data) {
+      await dynamo.updateItem(params, function (err, data) {
         if (err) {
           console.error('Error', err);
         } else if (parseInt(process.env.DEBUG_MODE) === 1) {
@@ -151,21 +151,11 @@ const processKinesisQueue = async (event) => {
       }).promise().catch((error) => {
         console.error(error);
       });
-
-      uploadBatchPromises.push(updateLatest);
     }
   }
   if (parseInt(process.env.DEBUG_MODE) === 1) {
     console.debug('Gateway status processed, uploading data to DynamoDB');
   }
-
-  // Note: async's in Lambdas should always be awaited as exiting the function
-  // pauses the execution context and there is no guarantee that the same one
-  // will be resumed in the future.
-  await Promise.all(uploadBatchPromises).catch(function (err) {
-    console.error(err);
-    return false;
-  });
 
   console.log(JSON.stringify({
     queueRecords: event.Records.length,
