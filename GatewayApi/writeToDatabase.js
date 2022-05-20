@@ -21,7 +21,7 @@ const processKinesisQueue = async (event) => {
       if (err) {
         console.error('Error', err);
       } else if (parseInt(process.env.DEBUG_MODE) === 1) {
-        console.debug('Sendbatch result:' + JSON.stringify(data) + 'Unprocessed items: ' + JSON.stringify(data.UnprocessedItems.length));
+        console.debug('Sendbatch result:' + JSON.stringify(data, function (k, v) { return v === undefined ? null : v; }));
       }
     }).promise().catch((error) => {
       console.error(error);
@@ -146,7 +146,7 @@ const processKinesisQueue = async (event) => {
         if (err) {
           console.error('Error', err);
         } else if (parseInt(process.env.DEBUG_MODE) === 1) {
-          console.debug('UpdateItem result:' + JSON.stringify(data) + ' Unprocessed items: ' + JSON.stringify(data.UnprocessedItems.length));
+          console.debug('updateItem result:' + JSON.stringify(data, function (k, v) { return v === undefined ? null : v; }));
         }
       }).promise().catch((error) => {
         console.error(error);
