@@ -17,7 +17,7 @@ const processKinesisQueue = async (event) => {
   async function sendBatch (data) {
     const batch = dynamoHelper.getDynamoBatch(data, process.env.TABLE_NAME);
 
-    const rdata = await dynamo.batchWriteItem(batch);
+    const rdata = await dynamo.batchWriteItem(batch).promise();
     if (parseInt(process.env.DEBUG_MODE) === 1) {
       console.debug('Sendbatch result:' + JSON.stringify(rdata, function (k, v) { return v === undefined ? null : v; }));
     }
@@ -137,7 +137,7 @@ const processKinesisQueue = async (event) => {
         params.UpdateExpression += ', #N = :n';
       }
 
-      const data = await dynamo.updateItem(params);
+      const data = await dynamo.updateItem(params).promise();
       if (parseInt(process.env.DEBUG_MODE) === 1) {
         console.debug('updateItem result:' + JSON.stringify(data, function (k, v) { return v === undefined ? null : v; }));
       }
