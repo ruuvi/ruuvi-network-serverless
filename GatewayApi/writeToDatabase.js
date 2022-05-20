@@ -20,13 +20,13 @@ const processKinesisQueue = async (event) => {
     return dynamo.batchWriteItem(batch, function (err, data) {
       if (err) {
         console.error('Error', err);
+      } else if (parseInt(process.env.DEBUG_MODE) === 1) {
+        console.debug('Sendbatch result:' + JSON.stringify(data) + 'Unprocessed items: ' + JSON.stringify(data.UnprocessedItems.length));
       }
     }).promise().catch((error) => {
       console.error(error);
     });
   }
-
-  const uploadBatchPromises = [];
   const batchedIds = []; // For deduplication
 
   const loggedGateways = [];
@@ -96,7 +96,7 @@ const processKinesisQueue = async (event) => {
       batchedIds.push(key + ',' + sensors[key].timestamp);
 
       if (flattenedData.length >= 25) {
-        uploadBatchPromises.push(sendBatch(flattenedData));
+        await sendBatch(flattenedData);
         flattenedData = [];
         uploadedBatches++;
         uploadedRecords += flattenedData.length;
@@ -146,15 +146,12 @@ const processKinesisQueue = async (event) => {
         if (err) {
           console.error('Error', err);
         } else if (parseInt(process.env.DEBUG_MODE) === 1) {
-          console.debug('updateItem result:' + JSON.stringify(data));
+          console.debug('UpdateItem result:' + JSON.stringify(data) + ' Unprocessed items: ' + JSON.stringify(data.UnprocessedItems.length));
         }
       }).promise().catch((error) => {
         console.error(error);
       });
     }
-  }
-  if (parseInt(process.env.DEBUG_MODE) === 1) {
-    console.debug('Gateway status processed, uploading data to DynamoDB');
   }
 
   console.log(JSON.stringify({
