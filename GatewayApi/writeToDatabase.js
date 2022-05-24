@@ -14,19 +14,14 @@ const processKinesisQueue = async (event) => {
   const dataTTL = parseInt(process.env.DATA_TTL);
   const now = validator.now();
 
-  function sendBatch (data) {
+  async function sendBatch (data) {
     const batch = dynamoHelper.getDynamoBatch(data, process.env.TABLE_NAME);
 
-    return dynamo.batchWriteItem(batch, function (err, data) {
-      if (err) {
-        console.error('Error', err);
-      }
-    }).promise().catch((error) => {
-      console.error(error);
-    });
+    const rdata = await dynamo.batchWriteItem(batch).promise();
+    if (parseInt(process.env.DEBUG_MODE) === 1) {
+      console.debug('Sendbatch result:' + JSON.stringify(rdata, function (k, v) { return v === undefined ? null : v; }));
+    }
   }
-
-  const uploadBatchPromises = [];
   const batchedIds = []; // For deduplication
 
   const loggedGateways = [];
@@ -96,7 +91,7 @@ const processKinesisQueue = async (event) => {
       batchedIds.push(key + ',' + sensors[key].timestamp);
 
       if (flattenedData.length >= 25) {
-        uploadBatchPromises.push(sendBatch(flattenedData));
+        await sendBatch(flattenedData);
         flattenedData = [];
         uploadedBatches++;
         uploadedRecords += flattenedData.length;
@@ -105,7 +100,7 @@ const processKinesisQueue = async (event) => {
   }
 
   if (flattenedData.length > 0) {
-    uploadBatchPromises.push(sendBatch(flattenedData));
+    await sendBatch(flattenedData);
     uploadedBatches++;
     uploadedRecords += flattenedData.length;
   }
@@ -142,30 +137,12 @@ const processKinesisQueue = async (event) => {
         params.UpdateExpression += ', #N = :n';
       }
 
-      const updateLatest = dynamo.updateItem(params, function (err, data) {
-        if (err) {
-          console.error('Error', err);
-        } else if (parseInt(process.env.DEBUG_MODE) === 1) {
-          console.debug('updateItem result:' + JSON.stringify(data));
-        }
-      }).promise().catch((error) => {
-        console.error(error);
-      });
-
-      uploadBatchPromises.push(updateLatest);
+      const data = await dynamo.updateItem(params).promise();
+      if (parseInt(process.env.DEBUG_MODE) === 1) {
+        console.debug('updateItem result:' + JSON.stringify(data, function (k, v) { return v === undefined ? null : v; }));
+      }
     }
   }
-  if (parseInt(process.env.DEBUG_MODE) === 1) {
-    console.debug('Gateway status processed, uploading data to DynamoDB');
-  }
-
-  // Note: async's in Lambdas should always be awaited as exiting the function
-  // pauses the execution context and there is no guarantee that the same one
-  // will be resumed in the future.
-  await Promise.all(uploadBatchPromises).catch(function (err) {
-    console.error(err);
-    return false;
-  });
 
   console.log(JSON.stringify({
     queueRecords: event.Records.length,
