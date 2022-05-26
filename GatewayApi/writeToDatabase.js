@@ -61,7 +61,8 @@ const processKinesisQueue = async (event) => {
       console.debug('Processing sensor data');
     }
 
-    for (const key of sensors) {
+    const keys = Object.keys(sensors);
+    for (const key of keys) {
       // Dedupe
       if (batchedIds.includes(key + ',' + sensors[key].timestamp)) {
         if (parseInt(process.env.DEBUG_MODE) === 1) {
