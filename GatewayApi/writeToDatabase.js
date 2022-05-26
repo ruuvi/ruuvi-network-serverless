@@ -104,6 +104,7 @@ const processKinesisQueue = async (event) => {
     await sendBatch(flattenedData);
     uploadedBatches++;
     uploadedRecords += flattenedData.length;
+    flattenedData = [];
   }
   if (parseInt(process.env.DEBUG_MODE) === 1) {
     console.debug('Sensor data processed, processing Gateway status');
@@ -145,10 +146,11 @@ const processKinesisQueue = async (event) => {
     }
   }
 
-  console.log(JSON.stringify({
+  console.info(JSON.stringify({
     queueRecords: event.Records.length,
     batches: uploadedBatches,
-    records: uploadedRecords
+    records: uploadedRecords,
+    gateways: loggedGateways.length
   }));
 
   return true;
