@@ -61,7 +61,7 @@ const processKinesisQueue = async (event) => {
       console.debug('Processing sensor data');
     }
 
-    Object.keys(sensors).forEach(async (key) => {
+    for (const key of sensors) {
       // Dedupe
       if (batchedIds.includes(key + ',' + sensors[key].timestamp)) {
         if (parseInt(process.env.DEBUG_MODE) === 1) {
@@ -96,7 +96,7 @@ const processKinesisQueue = async (event) => {
         uploadedBatches++;
         uploadedRecords += flattenedData.length;
       }
-    });
+    }
   }
 
   if (flattenedData.length > 0) {
