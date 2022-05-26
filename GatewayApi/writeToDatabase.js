@@ -19,7 +19,7 @@ const processKinesisQueue = async (event) => {
 
     const rdata = await dynamo.batchWriteItem(batch).promise();
     if (parseInt(process.env.DEBUG_MODE) === 1) {
-      console.debug('Sendbatch result:' + JSON.stringify(rdata, function (k, v) { return v === undefined ? null : v; }));
+      console.debug('Sendbatch result:' + JSON.stringify(rdata, function (_k, v) { return v === undefined ? null : v; }));
     }
   }
   const batchedIds = []; // For deduplication
@@ -93,9 +93,9 @@ const processKinesisQueue = async (event) => {
 
       if (flattenedData.length >= 25) {
         await sendBatch(flattenedData);
-        flattenedData = [];
         uploadedBatches++;
         uploadedRecords += flattenedData.length;
+        flattenedData = [];
       }
     }
   }
@@ -140,7 +140,7 @@ const processKinesisQueue = async (event) => {
 
       const data = await dynamo.updateItem(params).promise();
       if (parseInt(process.env.DEBUG_MODE) === 1) {
-        console.debug('updateItem result:' + JSON.stringify(data, function (k, v) { return v === undefined ? null : v; }));
+        console.debug('updateItem result:' + JSON.stringify(data, function (_k, v) { return v === undefined ? null : v; }));
       }
     }
   }
