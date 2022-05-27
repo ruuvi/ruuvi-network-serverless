@@ -73,7 +73,7 @@ const processKinesisQueue = async (event) => {
 
       const throttleSensor = await throttleHelper.throttle('writer:' + key, interval);
       if (throttleSensor) {
-        return;
+        continue;
       }
       if (interval > 100) {
         console.info('SD: ' + key);
