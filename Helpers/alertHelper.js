@@ -6,13 +6,14 @@ const sqlHelper = require('../Helpers/sqlHelper');
 const emailHelper = require('../Helpers/emailHelper');
 const throttleHelper = require('../Helpers/throttleHelper');
 const emptyAlert = {};
+const emptyAlertString = JSON.stringify(emptyAlert);
 
 /**
  * Fetches alerts for individual sensor
  */
 const getCachedAlerts = async (sensor) => {
   const alerts = await redis.get('alerts_' + sensor);
-  if (alerts === emptyAlert) {
+  if (alerts === emptyAlertString) {
     return [];
   } else if (alerts === null) {
     return null;
@@ -41,7 +42,7 @@ const refreshAlertCache = async (sensor, data = null) => {
   });
 
   if (active.length === 0) {
-    await redis.set('alerts_' + sensor, JSON.stringify(emptyAlert), 'EX', ttl);
+    await redis.set('alerts_' + sensor, emptyAlertString, 'EX', ttl);
   } else {
     await redis.set('alerts_' + sensor, JSON.stringify(active), 'EX', ttl);
   }
