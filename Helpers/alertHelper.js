@@ -5,14 +5,18 @@ if (process.env.REDIS_HOST) {
 const sqlHelper = require('../Helpers/sqlHelper');
 const emailHelper = require('../Helpers/emailHelper');
 const throttleHelper = require('../Helpers/throttleHelper');
+const emptyAlert = {};
+const emptyAlertString = JSON.stringify(emptyAlert);
 
 /**
  * Fetches alerts for individual sensor
  */
 const getCachedAlerts = async (sensor) => {
   const alerts = await redis.get('alerts_' + sensor);
-  if (alerts === null) {
+  if (alerts === emptyAlertString) {
     return [];
+  } else if (alerts === null) {
+    return null;
   }
   const parsed = JSON.parse(alerts);
   const formatted = formatAlerts(parsed);
@@ -30,6 +34,7 @@ const refreshAlertCache = async (sensor, data = null) => {
   }
 
   const active = [];
+  const ttl = 60 * 60 * 24 * 2;
   data.forEach((alert) => {
     if (alert.enabled) {
       active.push(alert);
@@ -37,9 +42,8 @@ const refreshAlertCache = async (sensor, data = null) => {
   });
 
   if (active.length === 0) {
-    await redis.del('alerts_' + sensor);
+    await redis.set('alerts_' + sensor, emptyAlertString, 'EX', ttl);
   } else {
-    const ttl = 60 * 60 * 24 * 2;
     await redis.set('alerts_' + sensor, JSON.stringify(active), 'EX', ttl);
   }
 };
@@ -54,7 +58,9 @@ const refreshAlertCache = async (sensor, data = null) => {
 const getAlerts = async (sensor, userId = null, useCache = false, returnRaw = false) => {
   if (useCache) {
     const cachedAlerts = await getCachedAlerts(sensor);
-    return cachedAlerts;
+    if (cachedAlerts !== null) {
+      return cachedAlerts;
+    }
   }
 
   const raw = await sqlHelper.fetchAlerts(sensor, userId);
