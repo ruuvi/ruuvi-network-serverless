@@ -52,19 +52,7 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
   for (const sensor of sensors) {
     sensor.public = !!sensor.public;
     sensor.canShare = !!sensor.canShare;
-    const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
-    // Format data for the API
-    const dataPoints = [];
-    data.forEach((item) => {
-      dataPoints.push({
-        coordinates: item.Coordinates,
-        data: item.SensorData,
-        gwmac: item.GatewayMac,
-        timestamp: item.MeasurementTimestamp,
-        rssi: item.RSSI
-      });
-    });
-    sensor.measurements = dataPoints;
+    sensor.measurements = await fetchLatestDataPoint(sensor);
     if (!sensor.canShare) {
       if (data.length > 0) {
         sensor.canShare = true;
@@ -139,21 +127,7 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
   for (const sensor of sensorsSharedToMe) {
     sensor.public = !!sensor.public;
     sensor.canShare = false;
-
-    const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
-    // Format data for the API
-    const dataPoints = [];
-    data.forEach((item) => {
-      dataPoints.push({
-        coordinates: item.Coordinates,
-        data: item.SensorData,
-        gwmac: item.GatewayMac,
-        timestamp: item.MeasurementTimestamp,
-        rssi: item.RSSI
-      });
-    });
-    sensor.measurements = dataPoints;
-
+    sensor.measurements = await fetchLatestDataPoint(sensor);
     formattedSharedToMe.push(JSON.parse(JSON.stringify(sensor)));
   }
 
@@ -162,3 +136,19 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
     sharedToMe: formattedSharedToMe
   });
 };
+
+const fetchLatestDataPoint = async(sensor) => {
+  const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
+  // Format data for the API
+  const dataPoints = [];
+  data.forEach((item) => {
+    dataPoints.push({
+      coordinates: item.Coordinates,
+      data: item.SensorData,
+      gwmac: item.GatewayMac,
+      timestamp: item.MeasurementTimestamp,
+      rssi: item.RSSI
+    });
+  });
+  return dataPoints
+}
