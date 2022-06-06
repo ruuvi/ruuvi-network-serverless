@@ -99,6 +99,88 @@ describe('Shares test suite', () => {
     expect(sharedSensorData.public).toBe(false);
   });
 
+  itif(RI)('`getSensorList` returns `measurements` for claimed sensors', async () => {
+    // Create sensor with record
+    const sensorToClaimMac = randomMac();
+    const sensorToClaimName = "Test-Sensor-To-Claim"
+    const sensorToClaimAddResult = await createSensorWithData(sensorToClaimMac, individualAlertGatewayConnection, null, sensorToClaimName);
+    expect(sensorToClaimAddResult).toBe(true);
+
+    // Return sensors
+    let sensorsResult = null;
+    try {
+      sensorsResult = await get('sensors', {});
+    } catch (e) {
+      console.error('Failed to fetch user data', e.response.data);
+    }
+    expect(sensorsResult).not.toBeNull();
+    expect(sensorsResult.data.data.sensors.length).toBeGreaterThan(0);
+
+    // Verify claimed sensor data and measurements
+    const claimedSensorData = sensorsResult.data.data.sensors.find(s => s.sensor === sensorToClaimMac);
+    expect(claimedSensorData.sensor).toBe(sensorToClaimMac);
+    expect(claimedSensorData.public).toBe(false);
+    expect(claimedSensorData.measurements.length).toBeGreaterThan(0);
+
+    // Unclaim the sensor
+    const unclaimSensorResult = await post('unclaim', {
+      sensor: sensorToClaimMac
+    });
+    expect(unclaimSensorResult).not.toBeNull();
+    expect(unclaimSensorResult.status).toBe(200, 'unclaim result: ' + unclaimSensorResult.status);
+  });
+
+  itif(RI)('`getSensorList` returns `measurements` for shared sensors', async () => {
+
+    // Create sensor with record
+    const sensorToShareMac = randomMac();
+    const sensorToShareName = "Test-Sensor-To-Share"
+    const sensorToShareAddResult = await createSensorWithData(sensorToShareMac, individualAlertGatewayConnection, null, sensorToShareName);
+    expect(sensorToShareAddResult).toBe(true);
+
+    // Share the sensor with secondary user
+    const shareResult = await post('share', {
+      sensor: sensorToShareMac,
+      user: secondaryEmail
+    });
+    expect(shareResult.status).toBe(200);
+    expect(shareResult.statusText).toBe('OK');
+    expect(shareResult.data.result).toBe('success');
+    expect(shareResult.data.data.sensor).toBe(sensorToShareMac);
+
+    // Get sensors list of secondary user
+    let sensorsResult = null;
+    try {
+      sensorsResult = await get('sensors', {}, secondaryHttp);
+    } catch (e) {
+      console.error('Failed to fetch user data', e.response.data);
+    }
+    expect(sensorsResult).not.toBeNull();
+    expect(sensorsResult.data.data.sharedToMe.length).toBeGreaterThan(0);
+
+    // Filter shared sensors, check data and measurements
+    const sharedSensorData = sensorsResult.data.data.sharedToMe.find(s => s.sensor === sensorToShareMac);
+    expect(sharedSensorData.sensor).toBe(sensorToShareMac);
+    expect(sharedSensorData.public).toBe(false);
+    expect(sharedSensorData.measurements.length).toBeGreaterThan(0);
+
+    // Unsare the sensor to the secondary user
+    const unshareResult = await post('unshare', {
+      sensor: sensorToShareMac,
+      user: secondaryEmail
+    });
+    expect(unshareResult.status).toBe(200);
+    expect(unshareResult.statusText).toBe('OK');
+    expect(unshareResult.data.result).toBe('success');
+
+    // Unclaim the sensor
+    const unclaimSensorResult = await post('unclaim', {
+      sensor: sensorToShareMac
+    });
+    expect(unclaimSensorResult).not.toBeNull();
+    expect(unclaimSensorResult.status).toBe(200, 'unclaim result: ' + unclaimSensorResult.status);
+  });
+
   itif(RI)('`share` is successful and shows original name', async () => {
     const sharedWithNameMac = randomMac();
     const sharedWithNameName = 'TEST-WITH-NAME-ORIGINALöööäöäö';
