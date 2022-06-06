@@ -32,7 +32,10 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
                 sensor_profiles.name AS name,
                 sensor_profiles.picture AS picture,
                 sensors.public AS public,
-                sensors.can_share AS canShare
+                sensors.can_share AS canShare,
+                sensors.offset_humidity AS offsetHumidity,
+                sensors.offset_temperature AS offsetTemperature,
+                sensors.offset_pressure AS offsetPressure
             FROM sensor_profiles
             INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
             WHERE
@@ -53,6 +56,7 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
       const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
       if (data.length > 0) {
         sensor.canShare = true;
+        sensor.measurement = data;
         await sqlHelper.setValue('can_share', 1, 'sensors', 'sensor_id', sensor.sensor);
       }
     }
@@ -103,7 +107,10 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
                 current_profile.name AS name,
                 current_profile.picture AS picture,
                 sensors.public AS public,
-                sensors.can_share AS canShare
+                sensors.can_share AS canShare,
+                sensors.offset_humidity AS offsetHumidity,
+                sensors.offset_temperature AS offsetTemperature,
+                sensors.offset_pressure AS offsetPressure
             FROM sensors
             LEFT JOIN sensor_profiles current_profile ON
                 current_profile.sensor_id = sensors.sensor_id
@@ -121,6 +128,10 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
   for (const sensor of sensorsSharedToMe) {
     sensor.public = !!sensor.public;
     sensor.canShare = false;
+
+    const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
+    sensor.measurement = data;
+
     formattedSharedToMe.push(JSON.parse(JSON.stringify(sensor)));
   }
 
