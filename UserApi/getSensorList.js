@@ -54,6 +54,7 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
     sensor.canShare = !!sensor.canShare;
     sensor.measurements = await fetchLatestDataPoint(sensor);
     if (!sensor.canShare) {
+      const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
       if (data.length > 0) {
         sensor.canShare = true;
         await sqlHelper.setValue('can_share', 1, 'sensors', 'sensor_id', sensor.sensor);
@@ -137,7 +138,7 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
   });
 };
 
-const fetchLatestDataPoint = async(sensor) => {
+const fetchLatestDataPoint = async (sensor) => {
   const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
   // Format data for the API
   const dataPoints = [];
@@ -150,5 +151,5 @@ const fetchLatestDataPoint = async(sensor) => {
       rssi: item.RSSI
     });
   });
-  return dataPoints
-}
+  return dataPoints;
+};

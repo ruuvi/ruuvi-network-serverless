@@ -102,7 +102,7 @@ describe('Shares test suite', () => {
   itif(RI)('`getSensorList` returns `measurements` for claimed sensors', async () => {
     // Create sensor with record
     const sensorToClaimMac = randomMac();
-    const sensorToClaimName = "Test-Sensor-To-Claim";
+    const sensorToClaimName = 'Test-Sensor-To-Claim';
     const sensorToClaimAddResult = await createSensorWithData(sensorToClaimMac, individualAlertGatewayConnection, null, sensorToClaimName);
     expect(sensorToClaimAddResult).toBe(true);
 
@@ -131,10 +131,9 @@ describe('Shares test suite', () => {
   });
 
   itif(RI)('`getSensorList` returns `measurements` for shared sensors', async () => {
-
     // Create sensor with record
     const sensorToShareMac = randomMac();
-    const sensorToShareName = "Test-Sensor-To-Share";
+    const sensorToShareName = 'Test-Sensor-To-Share';
     const sensorToShareAddResult = await createSensorWithData(sensorToShareMac, individualAlertGatewayConnection, null, sensorToShareName);
     expect(sensorToShareAddResult).toBe(true);
 
