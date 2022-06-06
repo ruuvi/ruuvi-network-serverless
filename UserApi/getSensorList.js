@@ -52,22 +52,22 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
   for (const sensor of sensors) {
     sensor.public = !!sensor.public;
     sensor.canShare = !!sensor.canShare;
+    const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
+    // Format data for the API
+    const dataPoints = [];
+    data.forEach((item) => {
+      dataPoints.push({
+        coordinates: item.Coordinates,
+        data: item.SensorData,
+        gwmac: item.GatewayMac,
+        timestamp: item.MeasurementTimestamp,
+        rssi: item.RSSI
+      });
+    });
+    sensor.measurements = dataPoints;
     if (!sensor.canShare) {
-      const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
       if (data.length > 0) {
         sensor.canShare = true;
-        // Format data for the API
-        const dataPoints = [];
-        data.forEach((item) => {
-          dataPoints.push({
-            coordinates: item.Coordinates,
-            data: item.SensorData,
-            gwmac: item.GatewayMac,
-            timestamp: item.MeasurementTimestamp,
-            rssi: item.RSSI
-          });
-        });
-        sensor.measurements = dataPoints;
         await sqlHelper.setValue('can_share', 1, 'sensors', 'sensor_id', sensor.sensor);
       }
     }
