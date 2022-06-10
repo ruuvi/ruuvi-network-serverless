@@ -148,7 +148,6 @@ describe('Shares test suite', () => {
     });
     expect(unclaimSensorWithoutDataResult).not.toBeNull();
     expect(unclaimSensorWithoutDataResult.status).toBe(200, 'unclaim result: ' + unclaimSensorWithoutDataResult.status);
-    
   });
 
   itif(RI)('`getSensorList` returns `measurements` for shared sensors', async () => {
