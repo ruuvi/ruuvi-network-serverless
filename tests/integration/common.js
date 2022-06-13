@@ -246,6 +246,30 @@ const createSensorWithData = async (macAddress, gatewayConnection, data = null, 
   return true;
 };
 
+/*
+*/
+const createSensorWithoutData = async (macAddress, name = null, claim = true) => {
+  const payload = { sensor: macAddress };
+  if (name !== null) {
+    payload.name = name;
+  }
+
+  try {
+    await post('claim', payload);
+  } catch (e) {
+    console.error('claim failed', e);
+    return false;
+  }
+
+  if (!claim) {
+    await post('unclaim', {
+      sensor: macAddress
+    });
+  }
+
+  return true;
+};
+
 module.exports = {
   utils,
 
@@ -265,6 +289,7 @@ module.exports = {
   createWhitelistedGateway,
   removeWhitelistedGateway,
   createSensorWithData,
+  createSensorWithoutData,
 
   internalKey,
 

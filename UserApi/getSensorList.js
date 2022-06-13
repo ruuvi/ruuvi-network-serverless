@@ -32,7 +32,10 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
                 sensor_profiles.name AS name,
                 sensor_profiles.picture AS picture,
                 sensors.public AS public,
-                sensors.can_share AS canShare
+                sensors.can_share AS canShare,
+                sensors.offset_humidity AS offsetHumidity,
+                sensors.offset_temperature AS offsetTemperature,
+                sensors.offset_pressure AS offsetPressure
             FROM sensor_profiles
             INNER JOIN sensors ON sensors.sensor_id = sensor_profiles.sensor_id
             WHERE
@@ -49,6 +52,7 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
   for (const sensor of sensors) {
     sensor.public = !!sensor.public;
     sensor.canShare = !!sensor.canShare;
+    sensor.measurements = await fetchLatestDataPoint(sensor);
     if (!sensor.canShare) {
       const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
       if (data.length > 0) {
@@ -103,7 +107,10 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
                 current_profile.name AS name,
                 current_profile.picture AS picture,
                 sensors.public AS public,
-                sensors.can_share AS canShare
+                sensors.can_share AS canShare,
+                sensors.offset_humidity AS offsetHumidity,
+                sensors.offset_temperature AS offsetTemperature,
+                sensors.offset_pressure AS offsetPressure
             FROM sensors
             LEFT JOIN sensor_profiles current_profile ON
                 current_profile.sensor_id = sensors.sensor_id
@@ -121,6 +128,7 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
   for (const sensor of sensorsSharedToMe) {
     sensor.public = !!sensor.public;
     sensor.canShare = false;
+    sensor.measurements = await fetchLatestDataPoint(sensor);
     formattedSharedToMe.push(JSON.parse(JSON.stringify(sensor)));
   }
 
@@ -128,4 +136,20 @@ const executeGetSensorList = async (event, context, sqlHelper, user) => {
     sensors: formatted,
     sharedToMe: formattedSharedToMe
   });
+};
+
+const fetchLatestDataPoint = async (sensor) => {
+  const data = await dynamoHelper.getSensorData(sensor.sensor, 1, null, null);
+  // Format data for the API
+  const dataPoints = [];
+  data.forEach((item) => {
+    dataPoints.push({
+      coordinates: item.Coordinates,
+      data: item.SensorData,
+      gwmac: item.GatewayMac,
+      timestamp: item.MeasurementTimestamp,
+      rssi: item.RSSI
+    });
+  });
+  return dataPoints;
 };
