@@ -108,7 +108,8 @@ const fetch = async (tableName, keyName, keyValue, fieldNames, limit = 10000, sc
     params.KeyConditionExpression += ' AND #range BETWEEN :since AND :until';
     params.ExpressionAttributeNames['#range'] = rangeField;
 
-    params.ExpressionAttributeValues[':since'] = rangeStart;
+    // Exclusive between from start
+    params.ExpressionAttributeValues[':since'] = rangeStart + 1;
     params.ExpressionAttributeValues[':until'] = rangeEnd;
   }
 
